@@ -1,17 +1,18 @@
 ---
 title: "熟悉 Tidymodels"
 date: "2023-07-11"
-date-modified: "2023-07-22"
+date-modified: "2023-07-23"
 image: "tidymodels.png"
 execute: 
   cache: true
 categories: 
   - Data Science
   - R
+  - tidymodels
 ---
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(8, 13)`
+`r stfun::progress(13, 13)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -1335,6 +1336,7 @@ Resampling allows us to simulate how well our model will perform on new data, an
 Some model parameters cannot be learned directly from a data set during model training; these kinds of parameters are called **hyperparameters**. Some examples of hyperparameters include the number of predictors that are sampled at splits in a tree-based model (we call this `mtry` in tidymodels) or the learning rate in a boosted tree model (we call this `learn_rate`). Instead of learning these kinds of hyperparameters during model training, we can estimate the best values for these values by training many models on resampled data sets and exploring how well all these models perform. This process is called **tuning**.
 
 ```{r}
+#| message: false
 library(rpart.plot)
 library(vip)
 ```
@@ -1399,23 +1401,438 @@ Tune a model specification along with a recipe or model, or
 
 Tune a `workflow()` that bundles together a model specification and a recipe or model preprocessor.
 
-Here we use a `workflow()` with a straightforward formula; if this model required more involved data preprocessing, we could use add_recipe() instead of add_formula().
+Here we use a `workflow()` with a straightforward formula; if this model required more involved data preprocessing, we could use `add_recipe()` instead of `add_formula()`.
 
+```{r}
+set.seed(345)
 
+tree_wf <- 
+  workflow() %>%
+  add_model(tune_spec) %>%
+  add_formula(class ~ .)
 
+tree_res <- 
+  tree_wf %>% 
+  tune_grid(
+    resamples = cell_folds,
+    grid = tree_grid
+  )
 
+tree_res
+```
 
+```{r}
+tree_res %>% 
+  collect_metrics()
+```
 
+```{r}
+tree_res %>% 
+  collect_metrics() %>% 
+  ggplot(aes(cost_complexity, mean,
+             color = factor(tree_depth))) +
+  geom_line(linewidth = 1.5, alpha = .6) +
+  geom_point(size = 2) +
+  facet_wrap(~ .metric, scales = "free", nrow = 2) +
+  scale_x_log10(labels = scales::label_number()) +
+  scale_color_viridis_d(option = "plasma", begin = .9, end = 0) +
+  labs(color = "tree_depth") +
+  theme(legend.position = "right")
+```
 
+The `show_best()` function shows us the top 5 candidate models by default:
 
+```{r}
+tree_res %>% 
+  show_best("accuracy")
+```
 
+We can also use the `select_best()` function to pull out the single set of hyperparameter values for our best decision tree model:
 
+```{r}
+best_tree <- tree_res %>% 
+  select_best("accuracy")
 
+best_tree
+```
 
+### Finalizing our model
 
+We can update (or “finalize”) our workflow object `tree_wf` with the values from `select_best()`.
 
+```{r}
+final_wf <- 
+  tree_wf %>% 
+  finalize_workflow(best_tree)
 
-::: {.callout-tip title="To be continued"}
-- <https://www.tidymodels.org/start/>
-- <https://www.tidymodels.org/learn/>
-:::
+final_wf
+```
+
+Our tuning is done!
+
+### The last fit
+
+We can use the function `last_fit()` with our finalized model; this function *fits* the finalized model on the full training data set and evaluates the finalized model on the testing data.
+
+```{r}
+final_fit <- 
+  final_wf %>% 
+  last_fit(cell_split)
+
+final_fit %>% 
+  collect_metrics()
+```
+
+```{r}
+final_fit %>% 
+  collect_predictions() %>% 
+  roc_curve(class, .pred_PS) %>% 
+  autoplot()
+```
+
+The performance metrics from the test set indicate that we did not overfit during our tuning procedure.
+
+The `final_fit` object contains a finalized, fitted workflow that you can use for predicting on new data or further understanding the results. You may want to extract this object, using one of the extract_ helper functions.
+
+```{r}
+final_tree <- extract_workflow(final_fit)
+final_tree
+```
+
+```{r}
+final_tree %>% 
+  extract_fit_engine() %>% 
+  rpart.plot(roundint = FALSE)
+```
+
+Perhaps we would also like to understand what variables are important in this final model. We can use the {vip} package to estimate variable importance based on the model’s structure.
+
+```{r}
+final_tree %>% 
+  extract_fit_parsnip() %>% 
+  vip()
+```
+
+## A predictive modeling case study
+
+### The hotel bookings data
+
+```{r}
+hotels <- 
+  read_csv("https://tidymodels.org/start/case-study/hotels.csv",
+           show_col_types = FALSE) %>% 
+  mutate(across(where(is.character), as_factor))
+
+dim(hotels)
+```
+
+```{r}
+glimpse(hotels)
+```
+
+### Data splitting & resampling
+
+```{r}
+set.seed(123)
+splits <- initial_split(hotels, strata = children)
+
+hotels_other <- training(splits)
+hotel_test <- testing(splits)
+```
+
+```{r}
+# training set proportions by children
+hotels_other %>% 
+  count(children) %>% 
+  mutate(prop = n / sum(n))
+
+# test set proportion by children
+hotel_test %>% 
+  count(children) %>% 
+  mutate(prop = n / sum(n))
+```
+
+For this case study, rather than using multiple iterations of resampling, let’s create a single resample called a *validation* set. In tidymodels, a validation set is treated as a single iteration of resampling. This will be a split from the 37,500 stays that were not used for testing, which we called `hotel_other`. This split creates two new datasets:
+
+- the set held out for the purpose of measuring performance, called the *validation* set, and
+- the remaining data used to fit the model, called the *training* set.
+
+![](imgs/validation-split.svg){width=80%}
+
+We’ll use the `validation_split()` function to allocate 20% of the `hotel_other` stays to the *validation* set and 30,000 stays to the *training* set. This means that our model performance metrics will be computed on a single set of 7,500 hotel stays. This is fairly large, so the amount of data should provide enough precision to be a reliable indicator for how well each model predicts the outcome with a single iteration of resampling.
+
+```{r}
+set.seed(234)
+val_set <- validation_split(hotels_other,
+                            strata = children,
+                            prop = .8)
+val_set
+```
+
+### A first model: penalized logistic regression
+
+```{r}
+# build the model
+lr_mod <- 
+  logistic_reg(penalty = tune(), mixture = 1) %>% 
+  set_engine("glmnet")
+```
+
+Setting `mixture` to a value of one means that the glmnet model will potentially remove irrelevant predictors and choose a simpler model.
+
+```{r}
+# create the recipe
+holidays <- c("AllSouls", "AshWednesday", "ChristmasEve", 
+              "Easter", "ChristmasDay", "GoodFriday",
+              "NewYearsDay","PalmSunday")
+
+lr_recipe <- 
+  recipe(children ~ ., data = hotels_other) %>% 
+  step_date(arrival_date) %>% 
+  step_holiday(arrival_date, holidays = holidays) %>% 
+  step_rm(arrival_date) %>% 
+  step_dummy(all_nominal_predictors()) %>% 
+  step_zv(all_predictors()) %>% 
+  step_normalize(all_predictors())
+```
+
+```{r}
+# create the workflow
+lr_wflow <- 
+  workflow() %>% 
+  add_model(lr_mod) %>% 
+  add_recipe(lr_recipe)
+```
+
+```{r}
+# create the grid for tuning
+lr_reg_grid <- tibble(penalty = 10^seq(-4, -1, length.out = 30))
+```
+
+Let’s use `tune::tune_grid()` to train these 30 penalized logistic regression models. We’ll also save the validation set predictions (via the call to `control_grid()`) so that diagnostic information can be available after the model fit. The area under the ROC curve will be used to quantify how well the model performs across a continuum of event thresholds (recall that the event rate—the proportion of stays including children— is very low for these data).
+
+```{r}
+# train and tune the model
+lr_res <- 
+  lr_wflow %>% 
+  tune_grid(val_set,
+            grid = lr_reg_grid,
+            control = control_grid(save_pred = TRUE),
+            metrics = metric_set(roc_auc))
+```
+
+It might be easier to visualize the validation set metrics by plotting the area under the ROC curve against the range of penalty values:
+
+```{r}
+lr_plot <- 
+  lr_res %>% 
+  collect_metrics() %>% 
+  ggplot(aes(penalty, mean)) +
+  geom_point() +
+  geom_line() +
+  ylab("Area under the ROC Curve") +
+  scale_x_log10(labels = scales::label_number())
+
+lr_plot
+```
+
+This plots shows us that model performance is generally better at the smaller penalty values. This suggests that the majority of the predictors are important to the model. We also see a steep drop in the area under the ROC curve towards the highest penalty values. This happens because a large enough penalty will remove all predictors from the model, and not surprisingly predictive accuracy plummets with no predictors in the model.
+
+Our model performance seems to plateau at the smaller penalty values, so going by the `roc_auc` metric alone could lead us to multiple options for the “best” value for this hyperparameter:
+
+```{r}
+top_models <- 
+  lr_res %>% 
+  show_best("roc_auc", n = 15) %>% 
+  arrange(penalty)
+
+top_models
+```
+
+However, we may want to choose a penalty value further along the x-axis, closer to where we start to see the decline in model performance. For example, candidate model 12 with a penalty value of 0.00174 has effectively the same performance as the numerically best model (model 11), but might eliminate more predictors. This penalty value is marked by the solid line above. In general, fewer irrelevant predictors is better. If performance is about the same, we’d prefer to choose a higher penalty value.
+
+Let’s select this value and visualize the validation set ROC curve:
+
+```{r}
+lr_best <- 
+  lr_res %>% 
+  collect_metrics() %>% 
+  arrange(penalty) %>% 
+  slice(12)
+
+lr_best
+```
+
+```{r}
+lr_auc <- 
+  lr_res %>% 
+  collect_predictions(parameters = lr_best) %>% 
+  roc_curve(children, .pred_none) %>% 
+  mutate(model = "Logistic Regression")
+
+autoplot(lr_auc)
+```
+
+The level of performance generated by this logistic regression model is good, but not groundbreaking. Perhaps the linear nature of the prediction equation is too limiting for this data set. As a next step, we might consider a highly non-linear model generated using a tree-based ensemble method.
+
+### A second model: tree-based ensemble
+
+Each tree is non-linear, and aggregating across trees makes random forests also non-linear but more robust and stable compared to individual trees. Tree-based models like random forests require very little preprocessing and can effectively handle many types of predictors (sparse, skewed, continuous, categorical, etc.).
+
+Although the default hyperparameters for random forests tend to give reasonable results, we’ll plan to tune two hyperparameters that we think could improve performance. Unfortunately, random forest models can be computationally expensive to train and to tune. The computations required for model tuning can usually be easily parallelized to improve training time. The {tune} package can do parallel processing for you, and allows users to use multiple cores or separate machines to fit models.
+
+But, here we are using a single validation set, so parallelization isn’t an option using the tune package. For this specific case study, a good alternative is provided by the engine itself. The {ranger} package offers a built-in way to compute individual random forest models in parallel. To do this, we need to know the the number of cores we have to work with. We can use the parallel package to query the number of cores on your own computer to understand how much parallelization you can do:
+
+```{r}
+cores <- parallel::detectCores()
+cores
+```
+
+We have 10 `r cores` to work with. We can pass this information to the ranger engine when we set up our parsnip rand_forest() model. To enable parallel processing, we can pass engine-specific arguments like num.threads to ranger when we set the engine:
+
+```{r}
+rf_mod <- 
+  rand_forest(mtry = tune(), min_n = tune(), trees = 1000) %>% 
+  set_engine("ranger", num.threads = cores) %>% 
+  set_mode("classification")
+```
+
+This works well in this modeling context, but it bears repeating: if you use any other resampling method, let tune do the parallel processing for you — we typically do not recommend relying on the modeling engine (like we did here) to do this.
+
+```{r}
+# create the recipe and workflow
+rf_recipe <- 
+  recipe(children ~ ., data = hotels_other) %>% 
+  step_date(arrival_date) %>% 
+  step_holiday(arrival_date) %>% 
+  step_rm(arrival_date)
+
+rf_wflow <- 
+  workflow() %>% 
+  add_model(rf_mod) %>% 
+  add_recipe(rf_recipe)
+```
+
+```{r}
+# train and tune the model
+rf_mod
+
+# show what will be tuned
+extract_parameter_set_dials(rf_mod)
+```
+
+```{r}
+set.seed(345)
+rf_res <- 
+  rf_wflow %>% 
+  tune_grid(val_set,
+            grid = 25,
+            control = control_grid(save_pred = TRUE),
+            metrics = metric_set(roc_auc))
+```
+
+The message printed above *“Creating pre-processing data to finalize unknown parameter: mtry”* is related to the size of the data set. Since `mtry` depends on the number of predictors in the data set, `tune_grid()` determines the upper bound for `mtry` once it receives the data.
+
+```{r}
+rf_res %>% 
+  show_best(metric = "roc_auc")
+```
+
+```{r}
+autoplot(rf_res)
+```
+
+```{r}
+# select the best model
+rf_best <- 
+  rf_res %>% 
+  select_best(metric = "roc_auc")
+
+rf_best
+```
+
+To calculate the data needed to plot the ROC curve, we use `collect_predictions()`. This is only possible after tuning with `control_grid(save_pred = TRUE)`. In the output, you can see the two columns that hold our class probabilities for predicting hotel stays including and not including children.
+
+```{r}
+rf_res %>% 
+  collect_predictions()
+```
+
+To filter the predictions for only our best random forest model, we can use the `parameters` argument and pass it our tibble with the best hyperparameter values from tuning, which we called `rf_best`:
+
+```{r}
+rf_auc <- 
+  rf_res %>% 
+  collect_predictions(parameters = rf_best) %>% 
+  roc_curve(children, .pred_none) %>% 
+  mutate(model = "Random Forest")
+```
+
+Now, we can compare the validation set ROC curves for our top penalized logistic regression model and random forest model:
+
+```{r}
+bind_rows(rf_auc, lr_auc) %>% 
+  ggplot(aes(x = 1 - specificity, y = sensitivity,
+             col = model)) +
+  geom_path(lwd = 1.5, alpha = .8) +
+  geom_abline(lty = 3) +
+  coord_equal() +
+  scale_color_viridis_d(option = "plasma", end = .6)
+```
+
+The random forest is uniformly better across event probability thresholds.
+
+### The last fit 
+
+After selecting our best model and hyperparameter values, our last step is to fit the final model on all the rows of data not originally held out for testing (both the training and the validation sets combined), and then evaluate the model performance one last time with the held-out test set.
+
+We’ll start by building our parsnip model object again from scratch. We take our best hyperparameter values from our random forest model. When we set the engine, we add a new argument: `importance = "impurity"`. This will provide variable importance scores for this last model, which gives some insight into which predictors drive model performance.
+
+```{r}
+# the last model
+last_rf_mod <- 
+  rand_forest(mtry = 8, min_n = 7, trees = 1000) %>% 
+  set_engine("ranger", num.threads = cores, importance = "impurity") %>% 
+  set_mode("classification")
+
+# the last workflow
+last_rf_wflow <- 
+  rf_wflow %>% 
+  update_model(last_rf_mod)
+
+# the last fit
+set.seed(345)
+last_rf_fit <- 
+  last_rf_wflow %>% 
+  last_fit(splits)
+
+last_rf_fit
+```
+
+This fitted workflow contains `everything`, including our final metrics based on the test set. So, how did this model do on the test set? Was the validation set a good estimate of future performance?
+
+```{r}
+last_rf_fit %>% 
+  collect_metrics()
+```
+
+This ROC AUC value is pretty close to what we saw when we tuned the random forest model with the validation set, which is good news. That means that our estimate of how well our model would perform with new data was not too far off from how well our model actually performed with the unseen test data.
+
+We can access those variable importance scores via the `.workflow` column. We can extract out the fit from the workflow object, and then use the vip package to visualize the variable importance scores for the top 20 features:
+
+```{r}
+last_rf_fit %>% 
+  extract_fit_parsnip() %>% 
+  vip(num_features = 20)
+```
+
+The most important predictors in whether a hotel stay had children or not were the daily cost for the room, the type of room reserved, the time between the creation of the reservation and the arrival date, and the type of room that was ultimately assigned.
+
+```{r}
+last_rf_fit %>% 
+  collect_predictions() %>% 
+  roc_curve(children, .pred_none) %>% 
+  autoplot()
+```
+
+Based on these results, the validation set and test set performance statistics are very close, so we would have pretty high confidence that our random forest model with the selected hyperparameters would perform well when predicting new data.
