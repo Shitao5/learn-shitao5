@@ -1,0 +1,457 @@
+---
+title: "Metaprogramming"
+date: "2023-06-18"
+date-modified: "2023-06-19"
+image: "metaprogramming.png"
+categories: R
+---
+
+::: {.callout-note title='Progress'}
+`r stfun::progress(3, 5)`
+:::
+
+::: {.callout-tip title="Learning Source"}
+- <https://adv-r.hadley.nz/metaprogramming.html>
+:::
+
+```{r}
+library(rlang)
+library(lobstr)
+```
+
+# Big picture
+
+## Code is data
+
+The first big idea is that **code is data**: you can capture code and compute on it as you can with any other type of data. The first way you can capture code is with `rlang::expr()`.
+
+More formally, captured code is called an *expression*. An expression isn’t a single type of object, but is a collective term for any of four types (call, symbol, constant, or pairlist).
+
+```{r}
+f <- expr(f(x = 1, y = 2))
+
+# add a new argument
+f$z <- 3
+f
+```
+
+```{r}
+# remove an argument
+f[[2]] <- NULL
+f
+```
+
+## Code is a tree
+
+To do more complex manipulation with expressions, you need to fully understand their structure. Behind the scenes, almost every programming language represents code as a tree, often called the **abstract syntax tree**, or AST for short. R is unusual in that you can actually inspect and manipulate this tree.
+
+```{r}
+ast(f(a, "b"))
+```
+
+```{r}
+ast(f1(f2(a, b), f3(1, f4(2))))
+```
+
+```{r}
+ast(1 + 2 * 3)
+```
+
+## Code can generate code
+
+`rlang::call2()` constructs a function call from its components: the function to call, and the arguments to call it with.
+
+```{r}
+call2("f", 1, 2, 3)
+```
+
+```{r}
+call2("+", 1, call2("*", 2, 3))
+```
+
+`call2()` is often convenient to program with, but is a bit clunky for interactive use. An alternative technique is to build complex code trees by combining simpler code trees with a template. `expr()` and `enexpr()` have built-in support for this idea via `!!` (pronounced bang-bang), the **unquote operator**.
+
+```{r}
+xx <- expr(x + x)
+yy <- expr(y + y)
+
+expr(!!xx / !!yy)
+```
+
+Unquoting gets even more useful when you wrap it up into a function, first using `enexpr()` to capture the user’s expression, then `expr()` and `!!` to create a new expression using a template. The example below shows how you can generate an expression that computes the coefficient of variation:
+
+```{r}
+cv <- function(var) {
+  var <- enexpr(var)
+  expr(sd(!!var) / mean(!!var))
+}
+
+cv(x)
+cv(x + y)
+```
+
+## Evaluation runs code
+
+Inspecting and modifying code gives you one set of powerful tools. You get another set of powerful tools when you **evaluate**, i.e. execute or run, an expression. Evaluating an expression requires an environment, which tells R what the symbols in the expression mean.
+
+The primary tool for evaluating expressions is `base::eval()`, which takes an expression and an environment:
+
+```{r}
+eval(expr(x + y), env(x = 1, y = 10))
+eval(expr(x + y), env(x = 2, y = 100))
+```
+
+If you omit the environment, `eval` uses the current environment:
+
+```{r}
+x <- 10
+y <- 100
+eval(expr(x + y))
+```
+
+## Customising evaluation with functions
+
+```{r}
+string_math <- function(x) {
+  e <- env(
+    caller_env(),
+    `+` = function(x, y) paste0(x, y),
+    `*` = function(x, y) strrep(x, y)
+  )
+  
+  eval(enexpr(x), e)
+}
+```
+
+
+```{r}
+name <- "shitao"
+string_math("Hello " + name)
+```
+
+```{r}
+string_math(("x" * 2 + "-y") * 3)
+```
+
+## Customising evaluation with data
+
+As well as expression and environment, `eval_tidy()` also takes a **data mask**, which is typically a data frame:
+
+```{r}
+df <- data.frame(x = 1:5, y = sample(5))
+eval_tidy(expr(x + y), df)
+```
+
+We can wrap this pattern up into a function by using `enexpr()`. This gives us a function very similar to `base::with()`:
+
+```{r}
+with2 <- function(df, expr) {
+  eval_tidy(enexpr(expr), df)
+}
+
+with2(df, x + y)
+```
+
+Unfortunately, this function has a subtle bug and we need a new data structure to help deal with it.
+
+## Quosures
+
+To make the problem more obvious, I’m going to modify `with2()`. The basic problem still occurs without this modification but it’s much harder to see.
+
+```{r}
+with2 <- function(df, expr) {
+  a <- 1000
+  eval_tidy(enexpr(expr), df)
+}
+
+df <- data.frame(x = 1:3)
+a <- 10
+with2(df, x + a)
+```
+
+Fortunately we can solve this problem by using a new data structure: the **quosure** which bundles an expression with an environment. eval_tidy() knows how to work with quosures so all we need to do is switch out enexpr() for enquo():
+
+```{r}
+with2 <- function(df, expr) {
+  a <- 1000
+  eval_tidy(enquo(expr), df)
+}
+
+with2(df, x + a)
+```
+
+Whenever you use a data mask, you must always use `enquo()` instead of `enexpr()`.
+
+# Expressions
+
+`expr()` returns an expression, an object that captures the structure of the code without evaluating it (i.e. running it). If you have an expression, you can evaluate it with `base::eval()`:
+
+```{r}
+z <- expr(y <- x * 10)
+x <- 4
+eval(z)
+y
+```
+
+## Abstract syntax trees
+
+Expressions are also called **abstract syntax trees** (ASTs) because the structure of code is hierarchical and can be naturally represented as a tree. Understanding this tree structure is crucial for inspecting and modifying expressions (i.e. metaprogramming).
+
+### Exercises
+
+```{r}
+ast(f(g(h())))
+```
+
+```{r}
+ast(`+`(`+`(1, 2), 3))
+```
+
+```{r}
+ast(`*`(`(`(`+`(x, y)), z))
+```
+
+## Expressions
+
+You can create a symbol in two ways: by capturing code that references an object with `expr()`, or turning a string into a symbol with `rlang::sym()`:
+
+```{r}
+expr(x)
+sym("x")
+```
+
+You can turn a symbol back into a string with `as.character()` or `rlang::as_string()`. `as_string()` has the advantage of clearly signalling that you’ll get a character vector of length 1.
+
+```{r}
+as_string(expr(x))
+```
+
+## Parsing and grammar
+
+We’ve talked a lot about expressions and the AST, but not about how expressions are created from code that you type (like `"x + y"`). The process by which a computer language takes a string and constructs an expression is called **parsing**, and is governed by a set of rules known as a **grammar**.
+
+Programming languages use conventions called operator precedence to resolve this ambiguity. We can use `ast()` to see what R does:
+
+```{r}
+ast(1 + 2 * 3)
+```
+
+Most of the time you type code into the console, and R takes care of turning the characters you’ve typed into an AST. But occasionally you have code stored in a string, and you want to parse it yourself. You can do so using `rlang::parse_expr()`:
+
+```{r}
+x1 <- "y <- x + 10"
+x1
+is.call(x1)
+
+x2 <- parse_expr(x1)
+x2
+is.call(x2)
+```
+
+```{r}
+x3 <- "a <- 1; a + 1"
+parse_exprs(x3)
+```
+
+# Quasiquotation
+
+Now that you understand the tree structure of R code, it’s time to return to one of the fundamental ideas that make `expr()` and `ast()` work: quotation. In tidy evaluation, all quoting functions are actually quasiquoting functions because they also support unquoting. Where **quotation** is the act of capturing an unevaluated expression, **unquotation** is the ability to selectively evaluate parts of an otherwise quoted expression. Together, this is called quasiquotation. Quasiquotation makes it easy to create functions that combine code written by the function’s author with code written by the function’s user. This helps to solve a wide variety of challenging problems.
+
+Quasiquotation is one of the three pillars of tidy evaluation. You’ll learn about the other two (quosures and the data mask) in Chapter 20. When used alone, quasiquotation is most useful for programming, particularly for generating code. But when it’s combined with the other techniques, tidy evaluation becomes a powerful tool for data analysis.
+
+```{r}
+#| message: false
+library(purrr)
+```
+
+```{r}
+cement <- function(...) {
+  args <- ensyms(...)
+  paste(map(args, as_string), collapse = " ")
+}
+
+cement(Good, morning, Shitao5)
+cement(Good, afternoon, Shitao5)
+```
+
+```{r}
+name <- "Shitao5"
+time <- "morning"
+
+cement(Good, time, name)
+cement(Good, !!time, !!name)
+```
+
+The distinction between quoted and evaluated arguments is important:
+
+- An **evaluated** argument obeys R’s usual evaluation rules.
+
+- A **quoted** argument is captured by the function, and is processed in some custom way.
+
+`paste()` evaluates all its arguments; `cement()` quotes all its arguments.
+
+Talking about whether an argument is quoted or evaluated is a more precise way of stating whether or not a function uses non-standard evaluation (NSE). I will sometimes use “quoting function” as short-hand for a function that quotes one or more arguments, but generally, I’ll talk about quoted arguments since that is the level at which the difference applies.
+
+## Quoting
+
+### Capturing expressions
+
+`expr()` is great for interactive exploration, because it captures what you, the developer, typed. It’s not so useful inside a function:
+
+```{r}
+f1 <- function(x) expr(x)
+f1(a + b + c)
+```
+
+We need another function to solve this problem: `enexpr()`. This captures what the caller supplied to the function by looking at the internal promise object that powers lazy evaluation.
+
+```{r}
+f2 <- function(x) enexpr(x)
+f2(a + b + c)
+```
+
+To capture all arguments in `...`, use `enexprs()`.
+
+```{r}
+f <- function(...) enexprs(...)
+f(x = 1, y = 10 * z)
+```
+
+Finally, `exprs()` is useful interactively to make a list of expressions:
+
+```{r}
+exprs(x = x ^ 2, y = y ^ 3, z = z ^ 4)
+# shorthand for
+# list(x = expr(x ^ 2), y = expr(y ^ 3), z = expr(z ^ 4))
+```
+
+In short, use `enexpr()` and `enexprs()` to capture the expressions supplied as arguments by the user. Use `expr()` and `exprs()` to capture expressions that you supply.
+
+### Capturing symbols
+
+Sometimes you only want to allow the user to specify a variable name, not an arbitrary expression. In this case, you can use `ensym()` or `ensyms()`. These are variants of enexpr() and enexprs() that check the captured expression is either symbol or a string (which is converted to a symbol). `ensym()` and `ensyms()` throw an error if given anything else.
+
+```{r}
+f <- function(...) ensyms(...)
+f(x)
+f("x")
+```
+
+### Summary
+
+|      | Developer | User        |
+|------|---------- |-------------|
+| One  | `expr()`  | `enexpr()`  |
+| Many | `exprs()` | `enexprs()` |
+
+: rlang quasiquoting functions {#tbl-rlang-quasiquoting}
+
+## Unquoting
+
+Unquoting allows you to selectively evaluate parts of the expression that would otherwise be quoted, which effectively allows you to merge ASTs using a template AST.
+
+Unquoting is one inverse of quoting. It allows you to selectively evaluate code inside `expr()`, so that `expr(!!x)` is equivalent to `x`. In Chapter 20, you’ll learn about another inverse, evaluation. This happens outside `expr()`, so that `eval(expr(x))` is equivalent to `x`.
+
+### Unquoting one argument
+
+Use `!!` to unquote a single argument in a function call. `!!` takes a single expression, evaluates it, and inlines the result in the AST.
+
+```{r}
+x <- expr(-1)
+expr(f(!!x, y))
+```
+
+As well as call objects, `!!` also works with symbols and constants:
+
+```{r}
+a <- sym("y")
+b <- 1
+expr(f(!!a, !!b))
+```
+
+If the right-hand side of !! is a function call, !! will evaluate it and insert the results:
+
+```{r}
+mean_rm <- function(var) {
+  var <- ensym(var)
+  expr(mean(!!var, na.rm = TRUE))
+}
+expr(!!mean_rm(x) + !!mean_rm(y))
+```
+
+### Unquoting a function
+
+`!!` is most commonly used to replace the arguments to a function, but you can also use it to replace the function. The only challenge here is operator precedence: `expr(!!f(x, y))` unquotes the result of `f(x, y)`, so you need an extra pair of parentheses.
+
+```{r}
+f <- expr(foo)
+expr((!!f)(x, y))
+```
+
+This also works when `f` is a call:
+
+```{r}
+f <- expr(pkg::foo)
+expr((!!f)(x, y))
+```
+
+Because of the large number of parentheses involved, it can be clearer to use `rlang::call2()`:
+
+```{r}
+f <- expr(pkg::foo)
+call2(f, expr(x), expr(y))
+```
+
+### Unquoting a missing forms
+
+```{r}
+arg <- missing_arg()
+expr(foo(!!maybe_missing(arg), !!maybe_missing(arg)))
+```
+
+### Unquoting in special forms
+
+There are a few special forms where unquoting is a syntax error. Take `$` for example: it must always be followed by the name of a variable, not another expression.
+
+To make unquoting work, you’ll need to use the prefix form:
+
+```{r}
+x <- expr(x)
+expr(`$`(df, !!x))
+```
+
+### Unquoting many arguments
+
+`!!` is a one-to-one replacement. `!!!` (called “unquote-splice”, and pronounced bang-bang-bang) is a one-to-many replacement. It takes a list of expressions and inserts them at the location of the `!!!`:
+
+```{r}
+xs <- exprs(1, a, -b)
+expr(f(!!!xs, y))
+
+# Or with names
+ys <- set_names(xs, letters[1:3])
+expr(f(!!!ys, d = 4))
+```
+
+`!!!` can be used in any rlang function that takes `...` regardless of whether or not `...` is quoted or evaluated. We’ll come back to this in Section 19.6; for now note that this can be useful in `call2()`.
+
+```{r}
+call2("f", !!!xs, expr(y))
+```
+
+
+
+
+
+
+
+
+
+::: {.callout-tip title="To be continued"}
+- <https://adv-r.hadley.nz/quasiquotation.html#non-standard-ast>
+:::
+
+
+
+
+

@@ -1,0 +1,14 @@
+{
+  "hash": "bb1990e37b0cc75862728c1183e34b7d",
+  "result": {
+    "markdown": "---\ntitle: \"Practial Statistics for Data Scientists\"\ndate: \"2023-07-02\"\ndate-modified: \"2023-07-04\"\nimage: \"img.jpg\"\ncategories: \n  - R\n  - Python\n  - Data Science\n---\n\n\n::: {.callout-note title='Progress'}\nLearning Progress: 4.29%.\n:::\n\n::: {.callout-tip title=\"Learning Source\"}\n- [*Practial Statistics for Data Scientists*](https://www.amazon.com/Practical-Statistics-Data-Scientists-Essential/dp/1491952962)\n:::\n\n\n\n\n\n# Exploratory Data Analysis\n\n## Elements of Structured Data\n\n- In fact, a major challenge of data science is to harness this torrent of raw data into actionable information.\n\n## Estimates of Location\n\n- METRICS AND ESTIMATES  \nStatisticians often use the term *estimate* for a value calculated from the data at hand, to draw a distinction between what we see from the data and the theoretical true or exact state of affairs. Data scientists and business analysts are more likely to refer to such a value as a *metric*. The difference reflects the approach of statistics versus that of data science: accounting for uncertainty lies at the heart of the discipline of statistics, whereas concrete business or organizational objectives are the focus of data science. Hence, **statisticians estimate, and data scientists measure**.\n\n- Still, outliers are often the result of data errors such as mixing data of different units (kilometers versus meters) or bad readings from a sensor. When outliers are the result of bad data, the mean will result in a poor estimate of location, while the median will still be valid. In any case, outliers should be identified and are usually worthy of further investigation.\n\n## Example: Location Estimates of Population and Murder Rates\n\n\n::: {.cell layout-align=\"center\" hash='index_cache/html/unnamed-chunk-2_83833ed875010741f7c9aa4e056070fc'}\n\n:::\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n::: {.callout-tip title=\"To be continued\"}\n- Estimates of Location\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

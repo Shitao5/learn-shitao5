@@ -1,0 +1,4 @@
+- source: project
+  netlify:
+    - id: 9da605d8-74c6-4562-86e9-2e05aadc9b7d
+      url: 'https://learn.shitao5.org'

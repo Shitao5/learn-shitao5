@@ -1,0 +1,325 @@
+---
+title: "Python Data Science Handbook"
+date: "2023-07-03"
+date-modified: "2023-07-11"
+image: "img.png"
+categories: 
+  - Data Science
+  - Python
+execute: 
+  warning: false
+  message: false
+fig-align: center
+---
+
+
+::: {.callout-note title='Progress'}
+<!-- `r stfun::progress(50, 66, stop = TRUE)` -->
+Learning Progress: Paused, current progress 75.76%.⏱
+:::
+
+::: {.callout-tip title="Learning Source"}
+- <https://jakevdp.github.io/PythonDataScienceHandbook/>
+:::
+
+# IPython Beyond Normal Python
+
+## Help and Documentation in IPython
+
+- If you play with this much, you'll notice that sometimes the `??` suffix doesn't display any source code: this is generally because the object in question is not implemented in Python, but in C or some other compiled extension language. If this is the case, the `??` suffix gives the same output as the `?` suffix. You'll find this particularly with many of Python's built-in objects and types.
+
+- Though Python has no strictly enforced distinction between public/external attributes and private/internal attributes, by convention a preceding underscore is used to denote the latter. For clarity, these private methods and special methods are omitted from the list by default, but it's possible to list them by explicitly typing the underscore.
+
+## IPython Magic Commands
+
+- As you begin developing more extensive code, you will likely find yourself working in IPython for interactive exploration, as well as a text editor to store code that you want to reuse. Rather than running this code in a new window, it can be convenient to run it within your IPython session. This can be done with the `%run` magic command.
+
+```{python}
+# file: myscript.py
+%run myscript.py
+```
+
+- Another example of a useful magic function is `%timeit`, which will automatically determine the execution time of the single-line Python statement that follows it. For example, we may want to check the performance of a list comprehension:
+
+```{python}
+%timeit L = [n ** 2 for n in range(1000)]
+```
+
+```{python}
+%%timeit
+L = []
+for n in range(1000):
+    L.append(n ** 2)
+```
+
+- Like normal Python functions, IPython magic functions have docstrings, and this useful documentation can be accessed in the standard manner. So, for example, to read the documentation of the `%timeit` magic function, simply type this:
+
+```{python}
+#| eval: false
+%timeit?
+```
+
+## Input and Output History
+
+The standard Python shell contains just one simple shortcut for accessing previous output: the variable `_` (i.e., a single underscore) is kept updated with the previous output. This works in IPython as well. 
+But IPython takes this a bit further—you can use a double underscore to access the second-to-last output, and a triple underscore to access the third-to-last output (skipping any commands with no output). 
+IPython stops there: more than three underscores starts to get a bit hard to count, and at that point it's easier to refer to the output by line number.
+
+There is one more shortcut I should mention, however—a shorthand for `Out[X]` is `_X` (i.e., a single underscore followed by the line number):
+
+```{python}
+#| eval: false
+_2
+```
+
+Sometimes you might wish to suppress the output of a statement,
+or maybe the command you're executing produces a result that you'd prefer not to store in your output history,
+perhaps so that it can be deallocated when other references are removed.
+The easiest way to suppress the output of a command is to add a semicolon to the end of the line:
+
+```{python}
+#| eval: false
+import math
+
+math.sin(2) + math.cos(2);
+```
+
+The result is computed silently, and the output is neither displayed on the screen nor stored in the `Out` dictionary:
+
+```{python}
+#| eval: false
+14 in Out
+```
+
+# Introduction to NumPy
+
+```{python}
+import numpy as np
+```
+
+```{python}
+np.__version__
+```
+
+## Understanding Data Types in Python
+
+### A Python List Is More Than Just a List
+
+- At the implementation level, the array essentially contains a single pointer to one contiguous block of data. The Python list, on the other hand, contains a pointer to a block of pointers, each of which in turn points to a full Python object like the Python integer we saw earlier. Again, **the advantage of the list is flexibility**: because each list element is a full structure containing both data and type information, the list can be filled with data of any desired type. Fixed-type NumPy-style arrays lack this flexibility, but are much more efficient for storing and manipulating data.
+
+### Creating Arrays from Python Lists
+
+```{python}
+# Integer array
+np.array([1, 4, 2, 5, 3])
+```
+
+```{python}
+# Integer upcast to floating point
+np.array([3.14, 3, 2, 3])
+```
+
+```{python}
+# Set data type
+np.array([1, 2, 3, 4], dtype = np.float32)
+```
+
+NumPy arrarys can be multidimensional:
+
+```{python}
+# Nested list result in multidismentional arrays
+np.array([range(i, i + 3) for i in [2, 4, 6]])
+```
+
+### Creating Arrays from Scratch
+
+```{python}
+# Create a length-10 integer array filled with 0s
+np.zeros(10, dtype = int)
+```
+
+```{python}
+# Create a 3x5 floating-point array filled with 1s
+np.ones((3, 5), dtype = float)
+```
+
+```{python}
+# Create a 3x5 array filled with 3.14
+np.full((3, 5), 3.14)
+```
+
+```{python}
+# Create an array filled with a linear sequence
+np.arange(0, 20, 2)
+```
+
+```{python}
+# Create an array of five values evenly spaced between 0 and 1
+np.linspace(0, 1, 5)
+```
+
+```{python}
+# Create a 3x3 array of uniformly distributed pseudorandom
+# values between 0 and 1
+np.random.random((3, 3))
+```
+
+```{python}
+# Create a 3x3 array of normally distributed pseudorandom
+# values with mean 0 and standard deviation 1
+np.random.normal(0, 1, (3, 3))
+```
+
+```{python}
+# Create a 3x3 array of pseudorandom integers in the interval [0, 10)
+np.random.randint(0, 10, (3, 3))
+```
+
+```{python}
+# Create a 3x3 identity matrix
+np.eye(3)
+```
+
+```{python}
+# Create an uninitialized array of three integers; the values will be
+# whatever happens to already exist at that memory location
+np.empty(3)
+```
+
+## The Basics of NumPy Arrays
+
+```{python}
+np.random.seed(0)
+
+x1 = np.random.randint(10, size = 6)
+x2 = np.random.randint(10, size = (3, 4))
+x3 = np.random.randint(10, size = (3, 4, 5))
+```
+
+Each array has attributes `ndim` (the number of dimensions), `shape` (the size of each dimension), and `size` (the total size of the array):
+
+```{python}
+print("x3 ndim: ", x3.ndim)
+print("x3 shape: ", x3.shape)
+print("x3 size: ", x3.size)
+```
+
+# Machine Learning
+
+## What Is Machine Learning?
+
+Fundamentally, machine learning involves building mathematical models to help understand data. "Learning" enters the fray when we give these models tunable parameters that can be adapted to observed data; in this way the program can be considered to be "learning" from the data. Once these models have been fit to previously seen data, they can be used to predict and understand aspects of newly observed data.1
+
+## Introducing Scikit-Learn
+
+### Data Representation in Scikit-Learn
+
+```{python}
+import seaborn as sns
+iris = sns.load_dataset('iris')
+iris.head()
+```
+
+```{python}
+#| fig-align: center
+#| warning: false
+%matplotlib inline
+sns.set()
+sns.pairplot(iris, hue = 'species', size = 1.5)
+```
+
+```{python}
+X_iris = iris.drop("species", axis = 1)
+X_iris.shape
+```
+
+```{python}
+y_iris = iris["species"]
+y_iris.shape
+```
+
+### Scikit-Learn's Estimator API
+
+#### Supervised learning example: Simple linear regression
+
+```{python}
+#| fig-align: center
+import matplotlib.pyplot as plt
+import numpy as np
+
+rng = np.random.RandomState(42)
+x = 10 * rng.rand(50)
+y = 2 * x - 1 + rng.randn(50)
+plt.scatter(x, y)
+```
+
+```{python}
+import sklearn
+from sklearn.linear_model import LinearRegression
+```
+
+An important point is that **a class of model is not the same as an instance of a model**.
+
+```{python}
+model = LinearRegression(fit_intercept = True)
+model
+```
+
+Keep in mind that when the model is instantiated, the only action is the storing of these hyperparameter values. In particular, we have not yet applied the model to any data: the Scikit-Learn API makes very clear the distinction between *choice of model* and *application of model to data*.
+
+```{python}
+# Arrange data into a features matrix and target vector
+X = x[:, np.newaxis]
+X.shape
+```
+
+```{python}
+# Fit the model to your data
+model.fit(X, y)
+```
+In Scikit-Learn, by convention all model parameters that were learned during the `fit()` process have trailing underscores; for example in this linear model, we have the following:
+
+```{python}
+model.coef_
+```
+
+```{python}
+model.intercept_
+```
+
+```{python}
+# Predict labels for unknown data
+xfit = np.linspace(-1, 11)
+Xfit = xfit[:, np.newaxis]
+yfit = model.predict(Xfit)
+```
+
+```{python}
+#| fig-align: center
+plt.scatter(x, y)
+plt.plot(xfit, yfit)
+```
+
+## Hyperparameters and Model Validation
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+::: {.callout-tip title="To be continued"}
+- <https://jakevdp.github.io/PythonDataScienceHandbook/05.03-hyperparameters-and-model-validation.html>
+:::

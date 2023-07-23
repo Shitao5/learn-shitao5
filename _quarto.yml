@@ -1,0 +1,48 @@
+project:
+  type: website
+
+website:
+  title: "Learn-Shitao5"
+  favicon: "images/logo.png"
+  site-url: https://learn.shitao5.org/
+  description: "Here are Shitao5's study notes."
+  back-to-top-navigation: true
+
+  repo-url: https://github.com/Shitao5/learn-shitao5
+  repo-actions: [edit, issue]
+
+  # comments:
+  #   giscus:
+  #     repo: Shitao5/learn-shitao5
+      # loading: lazy
+
+  navbar:
+    right:
+      - text: About
+        href: about.qmd
+      - text: Shitao's Blog
+        href: https://shitao5.org/
+      - icon: github
+        href: https://github.com/Shitao5/
+      - icon: rss-fill
+        href: index.xml
+        aria-label: RSS
+
+  page-footer:
+    left: "Copyright 2023, [Shitao5](https://shitao5.org/)"
+    right: "This blog is built with [Quarto](https://quarto.org/)❤️."
+
+format:
+  html:
+    theme:
+      light: [litera, styles.scss]
+      dark: [darkly, styles-dark.scss]
+    toc: true
+    number-sections: true
+    code-copy: true
+    code-overflow: wrap
+    code-link: true
+    link-external-newwindow: true
+
+date-format: iso
+# license: CC BY-SA

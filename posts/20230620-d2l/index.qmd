@@ -1,0 +1,756 @@
+---
+title: "动手学深度学习"
+date: "2023-06-20"
+date-modified: "2023-06-30"
+image: "front.png"
+categories: ["Deep Learning", "Python"]
+---
+
+::: {.callout-note title='Progress'}
+Learning Progress: 17.5%.
+:::
+
+::: {.callout-tip title="Learning Source"}
+- <https://zh-v2.d2l.ai/index.html>
+:::
+
+
+# 前言 {.unnumbered}
+
+- 任何一种计算技术要想发挥其全部影响力，都必须得到充分的理解、充分的文档记录，并得到成熟的、维护良好的工具的支持。关键思想应该被清楚地提炼出来，尽可能减少需要让新的从业者跟上时代的入门时间。成熟的库应该自动化常见的任务，示例代码应该使从业者可以轻松地修改、应用和扩展常见的应用程序，以满足他们的需求。
+
+# 引言
+
+- 通常，即使我们不知道怎样明确地告诉计算机如何从输入映射到输出，大脑仍然能够自己执行认知功能。 换句话说，即使我们不知道如何编写计算机程序来识别“Alexa”这个词，大脑自己也能够识别它。 有了这一能力，我们就可以收集一个包含大量音频样本的*数据集*（dataset），并对包含和不包含唤醒词的样本进行标记。 利用机器学习算法，我们不需要设计一个“明确地”识别唤醒词的系统。 相反，我们只需要定义一个灵活的程序算法，其输出由许多*参数*（parameter）决定，然后使用数据集来确定当下的“最佳参数集”，这些参数通过某种性能度量方式来达到完成任务的最佳性能。  
+那么到底什么是参数呢？ 参数可以被看作旋钮，旋钮的转动可以调整程序的行为。 任一调整参数后的程序被称为*模型*（model）。 通过操作参数而生成的所有不同程序（输入-输出映射）的集合称为“模型族”。 使用数据集来选择参数的元程序被称为*学习算法*（learning algorithm）。
+
+- 深度学习与经典方法的区别主要在于：前者关注的功能强大的模型，这些模型由神经网络错综复杂的交织在一起，包含层层数据转换，因此被称为*深度学习*（deep learning）
+
+- 当一个模型在训练集上表现良好，但不能推广到测试集时，这个模型被称为*过拟合*（overfitting）的。 就像在现实生活中，尽管模拟考试考得很好，真正的考试不一定百发百中。
+
+- 虽然监督学习只是几大类机器学习问题之一，但是在工业中，大部分机器学习的成功应用都使用了监督学习。 这是因为在一定程度上，许多重要的任务可以清晰地描述为，在给定一组特定的可用数据的情况下，估计未知事物的概率。
+
+- 回归是训练一个回归函数来输出一个数值； 分类是训练一个分类器来输出预测的类别。
+
+- 分类可能变得比二项分类、多项分类复杂得多。 例如，有一些分类任务的变体可以用于寻找层次结构，层次结构假定在许多类之间存在某种关系。 因此，**并不是所有的错误都是均等的**。 人们宁愿错误地分入一个相关的类别，也不愿错误地分入一个遥远的类别，这通常被称为*层次分类*(hierarchical classification)。
+
+- 学习预测不相互排斥的类别的问题称为*多标签分类*（multi-label classification）。
+
+- 无监督学习
+    - 聚类（clustering）问题：没有标签的情况下，我们是否能给数据分类呢？
+    - 主成分分析（principal component analysis）问题：我们能否找到少量的参数来准确地捕捉数据的线性相关属性？
+    - 因果关系（causality）和概率图模型（probabilistic graphical models）问题：我们能否描述观察到的许多数据的根本原因？
+    - 生成对抗性网络（generative adversarial networks）：为我们提供一种合成数据的方法，甚至像图像和音频这样复杂的非结构化数据。
+
+- 简单的离线学习有它的魅力。 好的一面是，我们可以孤立地进行模式识别，而不必分心于其他问题。 但缺点是，解决的问题相当有限。 这时我们可能会期望人工智能不仅能够做出预测，而且能够与真实环境互动。 **与预测不同，“与真实环境互动”实际上会影响环境**。 这里的人工智能是“智能代理”，而不仅是“预测模型”。 因此，我们必须考虑到它的行为可能会影响未来的观察结果。
+
+- 在强化学习问题中，智能体（agent）在一系列的时间步骤上与环境交互。 在每个特定时间点，智能体从环境接收一些观察（observation），并且必须选择一个动作（action），然后通过某种机制（有时称为执行器）将其传输回环境，最后智能体从环境中获得奖励（reward）。 此后新一轮循环开始，智能体接收后续观察，并选择后续操作，依此类推。 强化学习的过程在 @fig-rl-environment 中进行了说明。 请注意，**强化学习的目标是产生一个好的策略（policy）**。 强化学习智能体选择的“动作”受策略控制，即一个从环境观察映射到行动的功能。
+
+![强化学习和环境之间的相互作用](img/rl-environment.svg){width=60% #fig-rl-environment}
+
+- 当环境可被完全观察到时，强化学习问题被称为*马尔可夫决策过程*（markov decision process）。 当状态不依赖于之前的操作时，我们称该问题为*上下文赌博机*（contextual bandit problem）。 当没有状态，只有一组最初未知回报的可用动作时，这个问题就是经典的*多臂赌博机*（multi-armed bandit problem）。
+
+- 如前所述，机器学习可以使用数据来学习输入和输出之间的转换，例如在语音识别中将音频转换为文本。 在这样做时，通常需要以适合算法的方式表示数据，以便将这种表示转换为输出。 深度学习是“深度”的，模型学习了许多“层”的转换，每一层提供一个层次的表示。 例如，靠近输入的层可以表示数据的低级细节，而接近分类输出的层可以表示用于区分的更抽象的概念。 由于**表示学习（representation learning）目的是寻找表示本身，因此深度学习可以称为“多级表示学习”**。
+
+- 事实证明，这些多层模型能够以以前的工具所不能的方式处理低级的感知数据。 毋庸置疑，深度学习方法中最显著的共同点是使用**端到端训练**。 也就是说，与其基于单独调整的组件组装系统，不如构建系统，然后联合调整它们的性能。 例如，在计算机视觉中，科学家们习惯于将特征工程的过程与建立机器学习模型的过程分开。 Canny边缘检测器 (Canny, 1987) 和SIFT特征提取器 (Lowe, 2004) 作为将图像映射到特征向量的算法，在过去的十年里占据了至高无上的地位。 在过去的日子里，将机器学习应用于这些问题的关键部分是提出人工设计的特征工程方法，将数据转换为某种适合于浅层模型的形式。 然而，与一个算法自动执行的数百万个选择相比，人类通过特征工程所能完成的事情很少。 当深度学习开始时，这些特征抽取器被自动调整的滤波器所取代，产生了更高的精确度。  
+因此，深度学习的一个关键优势是它不仅取代了传统学习管道末端的浅层模型，而且还取代了劳动密集型的特征工程过程。 此外，通过取代大部分特定领域的预处理，深度学习消除了以前分隔计算机视觉、语音识别、自然语言处理、医学信息学和其他应用领域的许多界限，为解决各种问题提供了一套统一的工具。
+
+# 预备知识
+
+## 数据操作 {#sec-ndarray}
+
+### 入门
+
+```{python}
+import torch
+```
+
+张量表示一个由数值组成的数组，这个数组可能有多个维度。 具有一个轴的张量对应数学上的向量（vector）； 具有两个轴的张量对应数学上的矩阵（matrix）； 具有两个轴以上的张量没有特殊的数学名称。
+
+除非额外指定，新的张量将存储在内存中，并采用基于CPU的计算。
+
+```{python}
+# 创建张量
+x = torch.arange(12)
+x
+```
+
+```{python}
+# 访问张量（沿每个轴的长度）的形状
+x.shape  
+```
+
+```{python}
+# 改变张量的形状
+X = x.reshape(3, 4)
+X
+```
+
+要重点说明一下，虽然张量的形状发生了改变，但其元素值并没有变。 注意，通过改变张量的形状，张量的大小不会改变。
+
+此外，我们可以通过-1来调用自动计算出维度的功能。 即我们可以用`x.reshape(-1,4)`或`x.reshape(3,-1)`来取代`x.reshape(3,4)`。
+
+```{python}
+#| eval: false
+# 与 x.reshape(3, 4)效果一致
+x.reshape(-1, 4)
+x.reshape(3, -1)
+```
+
+```{python}
+# 创建形状为（2,3,4）的张量，其中所有元素都设置为0
+torch.zeros((2, 3, 4))
+```
+
+```{python}
+# 创建形状为（2,3,4）的张量，其中所有元素都设置为1
+torch.ones((2, 3, 4))
+```
+
+```{python}
+# 创建形状为（3,4）的张量，每个元素都从标准正态分布中随机采样
+torch.randn(3, 4)
+```
+
+```{python}
+# 通过 Python 列表为张量中的元素赋值
+torch.tensor([
+  [2, 1, 4, 3],
+  [1, 2, 3, 4],
+  [4, 3, 2, 1]
+])
+```
+
+### 运算符
+
+对于任意具有相同形状的张量， 常见的标准算术运算符（+、-、\*、\/和\*\*）都可以被升级为按元素运算。 我们可以在同一形状的任意两个张量上调用按元素操作。
+
+```{python}
+x = torch.tensor([1, 2, 4, 8])
+y = torch.tensor([2, 2, 2, 2])
+
+# 使用逗号来表示一个具有5个元素的元组
+x + y, x - y, x * y, x / y, x ** y
+```
+
+“按元素”方式可以应用更多的计算，包括像求幂这样的一元运算符。
+
+```{python}
+torch.exp(x)
+```
+
+可以把多个张量连结（concatenate）在一起， 把它们端对端地叠起来形成一个更大的张量。 我们只需要提供张量列表，并给出沿哪个轴连结。
+
+```{python}
+X = torch.arange(12, dtype = torch.float32).reshape((3, 4))
+Y = torch.tensor([
+  [2.0, 1, 4, 3],
+  [1  , 2, 3, 4],
+  [4  , 3, 2, 1]
+])
+torch.cat((X, Y), dim = 0), torch.cat((X, Y), dim = 1)
+```
+
+通过逻辑运算符构建二元张量：
+
+```{python}
+X == Y
+```
+
+对张量中的所有元素进行求和，会产生一个单元素张量：
+
+```{python}
+X.sum()
+```
+
+### 广播机制
+
+在上面的部分中，我们看到了如何在相同形状的两个张量上执行按元素操作。 在某些情况下，即使形状不同，我们仍然可以通过调用 *广播机制*（broadcasting mechanism）来执行按元素操作。 这种机制的工作方式如下：
+
+1. 通过适当复制元素来扩展一个或两个数组，以便在转换之后，两个张量具有相同的形状；
+1. 对生成的数组执行按元素操作。
+
+在大多数情况下，我们将沿着数组中长度为1的轴进行广播，如下例子：
+
+```{python}
+a = torch.arange(3).reshape((3, 1))
+b = torch.arange(2).reshape((1, 2))
+a, b
+```
+
+由于a和b分别是 $3\times1$
+和 $1\times2$
+矩阵，如果让它们相加，它们的形状不匹配。 我们将两个矩阵广播为一个更大的 $3\times2$
+矩阵，如下所示：矩阵$\mathbf{a}$将复制列， 矩阵$\mathbf{b}$将复制行，然后再按元素相加。
+
+```{python}
+a + b
+```
+
+### 索引和切片
+
+就像在任何其他Python数组中一样，张量中的元素可以通过索引访问。 与任何Python数组一样：第一个元素的索引是0，最后一个元素索引是-1； 可以指定范围以包含第一个元素和最后一个之前的元素。
+
+```{python}
+# 查看 X
+X
+```
+
+
+```{python}
+# 用[-1]选择最后一个元素，用[1:3]选择第二个和第三个元素
+X[-1], X[1:3]
+```
+
+除读取外，我们还可以通过指定索引来将元素写入矩阵。
+
+```{python}
+X[1, 2] = 9
+X
+```
+
+如果我们想为多个元素赋值相同的值，我们只需要索引所有元素，然后为它们赋值。 例如，`[0:2, :]`访问第1行和第2行，其中“`:`”代表沿轴1（列）的所有元素。 虽然我们讨论的是矩阵的索引，但这也适用于向量和超过2个维度的张量。
+
+```{python}
+X[0:2, :] = 12
+X
+```
+
+### 节省内存
+
+运行一些操作可能会导致为新结果分配内存。 例如，如果我们用`Y = X + Y`，我们将取消引用`Y`指向的张量，而是指向新分配的内存处的张量。
+
+在下面的例子中，我们用Python的`id()`函数演示了这一点， 它给我们提供了内存中引用对象的确切地址。 运行`Y = Y + X`后，我们会发现`id(Y)`指向另一个位置。 这是因为Python首先计算`Y + X`，为结果分配新的内存，然后使`Y`指向内存中的这个新位置。
+
+```{python}
+before = id(Y)
+Y = Y + X
+id(Y) == before
+```
+
+这可能是不可取的，原因有两个：
+
+1. 首先，我们不想总是不必要地分配内存。在机器学习中，我们可能有数百兆的参数，并且在一秒内多次更新所有参数。通常情况下，我们希望原地执行这些更新；
+1. 如果我们不原地更新，其他引用仍然会指向旧的内存位置，这样我们的某些代码可能会无意中引用旧的参数。
+
+幸运的是，执行原地操作非常简单。 我们可以使用切片表示法将操作的结果分配给先前分配的数组，例如`Y[:] = <expression>`。 为了说明这一点，我们首先创建一个新的矩阵`Z`，其形状与另一个`Y`相同， 使用`zeros_like`来分配一个全0的块。
+
+```{python}
+Z = torch.zeros_like(Y)
+print('id(Z):', id(Z))
+Z[:] = X + Y
+print('id(Z):', id(Z))
+```
+
+如果在后续计算中没有重复使用`X`， 我们也可以使用`X[:] = X + Y`或`X += Y`来减少操作的内存开销。
+
+### 转换为其他 Python 对象
+
+将深度学习框架定义的张量转换为NumPy张量（ndarray）很容易，反之也同样容易。 torch张量和numpy数组将共享它们的底层内存，就地操作更改一个张量也会同时更改另一个张量。
+
+```{python}
+A = X.numpy()
+B = torch.tensor(A)
+type(A), type(B)
+```
+
+要将大小为1的张量转换为Python标量，我们可以调用`item`函数或Python的内置函数。
+
+```{python}
+a = torch.tensor([3.4])
+a, a.item(), float(a), int(a)
+```
+
+## 数据预处理
+
+人工创建数据集：
+
+```{python}
+import os
+
+os.makedirs(os.path.join('.', 'data'), exist_ok = True)
+data_file = os.path.join('.', 'data', 'house_tiny.csv')
+with open(data_file, 'w') as f:
+  f.write('NumRooms,Allley,Price\n') # 列名
+  f.write('NA,Pave,127500\n')
+  f.write('2,NA,106000\n')
+  f.write('4,NA,178100\n')
+  f.write('NA,NA,140000\n')
+```
+
+使用 Pandas 的 `read_csv()` 函数读取：
+
+```{python}
+import pandas as pd
+
+data = pd.read_csv(data_file)
+print(data)
+```
+
+注意，“`NaN`”项代表缺失值。 为了处理缺失的数据，典型的方法包括*插值法*和*删除法*， 其中插值法用一个替代值弥补缺失值，而删除法则直接忽略缺失值。 在这里，我们将考虑插值法。
+
+通过位置索引`iloc`，我们将`data`分成`inputs`和`outputs`， 其中前者为`data`的前两列，而后者为`data`的最后一列。 对于`inputs`中缺少的数值，我们用同一列的均值替换“`NaN`”项。
+
+```{python}
+inputs, outputs = data.iloc[:, 0:2], data.iloc[:, 2]
+inputs.NumRooms = inputs.NumRooms.fillna(inputs.NumRooms.mean())
+print(inputs)
+```
+
+对于`inputs`中的类别值或离散值，我们将“`NaN`”视为一个类别。 由于“巷子类型”（“Alley”）列只接受两种类型的类别值“`Pave`”和“`NaN`”， pandas可以自动将此列转换为两列“`Alley_Pave`”和“`Alley_nan`”。 巷子类型为“`Pave`”的行会将“`Alley_Pave`”的值设置为1，“`Alley_nan`”的值设置为0。 缺少巷子类型的行会将“`Alley_Pave`”和“`Alley_nan`”分别设置为0和1。
+
+```{python}
+inputs = pd.get_dummies(inputs, dummy_na = True, dtype = float)
+print(inputs)
+```
+
+现在`inputs`和`outputs`中的所有条目都是数值类型，它们可以转换为张量格式。 当数据采用张量格式后，可以通过在 @sec-ndarray 中引入的那些张量函数来进一步操作。
+
+```{python}
+X, y= torch.tensor(inputs.values), torch.tensor(outputs.values)
+X, y
+```
+
+## 线性代数
+
+### 降维
+
+默认情况下，调用求和函数会沿所有的轴降低张量的维度，使它变为一个标量。 我们还可以指定张量沿哪一个轴来通过求和降低维度。 以矩阵为例，为了通过求和所有行的元素来降维（轴0），可以在调用函数时指定`axis=0`。 由于输入矩阵沿0轴降维以生成输出向量，因此输入轴0的维数在输出形状中消失。
+
+```{python}
+A = torch.arange(20, dtype = torch.float32).reshape(5, 4)
+A_sum_axis0 = A.sum(axis = 0)
+A_sum_axis0, A_sum_axis0.shape
+```
+
+指定`axis=1`将通过汇总所有列的元素降维（轴1）。因此，输入轴1的维数在输出形状中消失。
+
+```{python}
+A_sum_axis1 = A.sum(axis=1)
+A_sum_axis1, A_sum_axis1.shape
+```
+
+沿着行和列对矩阵求和，等价于对矩阵的所有元素进行求和。
+
+```{python}
+A.sum(axis = [0, 1])  # 结果和A.sum()相同
+```
+
+非降维求和：
+
+```{python}
+# 保持轴数不变
+sum_A = A.sum(axis = 1, keepdims = True)
+sum_A
+```
+
+```{python}
+# 通过广播将 A 除以 sum_A
+A / sum_A
+```
+
+```{python}
+# 求列和
+A.cumsum(axis = 0)
+```
+
+### 点积
+
+给定两个向量 $\mathbf{x}, \mathbf{y}\in\mathbb{R}^d$，
+它们的*点积*（dot product）$\mathbf{x}^\top\mathbf{y}$
+ （或 $\langle\mathbf{x},\mathbf{y}\rangle$）
+ 是相同位置的按元素乘积的和：$\mathbf{x}^\top\mathbf{y}=\sum^d_{i=1} x_i y_i$。
+
+```{python}
+x = torch.arange(4, dtype = torch.float32)
+y = torch.ones(4, dtype = torch.float32)
+x, y, torch.dot(x, y)
+```
+
+### 矩阵-向量积
+
+在代码中使用张量表示矩阵-向量积，我们使用`mv`函数。
+当我们为矩阵`A`和向量`x`调用`torch.mv(A, x)`时，会执行矩阵-向量积。
+注意，`A`的列维数（沿轴1的长度）必须与`x`的维数（其长度）相同。
+
+```{python}
+A.shape, x.shape, torch.mv(A, x)
+```
+
+### 矩阵-矩阵乘法
+
+```{python}
+B = torch.ones(4, 3)
+torch.mm(A, B)
+```
+
+### 范数
+
+线性代数中最有用的一些运算符是*范数*（norm）。
+非正式地说，向量的*范数*是表示一个向量有多大。
+这里考虑的*大小*（size）概念不涉及维度，而是分量的大小。
+
+在线性代数中，向量范数是将向量映射到标量的函数$f$。
+给定任意向量$\mathbf{x}$，向量范数要满足一些属性。
+第一个性质是：如果我们按常数因子$\alpha$缩放向量的所有元素，
+其范数也会按相同常数因子的*绝对值*缩放：
+
+$$
+f(\alpha \mathbf{x}) = |\alpha| f(\mathbf{x}).
+$$ {#eq-norm1}
+
+第二个性质是熟悉的三角不等式:
+
+$$
+f(\mathbf{x} + \mathbf{y}) \leq f(\mathbf{x}) + f(\mathbf{y}).
+$$ {#eq-norm2}
+
+第三个性质简单地说范数必须是非负的:
+
+$$
+f(\mathbf{x}) \geq 0.
+$$ {#eq-norm3}
+
+这是有道理的。因为在大多数情况下，任何东西的最小的*大小*是0。
+最后一个性质要求范数最小为0，当且仅当向量全由0组成。
+
+$$
+\forall i, [\mathbf{x}]_i = 0 \Leftrightarrow f(\mathbf{x})=0.
+$$ {#eq-norm4}
+
+在深度学习中，我们经常试图解决优化问题：
+*最大化*分配给观测数据的概率;
+*最小化*预测和真实观测之间的距离。
+用向量表示物品（如单词、产品或新闻文章），以便最小化相似项目之间的距离，最大化不同项目之间的距离。
+**目标，或许是深度学习算法最重要的组成部分（除了数据），通常被表达为范数。**
+
+## 微积分
+
+在深度学习中，我们“训练”模型，不断更新它们，使它们在看到越来越多的数据时变得越来越好。
+通常情况下，变得更好意味着最小化一个*损失函数*（loss function），
+即一个衡量“模型有多糟糕”这个问题的分数。
+最终，我们真正关心的是生成一个模型，它能够在从未见过的数据上表现良好。
+但“训练”模型只能将模型与我们实际能看到的数据相拟合。
+因此，我们可以将拟合模型的任务分解为两个关键问题：
+
+- *优化*（optimization）：用模型拟合观测数据的过程；
+- *泛化*（generalization）：数学原理和实践者的智慧，能够指导我们生成出有效性超出用于训练的数据集本身的模型。
+
+```{python}
+import numpy as np
+from matplotlib_inline import backend_inline
+```
+
+```{python}
+# 定义 f(x)
+def f(x):
+  return 3 * x ** 2 - 4 * x
+
+# 定义瞬时变化率计算函数
+def numerical_lim(f, x, h):
+  return (f(x + h) - f(x)) / h
+
+h = 0.1
+for i in range(5):
+  print(f'h={h:.5f}, numerical limit={numerical_lim(f, 1, h):.5f}')
+  h *= 0.1
+```
+
+```{python}
+# 使用自定义的 d2l.py 中的函数
+import d2l
+```
+
+```{python}
+#| label: fig-qiexian
+#| fig-cap: "x=1处切线"
+x = np.arange(0, 3, 0.1)
+d2l.plot(x, [f(x), 2 * x - 3], 'x', 'f(x)', legend=['f(x)', 'Tangent line (x=1)'])
+```
+
+我们可以连结一个多元函数对其所有变量的偏导数，以得到该函数的*梯度*（gradient）向量。
+具体而言，设函数$f:\mathbb{R}^n\rightarrow\mathbb{R}$的输入是
+一个$n$维向量$\mathbf{x}=[x_1,x_2,\ldots,x_n]^\top$，并且输出是一个标量。
+函数$f(\mathbf{x})$相对于$\mathbf{x}$的梯度是一个包含$n$个偏导数的向量:
+
+$$
+\nabla_{\mathbf{x}} f(\mathbf{x}) = \bigg[\frac{\partial f(\mathbf{x})}{\partial x_1}, \frac{\partial f(\mathbf{x})}{\partial x_2}, \ldots, \frac{\partial f(\mathbf{x})}{\partial x_n}\bigg]^\top,
+$$ {#eq-grandient}
+
+其中$\nabla_{\mathbf{x}} f(\mathbf{x})$通常在没有歧义时被$\nabla f(\mathbf{x})$取代。
+
+假设$\mathbf{x}$为$n$维向量，在微分多元函数时经常使用以下规则:
+
+- 对于所有$\mathbf{A} \in \mathbb{R}^{m \times n}$，都有$\nabla_{\mathbf{x}} \mathbf{A} \mathbf{x} = \mathbf{A}^\top$
+- 对于所有$\mathbf{A} \in \mathbb{R}^{n \times m}$，都有$\nabla_{\mathbf{x}} \mathbf{x}^\top \mathbf{A}  = \mathbf{A}$
+- 对于所有$\mathbf{A} \in \mathbb{R}^{n \times n}$，都有$\nabla_{\mathbf{x}} \mathbf{x}^\top \mathbf{A} \mathbf{x}  = (\mathbf{A} + \mathbf{A}^\top)\mathbf{x}$
+- $\nabla_{\mathbf{x}} \|\mathbf{x} \|^2 = \nabla_{\mathbf{x}} \mathbf{x}^\top \mathbf{x} = 2\mathbf{x}$
+
+同样，对于任何矩阵$\mathbf{X}$，都有$\nabla_{\mathbf{X}} \|\mathbf{X} \|_F^2 = 2\mathbf{X}$。
+正如我们之后将看到的，梯度对于设计深度学习中的优化算法有很大用处。
+
+## 自动微分
+
+深度学习框架通过自动计算导数，即*自动微分*（automatic differentiation）来加快求导。
+实际中，根据设计好的模型，系统会构建一个*计算图*（computational graph），
+来跟踪计算是哪些数据通过哪些操作组合起来产生输出。
+自动微分使系统能够随后反向传播梯度。
+这里，*反向传播*（backpropagate）意味着跟踪整个计算图，填充关于每个参数的偏导数。
+
+### 一个简单案例
+
+假设我们对函数$y=2\mathbf{x}^{\top}\mathbf{x}$关于列向量$\mathbf{x}$求导。
+首先，我们创建变量`x`并为其分配一个初始值。
+
+```{python}
+import torch
+
+x = torch.arange(4.0)
+x
+```
+
+在我们计算$y$关于$\mathbf{x}$的梯度之前，需要一个地方来存储梯度。
+重要的是，我们不会在每次对一个参数求导时都分配新的内存。
+因为我们经常会成千上万次地更新相同的参数，每次都分配新的内存可能很快就会将内存耗尽。
+注意，一个标量函数关于向量$\mathbf{x}$的梯度是向量，并且与$\mathbf{x}$具有相同的形状。
+
+```{python}
+x.requires_grad_(True)  # 等价于x=torch.arange(4.0,requires_grad=True)
+x.grad  # 默认值是None
+```
+
+```{python}
+y = 2 * torch.dot(x, x)
+y
+```
+
+`x`是一个长度为4的向量，计算`x`和`x`的点积，得到了我们赋值给`y`的标量输出。
+接下来，通过调用反向传播函数来自动计算`y`关于`x`每个分量的梯度，并打印这些梯度。
+
+```{python}
+y.backward()
+x.grad
+```
+
+函数$y=2\mathbf{x}^{\top}\mathbf{x}$关于$\mathbf{x}$的梯度应为$4\mathbf{x}$。
+让我们快速验证这个梯度是否计算正确。
+
+```{python}
+x.grad == 4 * x
+```
+
+现在计算`x`的另一个函数。
+
+```{python}
+# 在默认情况下，PyTorch会累积梯度，我们需要清除之前的值
+x.grad.zero_()
+y = x.sum()
+y.backward()
+x.grad
+```
+
+### 分离计算
+
+有时，我们希望**将某些计算移动到记录的计算图之外**]。
+例如，假设`y`是作为`x`的函数计算的，而`z`则是作为`y`和`x`的函数计算的。
+想象一下，我们想计算`z`关于`x`的梯度，但由于某种原因，希望将`y`视为一个常数，
+并且只考虑到`x`在`y`被计算后发挥的作用。
+
+这里可以分离`y`来返回一个新变量`u`，该变量与`y`具有相同的值，
+但丢弃计算图中如何计算`y`的任何信息。
+换句话说，梯度不会向后流经`u`到`x`。
+因此，下面的反向传播函数计算`z=u*x`关于`x`的偏导数，同时将`u`作为常数处理，
+而不是`z=x*x*x`关于`x`的偏导数。
+
+```{python}
+x.grad.zero_()
+y = x * x
+u = y.detach()
+z = u * x
+```
+
+由于记录了`y`的计算结果，我们可以随后在`y`上调用反向传播，
+得到`y=x*x`关于的`x`的导数，即`2*x`。
+
+```{python}
+x.grad.zero_()
+y.sum().backward()
+x.grad == 2 * x
+```
+
+### Python控制流的梯度计算
+
+使用自动微分的一个好处是：
+即使构建函数的计算图需要通过Python控制流（例如，条件、循环或任意函数调用），我们仍然可以计算得到的变量的梯度。
+在下面的代码中，`while`循环的迭代次数和`if`语句的结果都取决于输入`a`的值。
+
+```{python}
+def f(a):
+  b = a * 2
+  while b.norm() < 1000:
+    b = b * 2
+  if b.sum() > 0:
+    c = b
+  else:
+    c = 100 * b
+  return c
+```
+
+```{python}
+# 计算梯度
+a = torch.randn(size = (), requires_grad = True)
+d = f(a)
+d.backward()
+```
+
+```{python}
+a.grad == d / a
+```
+
+## 概率
+
+现实生活中，对于我们从工厂收到的真实骰子，我们需要检查它是否有瑕疵。
+检查骰子的唯一方法是多次投掷并记录结果。
+对于每个骰子，我们将观察到$\{1, \ldots, 6\}$中的一个值。
+对于每个值，一种自然的方法是将它出现的次数除以投掷的总次数，
+即此*事件*（event）概率的*估计值*。
+*大数定律*（law of large numbers）告诉我们：
+随着投掷次数的增加，这个估计值会越来越接近真实的潜在概率。
+让我们用代码试一试！
+
+```{python}
+import torch
+from torch.distributions import multinomial
+```
+
+```{python}
+fair_probs = torch.ones([6]) / 6
+multinomial.Multinomial(1, fair_probs).sample()
+```
+
+在估计一个骰子的公平性时，我们希望从同一分布中生成多个样本。
+如果用Python的for循环来完成这个任务，速度会慢得惊人。
+因此我们使用深度学习框架的函数同时抽取多个样本，得到我们想要的任意形状的独立样本数组。
+
+```{python}
+multinomial.Multinomial(10, fair_probs).sample()
+```
+
+现在我们知道如何对骰子进行采样，我们可以模拟1000次投掷。
+然后，我们可以统计1000次投掷后，每个数字被投中了多少次。
+具体来说，我们计算相对频率，以作为真实概率的估计。
+
+```{python}
+# 将结果存储为32位浮点数以进行除法
+counts = multinomial.Multinomial(1000, fair_probs).sample()
+counts / 1000   # 相对频率作为估计值
+```
+
+# 线性神经网络
+
+## 线性回归
+
+- *仿射变换*（affine transformation）的特点是通过加权和对特征进行*线性变换*（linear transformation），并通过偏置项来进行*平移*（translation）。
+
+- 给定训练数据特征$\mathbf{X}$和对应的已知标签$\mathbf{y}$，
+线性回归的目标是找到一组权重向量$\mathbf{w}$和偏置$b$：
+当给定从$\mathbf{X}$的同分布中取样的新样本特征时，
+这组权重向量和偏置能够使得新样本预测标签的误差尽可能小。
+
+- *损失函数*（loss function）能够量化目标的*实际*值与*预测*值之间的差距。
+通常我们会选择非负数作为损失，且数值越小表示损失越小，完美预测时的损失为0。
+回归问题中最常用的损失函数是平方误差函数。
+
+### 线性回归的基本元素
+
+- 梯度下降最简单的用法是计算损失函数（数据集中所有样本的损失均值）
+关于模型参数的导数（在这里也可以称为梯度）。
+但实际中的执行可能会非常慢：因为在每一次更新参数之前，我们必须遍历整个数据集。
+因此，我们通常会在每次需要计算更新的时候随机抽取一小批样本，
+这种变体叫做*小批量随机梯度下降*（minibatch stochastic gradient descent）。
+
+- *批量大小*（batch size）和*学习率*（learning rate）的值通常是手动预先指定，而不是通过模型训练得到的。
+这些可以调整但不在训练过程中更新的参数称为*超参数*（hyperparameter）。
+*调参*（hyperparameter tuning）是选择超参数的过程。
+超参数通常是我们根据训练迭代结果来调整的，
+而训练迭代结果是在独立的*验证数据集*（validation dataset）上评估得到的。
+
+- 线性回归恰好是一个在整个域中只有一个最小值的学习问题。
+但是对像深度神经网络这样复杂的模型来说，损失平面上通常包含多个最小值。
+深度学习实践者很少会去花费大力气寻找这样一组参数，使得在*训练集*上的损失达到最小。
+事实上，更难做到的是找到一组参数，这组参数能够在我们从未见过的数据上实现较低的损失，
+这一挑战被称为*泛化*（generalization）。
+
+### 矢量化加速
+
+```{python}
+#| include: false 
+
+import math
+import time
+import numpy as np
+import torch
+import d2l
+import random
+```
+
+```{python}
+n = 10000
+a = torch.ones([n])
+b = torch.ones([n])
+```
+
+首先，我们使用for循环，每次执行一位的加法。
+
+```{python}
+c = torch.zeros([n])
+timer = d2l.Timer()
+for i in range(n):
+  c[i] = a[i] + b[i]
+f'{timer.stop():.5f} sec'
+```
+或者，我们使用重载的`+`运算符来计算按元素的和。
+
+```{python}
+timer.start()
+d = a + b
+f'{timer.stop():.5f} sec'
+```
+
+结果很明显，第二种方法比第一种方法快得多。
+矢量化代码通常会带来数量级的加速。
+
+## 线性回归的从零开始实现
+
+```{python}
+true_w = torch.tensor([2, -3.4])
+true_b = 4.2
+features, labels = d2l.synthetic_data(true_w, true_b, 1000)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+::: {.callout-tip title="To be continued"}
+- <https://zh-v2.d2l.ai/chapter_linear-networks/linear-regression.html>
+:::
+
+
+
+
+
+
+
+
+

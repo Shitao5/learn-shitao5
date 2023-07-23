@@ -1,0 +1,61 @@
+---
+title: "Practial Statistics for Data Scientists"
+date: "2023-07-02"
+date-modified: "2023-07-04"
+image: "img.jpg"
+categories: 
+  - R
+  - Python
+  - Data Science
+---
+
+::: {.callout-note title='Progress'}
+`r stfun::progress(0.3, 7)`
+:::
+
+::: {.callout-tip title="Learning Source"}
+- [*Practial Statistics for Data Scientists*](https://www.amazon.com/Practical-Statistics-Data-Scientists-Essential/dp/1491952962)
+:::
+
+```{r}
+#| include: false
+1 + 1
+```
+
+# Exploratory Data Analysis
+
+## Elements of Structured Data
+
+- In fact, a major challenge of data science is to harness this torrent of raw data into actionable information.
+
+## Estimates of Location
+
+- METRICS AND ESTIMATES  
+Statisticians often use the term *estimate* for a value calculated from the data at hand, to draw a distinction between what we see from the data and the theoretical true or exact state of affairs. Data scientists and business analysts are more likely to refer to such a value as a *metric*. The difference reflects the approach of statistics versus that of data science: accounting for uncertainty lies at the heart of the discipline of statistics, whereas concrete business or organizational objectives are the focus of data science. Hence, **statisticians estimate, and data scientists measure**.
+
+- Still, outliers are often the result of data errors such as mixing data of different units (kilometers versus meters) or bad readings from a sensor. When outliers are the result of bad data, the mean will result in a poor estimate of location, while the median will still be valid. In any case, outliers should be identified and are usually worthy of further investigation.
+
+## Example: Location Estimates of Population and Murder Rates
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+::: {.callout-tip title="To be continued"}
+- Estimates of Location
+:::

@@ -1,0 +1,1421 @@
+---
+title: "熟悉 Tidymodels"
+date: "2023-07-11"
+date-modified: "2023-07-22"
+image: "tidymodels.png"
+execute: 
+  cache: true
+categories: 
+  - Data Science
+  - R
+---
+
+::: {.callout-note title='Progress'}
+`r stfun::progress(8, 13)`
+:::
+
+::: {.callout-tip title="Learning Source"}
+- <https://www.tidymodels.org/>
+:::
+
+# tidymodels 中的包
+
+```{r}
+#| message: false
+library(tidymodels)
+library(tidyverse)
+```
+
+```{r}
+#| include: false
+theme_set(theme_bw() + theme(legend.position = "top"))
+```
+
+
+## rsample
+
+官网：<https://rsample.tidymodels.org/>
+
+### Index
+
+```{r}
+library(mlbench)
+
+data("LetterRecognition")
+lobstr::obj_size(LetterRecognition)
+```
+
+```{r}
+set.seed(35222)
+boots <- bootstraps(LetterRecognition, times = 50)
+lobstr::obj_size(boots)
+```
+
+```{r}
+# Object size per resample
+lobstr::obj_size(boots) / nrow(boots)
+```
+
+```{r}
+as.numeric(lobstr::obj_size(boots)) / as.numeric(lobstr::obj_size(LetterRecognition))
+```
+
+The memory usage for 50 bootstrap samples is less than 3-fold more than the original data set.
+
+### Get started
+
+```{r}
+set.seed(8584)
+bt_resamples <- bootstraps(mtcars, times = 3)
+bt_resamples
+```
+
+The resamples are stored in the `splits` column in an object that has class `rsplit`.
+
+In this package we use the following terminology for the two partitions that comprise a resample:
+
+- The *analysis* data are those that we selected in the resample. For a bootstrap, this is the sample with replacement. For 10-fold cross-validation, this is the 90% of the data. These data are often used to fit a model or calculate a statistic in traditional bootstrapping.
+- The *assessment* data are usually the section of the original data not covered by the analysis set. Again, in 10-fold CV, this is the 10% held out. These data are often used to evaluate the performance of a model that was fit to the analysis data.
+
+```{r}
+first_resample <- bt_resamples$splits[[1]]
+first_resample
+```
+
+This indicates that there were 32 data points in the analysis set, 14 instances were in the assessment set, and that the original data contained 32 data points. These results can also be determined using the `dim` function on an `rsplit` object.
+
+```{r}
+head(assessment(first_resample))
+```
+
+
+## parsnip
+
+官网：<https://parsnip.tidymodels.org/>
+
+### Index
+
+One challenge with different modeling functions available in R *that do the same thing* is that they can have different interfaces and arguments. For example, to fit a random forest regression model, we might have:
+
+```{r}
+#| code-fold: true
+#| eval: false
+
+# From randomForest
+rf_1 <- randomForest(
+  y ~ ., 
+  data = dat, 
+  mtry = 10, 
+  ntree = 2000, 
+  importance = TRUE
+)
+
+# From ranger
+rf_2 <- ranger(
+  y ~ ., 
+  data = dat, 
+  mtry = 10, 
+  num.trees = 2000, 
+  importance = "impurity"
+)
+
+# From sparklyr
+rf_3 <- ml_random_forest(
+  dat, 
+  intercept = FALSE, 
+  response = "y", 
+  features = names(dat)[names(dat) != "y"], 
+  col.sample.rate = 10,
+  num.trees = 2000
+)
+```
+
+In this example:
+
+- the **type** of model is “random forest”,
+- the **mode** of the model is “regression” (as opposed to classification, etc), and
+- the computational **engine** is the name of the R package.
+
+The goals of parsnip are to:
+
+- Separate the definition of a model from its evaluation.
+- Decouple the model specification from the implementation (whether the implementation is in R, spark, or something else). For example, the user would call `rand_forest` instead of `ranger::ranger` or other specific packages.
+- Harmonize argument names (e.g. `n.trees`, `ntrees`, `trees`) so that users only need to remember a single name. This will help `across` model types too so that `trees` will be the same argument across random forest as well as boosting or bagging.
+
+```{r}
+# use ranger
+rand_forest(mtry = 10, trees = 2000) %>% 
+  set_engine("ranger", importrance = "impurity") %>% 
+  set_mode("regression")
+```
+
+```{r}
+# use Spark
+rand_forest(mtry = 10, trees = 2000) %>% 
+  set_engine("spark") %>% 
+  set_mode("regression")
+```
+
+```{r}
+set.seed(192)
+rand_forest(mtry = 10, trees = 2000) %>%
+  set_engine("ranger", importance = "impurity") %>%
+  set_mode("regression") %>%
+  fit(mpg ~ ., data = mtcars)
+```
+
+### Get started
+
+```{r}
+tune_mtry <- rand_forest(trees = 2000, mtry = tune())  # tune() is a placeholder
+tune_mtry
+```
+
+```{r}
+rf_with_seed <- 
+  rand_forest(trees = 2000, mtry = tune(), mode = "regression") %>%
+  set_engine("ranger", seed = 63233)
+rf_with_seed
+```
+
+```{r}
+rf_with_seed %>% 
+  set_args(mtry = 4) %>% 
+  set_engine("ranger") %>% 
+  fit(mpg ~ ., data = mtcars)
+```
+
+```{r}
+# or using the `randomForest` package
+set.seed(56982)
+rf_with_seed %>% 
+  set_args(mtry = 4) %>% 
+  set_engine("randomForest") %>% 
+  fit(mpg ~ ., data = mtcars)
+```
+
+## recipes
+
+官网：<https://recipes.tidymodels.org/>
+
+### Index
+
+With recipes, you can use dplyr-like pipeable sequences of feature engineering steps to get your data ready for modeling. For example, to create a recipe containing an outcome plus two numeric predictors and then center and scale (“normalize”) the predictors:
+
+```{r}
+data(ad_data)
+
+recipe(Class ~ tau + VEGF, data = ad_data) %>% 
+  step_normalize(all_numeric_predictors())
+```
+
+### Get started
+
+```{r}
+set.seed(55)
+train_test_split <- initial_split(credit_data)
+
+credit_train <- training(train_test_split)
+credit_test <- testing(train_test_split)
+```
+
+```{r}
+# there are some missing values
+vapply(credit_train, function(x) mean(!is.na(x)), numeric(1))
+```
+
+Rather than remove these, their values will be imputed.
+
+```{r}
+# an initial recipe
+rec_obj <- recipe(Status ~ ., data = credit_train)
+rec_obj
+```
+
+There are many ways to do this and `recipes` includes a few steps for this purpose:
+
+```{r}
+grep("impute_", ls("package:recipes"), value = TRUE)
+```
+
+Here, K-nearest neighbor imputation will be used. This works for both numeric and non-numeric predictors and defaults K to five To do this, it selects all predictors and then removes those that are numeric:
+
+```{r}
+imputed <- rec_obj %>% 
+  step_impute_knn(all_predictors())
+imputed
+```
+
+It is important to realize that the *specific* variables have not been declared yet (as shown when the recipe is printed above). In some preprocessing steps, variables will be added or removed from the current list of possible variables.
+
+Since some predictors are categorical in nature (i.e. nominal), it would make sense to convert these factor predictors into numeric dummy variables (aka indicator variables) using `step_dummy()`. To do this, the step selects all non-numeric predictors:
+
+```{r}
+ind_vars <- imputed %>% 
+  step_dummy(all_nominal_predictors())
+ind_vars
+```
+
+```{r}
+strandardozed <- ind_vars %>% 
+  step_center(all_numeric_predictors()) %>% 
+  step_scale(all_numeric_predictors())
+strandardozed
+```
+
+The `prep` function is used with a recipe and a data set:
+
+```{r}
+trained_rec <- prep(strandardozed, training = credit_train)
+trained_rec
+```
+
+Now that the statistics have been estimated, the preprocessing can be *applied* to the training and test set:
+
+```{r}
+train_data <- bake(trained_rec, new_data = credit_train)
+test_data <- bake(trained_rec, new_data = credit_test)
+```
+
+Another type of operation that can be added to a recipes is a *check*. Checks conduct some sort of data validation and, if no issue is found, returns the data as-is; otherwise, an error is thrown.
+
+```{r}
+trained_rec %>% 
+  check_missing(contains("Marital"))
+```
+
+## workflows
+
+官网：<https://workflows.tidymodels.org/>
+
+### Index
+
+A workflow is an object that can bundle together your pre-processing, modeling, and post-processing requests. For example, if you have a `recipe` and `parsnip` model, these can be combined into a workflow. The advantages are:
+
+- You don’t have to keep track of separate objects in your workspace.
+- The recipe prepping and model fitting can be executed using a single call to `fit()`.
+- If you have custom tuning parameter settings, these can be defined using a simpler interface when combined with {tune}.
+- In the future, workflows will be able to add post-processing operations, such as modifying the probability cutoff for two-class models.
+
+Suppose you were modeling data on cars. Say…the fuel efficiency of 32 cars. You know that the relationship between engine displacement and miles-per-gallon is nonlinear, and you would like to model that as a spline before adding it to a Bayesian linear regression model. 
+
+```{r}
+# recipe
+spline_cars <- recipe(mpg ~ ., data = mtcars) %>% 
+  step_ns(disp, deg_free = 10)
+
+# parsnip
+bayes_lm <- linear_reg() %>% 
+  set_engine("stan")
+
+# workflow
+car_wflow <- workflow() %>% 
+  add_recipe(spline_cars) %>% 
+  add_model(bayes_lm)
+```
+
+Now you can prepare the recipe and estimate the model via a single call to `fit()`:
+
+```{r}
+fit(car_wflow, data = mtcars)
+```
+
+You can alter existing workflows using `update_recipe()` / `update_model()` and `remove_recipe()` / `remove_model()`.
+
+### Get started
+
+```{r}
+library(modeldata)
+
+# This gives us access to the 3 partitions:
+# - `bivariate_train`: Training set
+# - `bivariate_val`: Validation set
+# - `bivariate_test`: Test set
+data("bivariate")
+```
+
+```{r}
+ggplot(bivariate_train, aes(A, B, col = Class)) +
+  geom_point(alpha = .3) +
+  coord_equal(ratio = 20)
+```
+
+```{r}
+bivariate_train %>% 
+  pivot_longer(A:B, names_to = "predictor") %>% 
+  ggplot(aes(Class, value)) +
+  geom_boxplot() +
+  facet_wrap(~predictor, scales = "free_y") +
+  scale_y_log10()
+```
+
+In the first plot above, the separation appears to happen linearly, and a straight, diagonal boundary might do well. We could use `glm()` directly to create a logistic regression, but we will use the `tidymodels` infrastructure and start by making a `parsnip` model object.
+
+```{r}
+logit_mod <- logistic_reg() %>% 
+  set_engine("glm")
+```
+
+```{r}
+glm_workflow <-
+  workflow() %>%
+  add_model(logit_mod)
+
+simple_glm <- 
+  glm_workflow %>% 
+  add_formula(Class ~ .) %>% 
+  fit(data = bivariate_train)
+simple_glm
+```
+
+To evaluate this model, the ROC curve will be computed along with its corresponding AUC.
+
+```{r}
+simple_glm_probs <- 
+  predict(simple_glm, bivariate_val, type = "prob") %>% 
+  bind_cols(bivariate_val)
+
+simple_glm_roc <- 
+  simple_glm_probs %>% 
+  roc_curve(Class, .pred_One)
+
+simple_glm_probs %>% roc_auc(Class, .pred_One)
+```
+
+```{r}
+autoplot(simple_glm_roc)
+```
+
+Since there are two correlated predictors with skewed distributions and strictly positive values, it might be intuitive to use their ratio instead of the pair. We’ll try that next by recycling the initial workflow and just adding a different formula:
+
+```{r}
+ratio_glm <- 
+  glm_workflow %>% 
+  add_formula(Class ~ I(A/B)) %>% 
+  fit(data = bivariate_train)
+
+ratio_glm_probs <- 
+  predict(ratio_glm, bivariate_val, type = "prob") %>% 
+  bind_cols(bivariate_val)
+
+ratio_glm_roc <- 
+  ratio_glm_probs %>% 
+  roc_curve(Class, .pred_One)
+
+ratio_glm_probs %>% roc_auc(Class, .pred_One)
+```
+
+```{r}
+autoplot(simple_glm_roc) +
+  geom_path(
+    data = ratio_glm_roc,
+    aes(x = 1 - specificity, y = sensitivity),
+    col = "#FDE725FF"
+  )
+```
+
+**More complex feature engineering**
+
+Instead of combining the two predictors, would it help the model if we were to resolve the skewness of the variables? To test this theory, one option would be to use the Box-Cox transformation on each predictor individually to see if it recommends a nonlinear transformation. The transformation can encode a variety of different functions including the log transform, square root, inverse, and fractional transformations in-between these.
+
+```{r}
+trans_recipe <- 
+  recipe(Class ~ ., data = bivariate_train) %>% 
+  step_BoxCox(all_predictors())
+
+trans_glm <- 
+  glm_workflow %>% 
+  add_recipe(trans_recipe) %>% 
+  fit(data = bivariate_train)
+
+trans_glm_probs <- 
+  predict(trans_glm, bivariate_val, type = "prob") %>% 
+  bind_cols(bivariate_val)
+
+trans_glm_roc <- 
+  trans_glm_probs %>% 
+  roc_curve(Class, .pred_One)
+
+trans_glm_probs %>% roc_auc(Class, .pred_One)
+
+autoplot(simple_glm_roc) +
+  geom_path(
+    data = ratio_glm_roc,
+    aes(x = 1 - specificity, y = sensitivity),
+    col = "#FDE725FF"
+  ) +
+  geom_path(
+    data = trans_glm_roc,
+    aes(x = 1 - specificity, y = sensitivity),
+    col = "#21908CFF"
+  )
+```
+
+```{r}
+ggplot(bivariate_train, aes(1/A, 1/B, col = Class)) + 
+  geom_point(alpha = .3) +
+  coord_equal(ratio = 1/12)
+```
+
+```{r}
+pca_recipe <- 
+  trans_recipe %>% 
+  step_normalize(A, B) %>% 
+  step_pca(A, B, num_comp = 2)
+
+pca_glm <- 
+  glm_workflow %>% 
+  add_recipe(pca_recipe) %>% 
+  fit(data = bivariate_train)
+
+pca_glm_probs <- 
+  predict(pca_glm, bivariate_val, type = "prob") %>% 
+  bind_cols(bivariate_val)
+
+pac_glm_roc <- 
+  pca_glm_probs %>% 
+  roc_curve(Class, .pred_One)
+
+pca_glm_probs %>% roc_auc(Class, .pred_One)
+```
+
+```{r}
+# using the test set
+test_prob <- 
+  predict(trans_glm, bivariate_test, type = "prob") %>% 
+  bind_cols(bivariate_test)
+
+test_roc <- 
+  test_prob %>% 
+  roc_curve(Class, .pred_One)
+
+test_prob %>% roc_auc(Class, .pred_One)
+```
+
+```{r}
+autoplot(test_roc)
+```
+
+## tune
+
+官网：<https://tune.tidymodels.org/>
+
+### Index
+
+The goal of tune is to facilitate hyperparameter tuning for the tidymodels packages. It relies heavily on {recipes}, {parsnip}, and {dials}.
+
+### Get started
+
+```{r}
+set.seed(4595)
+
+data_split <- 
+  ames %>% 
+  mutate(Sale_Price = log10(Sale_Price)) %>% 
+  initial_split(strata = Sale_Price)
+
+ames_train <- training(data_split)
+ame_test <- testing(data_split)
+```
+
+```{r}
+ames_train %>% 
+  select(Sale_Price, Longitude, Latitude) %>% 
+  pivot_longer(cols = 2:3,
+               names_to = "predictor",
+               values_to = "value") %>% 
+  ggplot(aes(value, Sale_Price)) +
+  geom_point(alpha = .2) +
+  geom_smooth(se = FALSE) +
+  facet_wrap(~ predictor, scales = "free_x")
+```
+
+```{r}
+ames_rec <- 
+  recipe(Sale_Price ~ Gr_Liv_Area + Longitude + Latitude, data = ames_train) %>% 
+  step_log(Gr_Liv_Area, base = 10) %>% 
+  step_ns(Longitude, deg_free = tune("long df")) %>% 
+  step_ns(Latitude, deg_free = tune("lat df"))
+```
+
+The function `dials::parameters()` can detect and collect the parameters that have been flagged for tuning:
+
+```{r}
+parameters(ames_rec)
+```
+
+The {dials} package has default ranges for many parameters. The generic parameter function for `deg_free` has a fairly small range:
+
+```{r}
+deg_free()
+```
+
+However, there is a dials function that is more appropriate for splines:
+
+```{r}
+spline_degree()
+```
+
+The parameter objects can be easily changed using the `update()` function:
+
+```{r}
+ames_param <- 
+  ames_rec %>% 
+  parameters() %>% 
+  update(
+    `long df` = spline_degree(),
+    `lat df` = spline_degree()
+  )
+
+ames_param
+```
+
+**Grid Search**
+
+```{r}
+spline_grid <- grid_max_entropy(ames_param, size = 10)
+spline_grid
+```
+
+```{r}
+# A regular grid
+df_vals <- seq(2, 18, by = 2)
+spline_grid <- expand.grid(`long df` = df_vals,
+                           `lat df` = df_vals)
+```
+
+There are two other ingredients that are required before tuning.
+
+First is a model specification. Using {parsnip}, a basic linear model can be used:
+
+```{r}
+# a basic linear model
+lm_mod <- linear_reg() %>% set_engine("lm")
+
+# simple 10-fold cross-validation
+set.seed(2453)
+cv_splits <- vfold_cv(ames_train, v = 10, strata = Sale_Price)
+```
+
+The root mean squared error will be used to measure performance (and this is the default for regression problems).
+
+```{r}
+ames_res <- tune_grid(lm_mod, ames_rec,
+                      resamples = cv_splits,
+                      grid = spline_grid)
+ames_res
+```
+
+The `.metrics` column has all of the holdout performance estimates for each parameter combination:
+
+```{r}
+ames_res$.metrics[[1]]
+```
+
+To get the average metric value for each parameter combination, `collect_metrics()` can be put to use:
+
+```{r}
+estimates <- collect_metrics(ames_res)
+estimates
+```
+
+```{r}
+estimates %>% 
+  filter(.metric == "rmse") %>% 
+  arrange(mean)
+```
+
+Smaller degrees of freedom values correspond to more linear functions, but the grid search indicates that more nonlinearity is better. What was the relationship between these two parameters and RMSE?
+
+```{r}
+autoplot(ames_res, metric = "rmse")
+```
+
+Interestingly, latitude does *not* do well with degrees of freedom less than 8. How nonlinear are the optimal degrees of freedom?
+
+Let’s plot these spline functions over the data for both good and bad values of `deg_free`:
+
+```{r}
+ames_train %>% 
+  select(Sale_Price, Longitude, Latitude) %>% 
+  pivot_longer(cols = 2:3,
+               names_to = "predictor",
+               values_to = "value") %>% 
+  ggplot(aes(value, Sale_Price)) +
+  geom_point(alpha = .2) +
+  geom_smooth(se = FALSE, method = lm,
+              formula = y ~ splines::ns(x, df = 3),
+              col = "red") +
+  geom_smooth(se = FALSE, method = lm,
+              formula = y ~ splines::ns(x, df = 16)) +
+  scale_y_log10() +
+  facet_wrap(~ predictor, scales = "free_x")
+```
+
+Looking at these plots, the smaller degrees of freedom (red) are clearly under-fitting. Visually, the more complex splines (blue) might indicate that there is overfitting but this would result in poor RMSE values when computed on the hold-out data.
+
+Based on these results, a new recipe would be created with the optimized values (using the entire training set) and this would be combined with a linear model created form the entire training set.
+
+**Model Optimization**
+
+Instead of a linear regression, a nonlinear model might provide good performance. A K-nearest-neighbor fit will also be optimized. For this example, the number of neighbors and the distance weighting function will be optimized:
+
+```{r}
+knn_mod <- 
+  nearest_neighbor(neighbors = tune(), weight_func = tune()) %>% 
+  set_engine("kknn") %>% 
+  set_mode("regression")
+
+knn_wflow <- 
+  workflow() %>% 
+  add_model(knn_mod) %>% 
+  add_recipe(ames_rec)
+
+knn_param <- 
+  knn_wflow %>% 
+  parameters() %>% 
+  update(
+    `long df` = spline_degree(c(2, 18)), 
+    `lat df` = spline_degree(c(2, 18)),
+    neighbors = neighbors(c(3, 50)),
+    weight_func = weight_func(values = c("rectangular", "inv", "gaussian", "triangular"))
+  )
+```
+
+```{r}
+#| message: false
+#| cache: true
+# conduct the search
+ctrl <- control_bayes(verbose = TRUE)
+set.seed(8154)
+knn_search <- tune_bayes(knn_wflow, resamples = cv_splits, 
+                         initial = 5, iter = 20,
+                         param_info = knn_param, control = ctrl)
+```
+
+Visually, the performance gain was:
+
+```{r}
+autoplot(knn_search, type = "performance", metric = "rmse")
+```
+
+The best results here were:
+
+```{r}
+collect_metrics(knn_search) %>% 
+  filter(.metric == "rmse") %>% 
+  arrange(mean)
+```
+
+## yardstick
+
+官网：<https://yardstick.tidymodels.org/>
+
+### Index
+
+{yardstick} is a package to estimate how well models are working using tidy data principles.
+
+```{r}
+head(two_class_example)
+```
+
+```{r}
+metrics(two_class_example, truth, predicted)
+
+two_class_example %>% 
+  roc_auc(truth, Class1)
+```
+
+```{r}
+hpc_cv <- hpc_cv %>% as_tibble()
+hpc_cv
+```
+
+```{r}
+# Macro averaged multiclass precision
+precision(hpc_cv, obs, pred)
+
+# Micro averaged multiclass precision
+precision(hpc_cv, obs, pred, estimator = "micro")
+```
+
+```{r}
+hpc_cv %>% 
+  group_by(Resample) %>% 
+  roc_auc(obs, VF:L)
+```
+
+```{r}
+hpc_cv %>% 
+  group_by(Resample) %>% 
+  roc_curve(obs, VF:L) %>% 
+  autoplot()
+```
+
+## broom
+
+官网：<https://broom.tidymodels.org/>
+
+### Index
+
+`tidy()` produces a `tibble()` where each row contains information about an important component of the model. For regression models, this often corresponds to regression coefficients. This is can be useful if you want to inspect a model or create custom visualizations.
+
+```{r}
+data("trees")
+
+fit <- lm(Volume ~ Girth + Height, trees)
+tidy(fit)
+```
+
+`glance()` returns a tibble with exactly one row of goodness of fitness measures and related statistics. This is useful to check for model misspecification and to compare many models.
+
+```{r}
+glance(fit)
+```
+
+`augment()` adds columns to a dataset, containing information such as fitted values, residuals or cluster assignments. All columns added to a dataset have `.` prefix to prevent existing columns from being overwritten.
+
+```{r}
+augment(fit, data = trees)
+```
+
+## dials
+
+### Index
+
+This package contains *infrastructure* to create and manage values of tuning parameters for the tidymodels packages.
+
+### Get started
+
+In any case, some information is needed to create a grid or to validate whether a candidate value is appropriate (e.g. the number of neighbors should be a positive integer). {dials} is designed to:
+
+- Create an easy to use framework for describing and querying tuning parameters. This can include getting sequences or random tuning values, validating current values, transforming parameters, and other tasks.
+- Standardize the names of different parameters. Different packages in R use different argument names for the same quantities. dials proposes some standardized names so that the user doesn’t need to memorize the syntactical minutiae of every package.
+- Work with the other tidymodels packages for modeling and machine learning using tidyverse principles.
+
+**Numeric Parameters**
+
+```{r}
+cost_complexity()
+```
+
+Note that this parameter is handled in log units and the default range of values is between `10^-10` and `0.1`. The range of possible values can be returned and changed based on some utility functions. We’ll use the pipe operator here:
+
+```{r}
+cost_complexity() %>% range_get()
+
+cost_complexity() %>% range_set(c(-5, 1))
+
+# Or using the `range` argument
+cost_complexity(range = c(-5, 1))
+```
+
+Values for this parameter can be obtained in a few different ways. To get a sequence of values that span the range:
+
+```{r}
+# Natural units
+cost_complexity() %>% value_seq(n = 4)
+
+# Stay in the transformed space
+cost_complexity() %>% value_seq(n = 4, original = FALSE)
+```
+
+Random values can be sampled too:
+
+```{r}
+set.seed(5473)
+cost_complexity() %>% value_sample(n = 4)
+```
+
+**Discrete Parameters**
+
+In the discrete case there is no notion of a range. The parameter objects are defined by their discrete values.
+
+```{r}
+weight_func()
+```
+
+```{r}
+weight_func() %>% value_set(c("rectangular", "triangular"))
+
+weight_func() %>% value_sample(3)
+
+weight_func() %>% value_seq(3)
+```
+
+# tidymodels get started
+
+地址：<https://www.tidymodels.org/start/>
+
+## Build a model
+
+```{r}
+library(broom.mixed) # for converting bayesian models to tidy tibbles
+library(dotwhisker)  # for visualizing regression results
+```
+
+
+### The sea urchins data
+
+```{r}
+urchins <-
+  read_csv("https://tidymodels.org/start/models/urchins.csv", show_col_types = FALSE) %>% 
+  setNames(c("food_regime", "initial_volume", "width")) %>% 
+  mutate(food_regime = factor(food_regime, levels = c("Initial", "Low", "High")))
+
+urchins
+```
+
+As a first step in modeling, it’s always a good idea to plot the data:
+
+```{r}
+ggplot(urchins, aes(x = initial_volume,
+                    y = width,
+                    group = food_regime,
+                    col = food_regime)) +
+  geom_point() +
+  geom_smooth(method = lm, se = FALSE) +
+  scale_color_viridis_d(option = "plasma", end = .7)
+```
+
+We can see that urchins that were larger in volume at the start of the experiment tended to have wider sutures at the end, but the slopes of the lines look different so this effect may depend on the feeding regime condition.
+
+### Build and fit a model
+
+```{r}
+lm_fit <- linear_reg() %>% 
+  fit(width ~ initial_volume * food_regime, data = urchins)
+lm_fit
+```
+
+```{r}
+tidy(lm_fit)
+```
+
+This kind of output can be used to generate a dot-and-whisker plot of our regression results using the {dotwhisker} package:
+
+```{r}
+tidy(lm_fit) %>% 
+  dwplot(dot_args = list(size = 2, color = "black"),
+         whisker_args = list(color = "black"),
+         vline = geom_vline(xintercept = 0, color = "grey50",
+                            linetype = 2))
+```
+
+### Use a model to predict
+
+
+```{r}
+new_points <- expand_grid(initial_volume = 20,
+                          food_regime = c("Initial", "Low", "High"))
+new_points
+```
+
+```{r}
+mean_pred <- predict(lm_fit, new_data = new_points)
+mean_pred
+
+conf_int_pred <- predict(lm_fit, new_data = new_points, type = "conf_int")
+conf_int_pred
+```
+
+```{r}
+new_points %>% 
+  bind_cols(mean_pred) %>% 
+  bind_cols(conf_int_pred) %>% 
+  ggplot(aes(x = food_regime)) +
+  geom_point(aes(y = .pred)) + 
+  geom_errorbar(aes(ymin = .pred_lower,
+                    ymax = .pred_upper),
+                width = .2) +
+  labs(y = "urchin size")
+```
+
+### Model with a different engine
+
+```{r}
+# set the prior distribution
+prior_dist <- rstanarm::student_t(df = 1)
+
+set.seed(123)
+
+# make the paarsnip model
+bayes_mod <- linear_reg() %>% 
+  set_engine("stan",
+             prior_intercept = prior_dist,
+             prior = prior_dist)
+
+# train the model
+bayes_fit <- 
+  bayes_mod %>% 
+  fit(width ~ initial_volume * food_regime, data = urchins)
+
+print(bayes_fit, digits = 5)
+```
+
+```{r}
+tidy(bayes_fit, conf.int = TRUE)
+```
+
+## Preprocess your data with recipes
+
+```{r}
+#| message: false
+library(tidymodels)
+library(tidyverse)
+
+library(nycflights13)    # for flight data
+library(skimr)           # for variable summaries
+```
+
+Let’s use the nycflights13 data to predict whether a plane arrives more than 30 minutes late.
+
+```{r}
+flight_data <- flights %>% 
+  mutate(
+    arr_delay = factor(ifelse(arr_delay >= 30, "late", "on_time")),
+    date = as_date(time_hour)
+  ) %>% 
+  inner_join(weather, join_by(origin, time_hour)) %>% 
+  select(dep_time, flight, origin, dest, air_time, distance, 
+         carrier, date, arr_delay, time_hour) %>% 
+  drop_na() %>% 
+  # For creating models, it is better to have qualitative columns
+  # encoded as factors (instead of character strings)
+  mutate(across(where(is.character), as_factor))
+
+flight_data %>% 
+  count(arr_delay) %>% 
+  mutate(prop = n / sum(n))
+```
+
+We can see that about 16% of the flights in this data set arrived more than 30 minutes late.
+
+```{r}
+glimpse(flight_data)
+```
+
+```{r}
+flight_data %>% skim(dest, carrier)
+```
+
+Because we’ll be using a simple logistic regression model, the variables `dest` and `carrier` will be converted to dummy variables. However, some of these values do not occur very frequently and this could complicate our analysis. We’ll discuss specific steps later in this article that we can add to our recipe to address this issue before modeling.
+
+### Data splitting
+
+```{r}
+set.seed(222)
+
+data_split <- initial_split(flight_data, prop = 3/4)
+
+train_data <- training(data_split)
+test_data <- testing(data_split)
+```
+
+### Create recipe and roles
+
+We can use the `update_role()` function to let recipes know that `flight` and `time_hour` are variables with a custom role that we called `"ID"` (a role can have any character value). Whereas our formula included all variables in the training set other than `arr_delay` as predictors, this tells the recipe to keep these two variables but not use them as either outcomes or predictors.
+
+```{r}
+flights_rec <- 
+  recipe(arr_delay ~ ., data = train_data) %>% 
+  update_role(flight, time_hour, new_role = "ID")
+```
+
+To get the current set of variables and roles, use the `summary()` function:
+
+```{r}
+summary(flights_rec)
+```
+
+### Create features
+
+It’s possible that the numeric date variable is a good option for modeling; perhaps the model would benefit from a linear trend between the log-odds of a late arrival and the numeric date variable. However, it might be better to add model terms *derived* from the date that have a better potential to be important to the model. For example, we could derive the following meaningful features from the single `date` variable:
+
+- the day of the week,
+- the month, and
+- whether or not the date corresponds to a holiday.
+
+Let’s do all three of these by adding steps to our recipe:
+
+```{r}
+flights_rec <- 
+  recipe(arr_delay ~ ., data = train_data) %>% 
+  update_role(flight, time_hour, new_role = "ID") %>% 
+  step_date(date, features = c("dow", "month")) %>% 
+  step_holiday(date,
+               holidays = timeDate::listHolidays("US"),
+               keep_original_cols = FALSE)
+```
+
+Unlike the standard model formula methods in R, a recipe **does not** automatically create these dummy variables for you; you’ll need to tell your recipe to add this step. This is for two reasons. First, many models do not require numeric predictors, so dummy variables may not always be preferred. Second, recipes can also be used for purposes outside of modeling, where non-dummy versions of the variables may work better. For example, you may want to make a table or a plot with a variable as a single factor. For those reasons, you need to explicitly tell recipes to create dummy variables using `step_dummy()`:
+
+```{r}
+flights_rec <- 
+  recipe(arr_delay ~ ., data = train_data) %>% 
+  update_role(flight, time_hour, new_role = "ID") %>% 
+  step_date(date, features = c("dow", "month")) %>%               
+  step_holiday(date, 
+               holidays = timeDate::listHolidays("US"), 
+               keep_original_cols = FALSE) %>%
+  step_dummy(all_nominal_predictors())
+```
+
+We need one final step to add to our recipe. Since `carrier` and `dest` have some infrequently occurring factor values, it is possible that dummy variables might be created for values that don’t exist in the training set. For example, there is one destination that is only in the test set:
+
+```{r}
+test_data %>% 
+  distinct(dest) %>% 
+  anti_join(train_data, join_by(dest))
+```
+
+When the recipe is applied to the training set, a column is made for LEX because the factor levels come from `flight_data` (not the training set), but this column will contain all zeros. This is a “zero-variance predictor” that has no information within the column. While some R functions will not produce an error for such predictors, it usually causes warnings and other issues. `step_zv()` will remove columns from the data when the training set data have a single value, so it is added to the recipe *after* `step_dummy()`:
+
+```{r}
+flights_rec <- 
+  recipe(arr_delay ~ ., data = train_data) %>% 
+  update_role(flight, time_hour, new_role = "ID") %>% 
+  step_date(date, features = c("dow", "month")) %>%
+  step_holiday(date, 
+               holidays = timeDate::listHolidays("US"), 
+               keep_original_cols = FALSE) %>% 
+  step_dummy(all_nominal_predictors()) %>%
+  step_zv(all_predictors())
+```
+
+### Fit a model with a recipe
+
+```{r}
+lr_mod <- 
+  logistic_reg() %>% 
+  set_engine("glm")
+```
+
+We will want to use our recipe across several steps as we train and test our model. We will:
+
+- **Process the recipe using the training set:** This involves any estimation or calculations based on the training set. For our recipe, the training set will be used to determine which predictors should be converted to dummy variables and which predictors will have zero-variance in the training set, and should be slated for removal.
+
+- **Apply the recipe to the training set:** We create the final predictor set on the training set.
+
+- **Apply the recipe to the test set:** We create the final predictor set on the test set. Nothing is recomputed and no information from the test set is used here; the dummy variable and zero-variance results from the training set are applied to the test set.
+
+To simplify this process, we can use a model *workflow*, which pairs a model and recipe together. This is a straightforward approach because different recipes are often needed for different models, so when a model and recipe are bundled, it becomes easier to train and test workflows. We’ll use the workflows package from tidymodels to bundle our parsnip model (`lr_mod`) with our recipe (`flights_rec`).
+
+```{r}
+flights_wflow <- 
+  workflow() %>% 
+  add_model(lr_mod) %>% 
+  add_recipe(flights_rec)
+
+flights_wflow
+```
+
+Now, there is a single function that can be used to prepare the recipe and train the model from the resulting predictors:
+
+```{r}
+flights_fit <- 
+  flights_wflow %>% 
+  fit(data = train_data)
+```
+
+This object has the finalized recipe and fitted model objects inside. You may want to extract the model or recipe objects from the workflow. To do this, you can use the helper functions `extract_fit_parsnip()` and `extract_recipe()`. For example, here we pull the fitted model object then use the `broom::tidy()` function to get a tidy tibble of model coefficients:
+
+```{r}
+flights_fit %>% 
+  extract_fit_parsnip() %>% 
+  tidy()
+```
+
+### Use a trained workflow to predict
+
+Our goal was to predict whether a plane arrives more than 30 minutes late. We have just:
+
+- Built the model (`lr_mod`),
+
+- Created a preprocessing recipe (`flights_rec`),
+
+- Bundled the model and recipe (`flights_wflow`), and
+
+- Trained our workflow using a single call to `fit()`.
+
+The next step is to use the trained workflow (`flights_fit`) to predict with the unseen test data, which we will do with a single call to `predict()`. The `predict()` method applies the recipe to the new data, then passes them to the fitted model.
+
+```{r}
+predict(flights_fit, test_data)
+```
+
+Because our outcome variable here is a factor, the output from `predict()` returns the predicted class: `late` versus `on_time.` But, let’s say we want the predicted class probabilities for each flight instead. To return those, we can specify `type = "prob"` when we use `predict()` or use `augment()` with the model plus test data to save them together:
+
+```{r}
+flights_aug <- 
+  augment(flights_fit, test_data)
+
+flights_aug %>% 
+  select(arr_delay, time_hour, flight,
+         .pred_class, .pred_on_time)
+```
+
+Let’s use the area under the ROC curve as our metric, computed using `roc_curve()` and `roc_auc()` from the yardstick package.
+
+```{r}
+flights_aug %>% 
+  roc_curve(truth = arr_delay, .pred_late) %>% 
+  autoplot()
+```
+
+Similarly, `roc_auc()` estimates the area under the curve:
+
+```{r}
+flights_aug %>% 
+  roc_auc(truth = arr_delay, .pred_late)
+```
+
+<!-- We leave it to the reader to test out this workflow without this recipe. You can use workflows::add_formula(arr_delay ~ .) instead of add_recipe() (remember to remove the identification variables first!), and see whether our recipe improved our model’s ability to predict late arrivals.   -->
+
+```{r}
+#| include: false
+#| eval: false
+# 按照一下步骤算完，这个 recipe 似乎并没有提高模型预测能力
+test <- workflow() %>% 
+  add_model(lr_mod) %>% 
+  add_formula(arr_delay ~ .) %>% 
+  fit(data = train_data)
+
+test_aug <- 
+  augment(test, test_data)
+
+test_aug %>% 
+  roc_curve(truth = arr_delay, .pred_late) %>% 
+  autoplot()
+
+test_aug %>% 
+  roc_auc(truth = arr_delay, .pred_late)
+```
+
+## Evaluate your model with resampling
+
+```{r}
+library(modeldata)
+```
+
+### The cell image data
+
+```{r}
+data(cells)
+cells
+```
+
+### Predicting image segmentation quality
+
+A cell-based experiment might involve millions of cells so it is unfeasible to visually assess them all. Instead, a subsample can be created and these cells can be manually labeled by experts as either poorly segmented (`PS`) or well-segmented (`WS`). If we can predict these labels accurately, the larger data set can be improved by filtering out the cells most likely to be poorly segmented.
+
+### Back to the cells data
+
+The rates of the classes are somewhat imbalanced; there are more poorly segmented cells than well-segmented cells:
+
+```{r}
+cells %>% 
+  count(class) %>% 
+  mutate(prop = n / sum(n))
+```
+
+### Data splitting
+
+```{r}
+set.seed(123)
+cell_split <- initial_split(cells %>% select(-case),
+                            strata = class)
+```
+
+Here we used the `strata` argument, which conducts a stratified split. This ensures that, despite the imbalance we noticed in our `class` variable, our training and test data sets will keep roughly the same proportions of poorly and well-segmented cells as in the original data. After the initial_split, the `training()` and `testing()` functions return the actual data sets.
+
+```{r}
+cell_train <- training(cell_split)
+cell_test <- testing(cell_split)
+
+# training set proportions by class
+cell_train %>% 
+  count(class) %>% 
+  mutate(prop = n / sum(n))
+
+# test set proportions by class
+cell_test %>% 
+  count(class) %>% 
+  mutate(prop =  n / sum(n))
+```
+
+### Modeling
+
+One of the benefits of a random forest model is that it is very low maintenance; it requires very little preprocessing of the data and the default parameters tend to give reasonable results. For that reason, we won’t create a recipe for the `cells` data.
+
+To fit a random forest model on the training set, let’s use the {parsnip} package with the {ranger} engine. We first define the model that we want to create:
+
+```{r}
+rf_mod <- 
+  rand_forest(trees = 1000) %>% 
+  set_engine("ranger") %>% 
+  set_mode("classification")
+```
+
+```{r}
+set.seed(234)
+
+rf_fit <- 
+  rf_mod %>% 
+  fit(class ~ ., data = cell_train)
+
+rf_fit
+```
+
+### Estimating performance
+
+```{r}
+rf_testing_pred <- 
+  predict(rf_fit, cell_test) %>% 
+  bind_cols(predict(rf_fit, cell_test, type = "prob")) %>% 
+  bind_cols(cell_test %>% select(class))
+
+rf_testing_pred %>% 
+  roc_auc(truth = class, .pred_PS)
+
+rf_testing_pred %>% 
+  accuracy(truth = class, .pred_class)
+```
+
+### Resampling to the rescue
+
+The final resampling estimates for the model are the **averages** of the performance statistics replicates.
+
+### Fit a model with resampling
+
+```{r}
+set.seed(345)
+
+folds <- vfold_cv(cell_train, v = 10)
+folds
+```
+
+The list column for `splits` contains the information on which rows belong in the analysis and assessment sets. There are functions that can be used to extract the individual resampled data called `analysis()` and `assessment()`.
+
+You have several options for building an object for resampling:
+
+- Resample a model specification preprocessed with a formula or recipe, or
+- Resample a `workflow()` that bundles together a model specification and formula/recipe.
+
+For this example, let’s use a `workflow()` that bundles together the random forest model and a formula, since we are not using a recipe. Whichever of these options you use, the syntax to `fit_resamples()` is very similar to `fit()`:
+
+```{r}
+rf_wf <- 
+  workflow() %>% 
+  add_model(rf_mod) %>% 
+  add_formula(class ~ .)
+
+set.seed(456)
+rf_fit_rs <- 
+  rf_wf %>% 
+  fit_resamples(folds)
+
+rf_fit_rs
+```
+
+The results are similar to the `folds` results with some extra columns. The column `.metrics` contains the performance statistics created from the 10 assessment sets. These can be manually unnested but the tune package contains a number of simple functions that can extract these data:
+
+```{r}
+collect_metrics(rf_fit_rs)
+```
+
+Think about these values we now have for accuracy and AUC. These performance metrics are now more realistic (i.e. lower) than our ill-advised first attempt at computing performance metrics in the section above. If we wanted to try different model types for this data set, we could more confidently compare performance metrics computed using resampling to choose between models. Also, remember that at the end of our project, we return to our test set to estimate final model performance.
+
+Resampling allows us to simulate how well our model will perform on new data, and the test set acts as the final, unbiased check for our model’s performance.
+
+## Tune model parameters
+
+### Introduction
+
+Some model parameters cannot be learned directly from a data set during model training; these kinds of parameters are called **hyperparameters**. Some examples of hyperparameters include the number of predictors that are sampled at splits in a tree-based model (we call this `mtry` in tidymodels) or the learning rate in a boosted tree model (we call this `learn_rate`). Instead of learning these kinds of hyperparameters during model training, we can estimate the best values for these values by training many models on resampled data sets and exploring how well all these models perform. This process is called **tuning**.
+
+```{r}
+library(rpart.plot)
+library(vip)
+```
+
+### Predicting image segemention, but better
+
+```{r}
+#| include: false
+
+set.seed(123)
+cell_split <- initial_split(cells %>% select(-case), 
+                            strata = class)
+cell_train <- training(cell_split)
+cell_test  <- testing(cell_split)
+```
+
+Random forest models are a tree-based ensemble method, and typically perform well with default hyperparameters. However, the accuracy of some other tree-based models, such as boosted tree models or decision tree models, can be sensitive to the values of hyperparameters. In this article, we will train a **decision tree** model. There are several hyperparameters for decision tree models that can be tuned for better performance. Let’s explore:
+
+- the complexity parameter (which we call `cost_complexity` in tidymodels) for the tree, and
+- the maximum `tree_depth`.
+
+Tuning these hyperparameters can improve model performance because decision tree models are prone to overfitting. This happens because single tree models tend to fit the training data *too well* — so well, in fact, that they over-learn patterns present in the training data that end up being detrimental when predicting new data.
+
+### Tuning hyperparameters
+
+To tune the decision tree hyperparameters `cost_complexity` and `tree_depth`, we create a model specification that identifies which hyperparameters we plan to tune.
+
+```{r}
+tune_spec <- 
+  decision_tree(
+    cost_complexity = tune(),
+    tree_depth = tune()
+  ) %>% 
+  set_engine("rpart") %>% 
+  set_mode("classification")
+
+tune_spec
+```
+
+We can create a regular grid of values to try using some convenience functions for each hyperparameter:
+
+```{r}
+tree_grid <- grid_regular(cost_complexity(),
+                          tree_depth(),
+                          levels = 5)
+
+tree_grid
+```
+
+Armed with our grid filled with 25 candidate decision tree models, let’s create cross-validation folds for tuning:
+
+```{r}
+set.seed(234)
+cell_folds <- vfold_cv(cell_train)
+```
+
+### Model tuning with a grid
+
+We are ready to tune! Let’s use `tune_grid()` to fit models at all the different values we chose for each tuned hyperparameter. There are several options for building the object for tuning:
+
+Tune a model specification along with a recipe or model, or
+
+Tune a `workflow()` that bundles together a model specification and a recipe or model preprocessor.
+
+Here we use a `workflow()` with a straightforward formula; if this model required more involved data preprocessing, we could use add_recipe() instead of add_formula().
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+::: {.callout-tip title="To be continued"}
+- <https://www.tidymodels.org/start/>
+- <https://www.tidymodels.org/learn/>
+:::
