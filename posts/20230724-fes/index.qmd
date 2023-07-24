@@ -9,6 +9,12 @@ categories:
   - R
 ---
 
+```{r}
+#| include: false
+1 + 1
+```
+
+
 ::: {.callout-note title='Progress'}
 `r stfun::progress(0, 13)`
 :::
@@ -45,25 +51,43 @@ The goals of *Feature Engineering and Selection* are to provide tools for re-rep
 
 # Introducton
 
+Whether the model will be used for inference or estimation (or in rare occasions, both), there are important characteristics to consider. *Parsimony* (or simplicity) is a key consideration. Simple models are generally preferable to complex models, especially when inference is the goal.
 
+The problem, however, is that **accuracy should not be seriously sacrificed for the sake of simplicity.** A simple model might be easy to interpret but would not succeed if it does not maintain acceptable level of faithfulness to the data; if a model is only 50% accurate, should it be used to make inferences or predictions? Complexity is usually the solution to poor accuracy. By using additional parameters or by using a model that is inherently nonlinear, we might improve accuracy but interpretability will likely suffer greatly. This trade-off is a key consideration for model building.
 
+**The goal of this book is to help practitioners build better models by focusing on the predictors.** “Better” depends on the context of the problem but most likely involves the following factors: accuracy, simplicity, and robustness.
 
+> 无论模型是用于推断还是估计（或在罕见的情况下同时用于推断和估计），都有重要的特性需要考虑。简洁性（或简单性）是一个关键考虑因素。
+>
+> 然而，问题在于**准确性不应该为简单性而严重牺牲**。简单模型可能容易解释，但如果它不能对数据保持可接受的准确性，那么它将不会成功；如果一个模型只有50%的准确性，它应该被用来进行推断或预测吗？复杂性通常是准确性不佳的解决方案。通过使用额外的参数或使用本质上非线性的模型，我们可能会提高准确性，但解释性很可能会大大降低。这种权衡是模型构建的一个关键考虑因素。
+>
+> 本书的目标是帮助从业者通过关注预测变量来构建更好的模型。“更好”取决于问题的背景，但很可能涉及以下因素：准确性、简洁性和鲁棒性。
 
+## Important Concepts
 
+While models can overfit to the *data points*, such as with the housing data shown above, feature selection techniques can overfit to the *predictors*. This occurs when a variable appears relevant in the current data set but shows no real relationship with the outcome once new data are collected. The risk of this type of overfitting is especially dangerous when the number of data points, denoted as $n$, is small and the number of potential predictors ($p$) is very large. As with overfitting to the data points, this problem can be mitigated using a methodology that will show a warning when this is occurring.
 
+Both supervised and unsupervised analyses are susceptible to *overfitting* but supervised are particularly inclined to discovering erroneous patterns in the data for predicting the outcome. In short, we can use these techniques to create a *self-fulfilling predictive prophecy*.
 
+> 模型可以对数据点进行过拟合，比如上面显示的房地产数据，特征选择技术可以对预测变量进行过拟合。当一个变量在当前数据集中看起来相关，但一旦收集到新数据，与结果没有真实关系时，就会出现这种情况。当数据点的数量（表示为$n$）很小，而潜在的预测变量（$p$）非常多时，这种过拟合的风险尤其严重。与对数据点过拟合类似，可以使用一种方法来发出警告，当发生这种情况时，以减轻这个问题。
+>
+> 无论是监督分析还是无监督分析都容易出现过拟合，但监督分析尤其倾向于发现预测结果的数据中的错误模式。简言之，我们可以使用这些技术来创建自证预测预言。
 
+Models can also be evaluated in terms of variance and bias (Geman, Bienenstock, and Doursat 1992). A model has high variance if small changes to the underlying data used to estimate the parameters cause a sizable change in those parameters (or in the structure of the model). For example, the sample mean of a set of data points has higher variance than the sample median. The latter uses only the values in the center of the data distribution and, for this reason, it is insensitive to moderate changes in the values. A few examples of models with *low variance* are linear regression, logistic regression, and partial least squares. High-variance models include those that strongly rely on individual data points to define their parameters such as classification or regression trees, nearest neighbor models, and neural networks. To contrast low-variance and high-variance models, consider linear regression and, alternatively, nearest neighbor models. Linear regression uses all of the data to estimate slope parameters and, while it can be sensitive to outliers, it is much less sensitive than a nearest neighbor model.
 
+Model bias reflects the ability of a model to conform to the underlying theoretical structure of the data. A low-bias model is one that can be highly flexible and has the capacity to fit a variety of different shapes and patterns. A high-bias model would be unable to estimate values close to their true theoretical counterparts. Linear methods often have high bias since, without modification, cannot describe nonlinear patterns in the predictor variables. Tree-based models, support vector machines, neural networks, and others can be very adaptable to the data and have low bias.
 
+As one might expect, model bias and variance can often be in opposition to one another; in order to achieve low bias, models tend to demonstrate high variance (and vice versa). The *variance-bias trade-off* is a common theme in statistics. In many cases, models have parameters that control the flexibility of the model and thus affect the variance and bias properties of the results.
 
+As previously described, simplicity is an important characteristic of a model. One method of creating a *low-variance*, *low-bias* model is to augment a low-variance model with appropriate representations of the data to decrease the bias.
 
+> 模型也可以根据方差和偏差进行评估（Geman，Bienenstock和Doursat 1992）。如果对用于估计参数的基础数据进行微小改变，会导致参数（或模型结构）发生较大变化，则模型的方差很高。例如，对一组数据点的样本均值的方差比样本中位数的方差更高。后者仅使用数据分布的中心值，因此对值的中等变化不敏感。一些具有低方差的模型包括线性回归、逻辑回归和偏最小二乘法。高方差的模型包括那些强烈依赖于个别数据点来定义其参数的模型，例如分类或回归树、最近邻模型和神经网络。为了对比低方差和高方差的模型，可以考虑线性回归和最近邻模型。线性回归使用所有数据来估计斜率参数，虽然它可能对异常值敏感，但比最近邻模型要不那么敏感。
+>
+> 模型偏差反映了模型符合数据潜在理论结构的能力。低偏差模型是高度灵活的，能够适应各种不同的形状和模式。高偏差模型无法估计接近其真实理论对应物的值。线性方法通常具有较高的偏差，因为未经修改时，无法描述预测变量中的非线性模式。基于树的模型、支持向量机、神经网络等在数据上可以非常适应，具有较低的偏差。
+>
+> 如预料的那样，模型偏差和方差通常会相互对立；为了实现低偏差，模型往往表现出较高的方差（反之亦然）。方差-偏差权衡是统计学中的一个常见主题。在许多情况下，模型具有控制模型灵活性的参数，从而影响结果的方差和偏差特性。
 
-
-
-
-
-
-
+## A More Complex Example
 
 
 
@@ -75,5 +99,5 @@ The goals of *Feature Engineering and Selection* are to provide tools for re-rep
 
 
 ::: {.callout-tip title="To be continued"}
-- 5 逻辑回归
+- <https://bookdown.org/max/FES/a-more-complex-example.html>
 :::
