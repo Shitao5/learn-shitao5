@@ -2,7 +2,10 @@
 title: "评分指标权重训练"
 date: "2023-06-24"
 image: "weight.png"
-categories: ["Data Science", "R"]
+categories: ["Machine Learning", "R"]
+draft: true
+execute: 
+  freeze: true
 ---
 
 ::: {.callout-note title='Progress'}

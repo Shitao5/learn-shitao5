@@ -1,0 +1,79 @@
+---
+title: "Feature Engineering and Selection"
+subtitle: "A Practical Approach for Predictive Models"
+date: "2023-07-24"
+date-modified: "2023-07-24"
+image: "cover.jpg"
+categories: 
+  - Machine Learning
+  - R
+---
+
+::: {.callout-note title='Progress'}
+`r stfun::progress(0, 13)`
+:::
+
+::: {.callout-tip title="Learning Source"}
+- <https://bookdown.org/max/FES/>
+- <https://github.com/topepo/FES>
+- 中文翻译由 ChatGPT 完成
+:::
+
+# Preface {.unnumbered}
+
+Despite our attempts to follow these good practices, we are sometimes frustrated to find that the best models have less-than-anticipated, less-than-useful useful predictive performance. This lack of performance may be due to a simple to explain, but difficult to pinpoint, cause: relevant predictors that were collected are represented in a way that models have trouble achieving good performance. Key relationships that are not directly available as predictors may be between the response and:
+
+- a transformation of a predictor,
+- an interaction of two or more predictors such as a product or ratio,
+- a functional relationship among predictors, or
+- an equivalent re-representation of a predictor.
+
+Adjusting and reworking the predictors to enable models to better uncover predictor-response relationships has been termed feature engineering. The engineering connotation implies that we know the steps to take to fix poor performance and to guide predictive improvement. However, we often do not know the best re-representation of the predictors to improve model performance. Instead, the re-working of predictors is more of an art, requiring the right tools and experience to find better predictor representations. Moreover, we may need to search many alternative predictor representations to improve model performance. This process, too, can lead to overfitting due to the vast number of alternative predictor representations. So appropriate care must be taken to avoid overfitting during the predictor creation process.
+
+The goals of *Feature Engineering and Selection* are to provide tools for re-representing predictors, to place these tools in the context of a good predictive modeling framework, and to convey our experience of utilizing these tools in practice. In the end, we hope that these tools and our experience will help you generate better models.
+
+> 尽管我们尝试遵循这些良好的实践，但有时我们会发现最佳模型的预测性能不如预期或者不够有用。这种性能的不足可能是由于一个简单易懂但难以确定的原因：**收集的相关预测变量的表示方式使得模型难以获得良好的性能。**与响应之间可能存在关键关系，而这些关系在预测变量中并不直接可用，例如：
+>
+> - 预测变量的转换；  
+> - 两个或更多预测变量的交互作用，例如乘积或比率；  
+> - 预测变量之间的功能关系；  
+> - 预测变量的等效重新表示。  
+>
+> 调整和重新设计预测变量以使模型能够更好地揭示预测变量与响应之间的关系被称为**特征工程**。"工程"这个词意味着我们知道采取哪些步骤来修复性能差的问题并指导预测性能的改进。然而，我们通常并不知道改进模型性能的最佳预测变量重新表示方式。相反，重新设计预测变量更像是一门艺术，需要正确的工具和经验来找到更好的预测变量表示方式。此外，为了改进模型性能，我们可能需要搜索许多替代的预测变量表示方式。这个过程也可能导致过度拟合，因为替代预测变量的数量非常庞大。因此，在预测变量创建过程中必须谨慎避免过度拟合。
+>
+> 《特征工程与选择》的目标是提供用于重新表示预测变量的工具，将这些工具置于一个良好的预测建模框架中，并传达我们在实践中使用这些工具的经验。最终，我们希望这些工具和我们的经验能够帮助您生成更好的模型。
+
+# Introducton
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+::: {.callout-tip title="To be continued"}
+- 5 逻辑回归
+:::

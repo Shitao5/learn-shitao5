@@ -6,7 +6,7 @@ image: "tidymodels.png"
 execute: 
   cache: true
 categories: 
-  - Data Science
+  - Machine Learning
   - R
   - tidymodels
 ---
