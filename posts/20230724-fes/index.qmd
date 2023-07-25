@@ -131,11 +131,11 @@ There are a number of ways to split the data into training and testing sets. The
 
 > 有许多方法可以将数据分成训练集和测试集。最常见的方法是使用某种随机抽样的版本。完全随机抽样是一种简单直接的策略，通常可以避免偏向数据任何特征的问题。然而，当响应在结果上不均匀分布时，这种方法可能会有问题。一个较低风险的分割策略是基于结果进行分层随机抽样。对于分类模型，可以在每个类别内随机选择样本。这种方法确保在训练集和测试集中，结果的频率分布大致相等。当结果是数值时，可以根据数据的四分位数构建人工层次。
 
+## Model Optimization and Tuning
 
+When there are many tuning parameters associated with a model, there are several ways to proceed. First, a multidimensional grid search can be conducted where candidate parameter combinations and the grid of combinations are evaluated. In some cases, this can be very inefficient. Another approach is to define a range of possible values for each parameter and to randomly sample the multidimensional space enough times to cover a reasonable amount (Bergstra and Bengio 2012). This random search grid can then be resampled in the same way as a more traditional grid. This procedure can be very beneficial when there are a large number of tuning parameters and there is no a priori notion of which values should be used. A large grid may be inefficient to search, especially if the profile has a fairly stable pattern with little change over some range of the parameter. Neural networks, gradient boosting machines, and other models can effectively be tuned using this approach.
 
-
-
-
+> 当模型与许多调参参数相关联时，有几种方法可以进行。首先，可以进行多维网格搜索，评估候选参数组合和组合的网格。在某些情况下，这可能非常低效。另一种方法是为每个参数定义一个可能的值范围，并随机采样多维空间足够多次以涵盖合理数量（Bergstra和Bengio 2012）。然后可以对此随机搜索网格进行与传统网格相同的重新采样。当存在大量调参参数并且没有先验的概念可以使用哪些值时，这个过程可能非常有益。大的网格可能不易于搜索，尤其是如果配置在某个参数范围内具有相当稳定的模式且变化较小的情况下。神经网络，梯度增强机器和其他模型可以有效地使用这种方法。
 
 
 
@@ -171,5 +171,5 @@ There are a number of ways to split the data into training and testing sets. The
 
 
 ::: {.callout-tip title="To be continued"}
-- <https://bookdown.org/max/FES/a-more-complex-example.html>
+- <https://bookdown.org/max/FES/review-model-comparisons.html>
 :::
