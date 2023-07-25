@@ -89,6 +89,78 @@ As previously described, simplicity is an important characteristic of a model. O
 
 ## A More Complex Example
 
+The overall points that should be understood from this demonstration are:
+
+1. When modeling data, there is almost never a single model fit or feature set that will immediately solve the problem. The process is more likely to be a campaign of trial and error to achieve the best results.
+1. The effect of feature sets can be much larger than the effect of different models.
+1. The interplay between models and features is complex and somewhat unpredictable.
+1. With the right set of predictors, is it common that many different types of models can achieve the same level of performance. Initially, the linear models had the worst performance but, in the end, showed some of the best performance.
+
+> 总体上，应该理解以下几点：
+>
+> 1. 当建模数据时，几乎永远不会有一个单一的模型适合或特征集能立即解决问题。这个过程更可能是一系列试错的过程，以获得最佳结果。  
+> 1. 特征集的影响可能比不同模型的影响大得多。  
+> 1. 模型与特征之间的相互作用是复杂且有些不可预测的。  
+> 使用正确的预测变量，许多不同类型的模型通常可以达到相同水平的性能。最初，线性模型的性能最差，但最后显示出了一些最好的性能。
+
+## Feature Selection
+
+When conducting a search for a subset of variables, it is important to realize that there may not be a unique set of predictors that will produce the best performance. There is often a compensatory effect where, when one seemingly important variable is removed, the model adjusts using the remaining variables. This is especially true when there is some degree of correlation between the explanatory variables or when a low-bias models is used. For this reason, feature selection should not be used as a formal method of determining feature *significance*. More traditional inferential statistical approaches are a better solution for appraising the contribution of a predictor to the underlying model or to the data set.
+
+> 当进行变量子集的搜索时，重要的是要意识到**可能没有一个唯一的预测变量集会产生最佳性能。**通常会有一种补偿效应，当一个看似重要的变量被移除时，模型会使用其余的变量进行调整。这在解释变量之间存在某种程度的相关性或者使用低偏差模型时尤其明显。因此，特征选择不应作为确定特征重要性的正式方法，更传统的推理统计方法是评估预测变量对基础模型或数据集的贡献的更好解决方案。
+
+# Illustrative Example: Predicting Risk of Ischemic Stroke
+
+## Other Considerations
+
+Our primary point in this short tour is to illustrate that spending a little more time (and sometimes a lot more time) investigating predictors and relationships among predictors can help to improve model predictivity. This is especially true when marginal gains in predictive performance can have significant benefits.
+
+> 在这个简短的导览中，我们的主要目的是说明多花一点时间（有时可能会花费更多时间）来调查预测因子和预测因子之间的关系，可以帮助提高模型的预测性能。特别是当预测性能的边际增益可以带来显著的好处时，这一点尤为重要。
+
+# A Review of the Predictive Modeling Process
+
+## Measuring Performance
+
+During the initial phase of model building, a good strategy for data sets with two classes is to focus on the AUC statistics from these curves instead of metrics based on hard class predictions. Once a reasonable model is found, the ROC or precision-recall curves can be carefully examined to find a reasonable cutoff for the data and then qualitative prediction metrics can be used.
+
+> 在模型构建的初期阶段，对于具有两个类别的数据集，一个很好的策略是专注于从这些曲线中得出的 AUC（曲线下面积）统计量，而不是基于硬类别预测的指标。一旦找到一个合理的模型，可以仔细检查 ROC 曲线或精确度-召回曲线，找到合理的数据截断点，然后使用定性预测指标。
+
+## Data Splitting
+
+There are a number of ways to split the data into training and testing sets. The most common approach is to use some version of random sampling. Completely random sampling is a straightforward strategy to implement and usually protects the process from being biased towards any characteristic of the data. However this approach can be problematic when the response is not evenly distributed across the outcome. A less risky splitting strategy would be to use a *stratified* random sample based on the outcome. For classification models, this is accomplished by selecting samples at random *within* each class. This approach ensures that the frequency distribution of the outcome is approximately equal within the training and test sets. When the outcome is numeric, artificial strata can be constructed based on the quartiles of the data.
+
+> 有许多方法可以将数据分成训练集和测试集。最常见的方法是使用某种随机抽样的版本。完全随机抽样是一种简单直接的策略，通常可以避免偏向数据任何特征的问题。然而，当响应在结果上不均匀分布时，这种方法可能会有问题。一个较低风险的分割策略是基于结果进行分层随机抽样。对于分类模型，可以在每个类别内随机选择样本。这种方法确保在训练集和测试集中，结果的频率分布大致相等。当结果是数值时，可以根据数据的四分位数构建人工层次。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
