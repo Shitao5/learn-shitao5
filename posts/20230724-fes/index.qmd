@@ -14,7 +14,6 @@ categories:
 1 + 1
 ```
 
-
 ::: {.callout-note title='Progress'}
 `r stfun::progress(3.2, 13)`
 :::

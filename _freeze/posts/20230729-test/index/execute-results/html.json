@@ -1,0 +1,11 @@
+{
+  "hash": "00447f13925053ed86c6302621217728",
+  "result": {
+    "markdown": "---\ntitle: Jupyter test\ndate: '2023-07-24'\ndate-modified: '2023-07-26'\ncategories:\n  - Python\n---\n\n::: {.callout-note title='Progress'}\n`r stfun::progress(3.2, 13)`\n:::\n\n::: {.callout-tip title=\"Learning Source\"}\n- <https://bookdown.org/max/FES/>\n- <https://github.com/topepo/FES>\n- 中文翻译由 ChatGPT 完成\n:::\n\n# Preface {.unnumbered}\n\nDespite our attempts to follow these good practices, we are sometimes frustrated to find that the best models have less-than-anticipated, less-than-useful useful predictive performance. This lack of performance may be due to a simple to explain, but difficult to pinpoint, cause: relevant predictors that were collected are represented in a way that models have trouble achieving good performance. Key relationships that are not directly available as predictors may be between the response and:\n\n::: {.cell execution_count=1}\n``` {.python .cell-code}\nimport numpy as np\nimport matplotlib.pyplot as plt\n\nr = np.arange(0, 2, 0.01)\ntheta = 2 * np.pi * r\nfig, ax = plt.subplots(\n  subplot_kw = {'projection': 'polar'} \n)\nax.plot(theta, r)\nax.set_rticks([0.5, 1, 1.5, 2])\nax.grid(True)\nplt.show()\n```\n\n::: {.cell-output .cell-output-display}\n![](index_files/figure-html/cell-2-output-1.png){width=450 height=439}\n:::\n:::\n\n\n",
+    "supporting": [
+      "index_files"
+    ],
+    "filters": [],
+    "includes": {}
+  }
+}
