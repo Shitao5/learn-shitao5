@@ -2,7 +2,7 @@
 title: "Feature Engineering and Selection"
 subtitle: "A Practical Approach for Predictive Models"
 date: "2023-07-24"
-date-modified: "2023-07-26"
+date-modified: "2023-07-30"
 image: "cover.jpg"
 categories: 
   - Machine Learning
@@ -15,7 +15,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(3.2, 13)`
+`r stfun::progress(4, 12)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -158,22 +158,29 @@ One of the first steps of the exploratory data process when the ultimate purpose
 > - 样本和预测变量的热图，或  
 > - 用于检查分类变量之间关联的马赛克图。
 
+## Visualizations for Numeric Data
 
+It is possible to visualize five or six dimensions of data in a two-dimensional figure by using colors, shapes, and faceting. But almost any data set today contains many more than just a handful of variables. Being able to visualize many dimensions in the physical space that we can actually see is crucial to understanding the data and to understanding if there characteristics of the data that point to the need for feature engineering. One way to condense many dimensions into just two or three is to use projection techniques such as principal components analysis (PCA), partial least squares (PLS), or multidimensional scaling (MDS).
 
+Principal components analysis finds combinations of the variables that best summarizes the variability in the original data (Dillon and Goldstein 1984). The combinations are a simpler representation of the data and often identify underlying characteristics within the data that will help guide the feature engineering process.
 
+> 通过使用颜色、形状和分面，可以在二维图中可视化五到六个数据维度。但是，现今几乎任何数据集都包含的变量数量远不止几个。能够在我们实际可见的物理空间中可视化多个维度对于理解数据以及发现是否有数据特征需要进行特征工程是至关重要的。将许多维度压缩为只有两个或三个维度的一种方法是使用投影技术，例如主成分分析（PCA）、偏最小二乘法（PLS）或多维缩放（MDS）。
+>
+> 主成分分析找出最能概括原始数据变异性的变量组合（Dillon和Goldstein 1984）。这些组合是数据的简化表示，并且通常可以识别出数据内部的潜在特征，有助于指导特征工程的过程。
 
+## Visualizations for Categorical Data
 
+The point of this discussion is not that summary statistics with confidence intervals are always the solution to a visualization problem. The takeaway message is that each graph should have a clearly defined hypothesis and that this hypothesis is shown concisely in a way that allows the reader to make quick and informative judgments based on the data.
 
+> 这个讨论的重点不是得出统计量和置信区间总是解决可视化问题的方案的结论。要传达的信息是，每个图形都应该有一个明确定义的假设，并且这个假设应该以简明的方式显示出来，以便读者可以根据数据快速且有效地做出判断。
 
+## Summary
 
+Advanced predictive modeling and machine learning techniques offer the allure of being able to extract complex relationships between predictors and the response with little effort by the analyst. This hands-off approach to modeling will only put the analyst at a disadvantage. Spending time visualizing the response, predictors, relationships among the predictors, and relationships between predictors and the response can only lead to better understandings of the data. Moreover, this knowledge may provide crucial insights as to what features may be missing in the data and may need to be included to improve a model’s predictive performance.
 
+> 先进的预测建模和机器学习技术提供了一种诱人的可能性，即能够在分析员几乎不费力的情况下提取预测变量与响应之间的复杂关系。然而，这种对建模的“无为而治”方法只会让分析员处于劣势。花时间对响应变量、预测变量、预测变量之间的关系以及预测变量与响应之间的关系进行可视化，只会带来对数据更深入的理解。此外，这些知识可能提供关键的见解，以了解数据中可能缺失的特征，并可能需要包含这些特征以改进模型的预测性能。
 
-
-
-
-
-
-
+# Encoding Categorical Predictors
 
 
 
@@ -187,5 +194,5 @@ One of the first steps of the exploratory data process when the ultimate purpose
 
 
 ::: {.callout-tip title="To be continued"}
-- <https://bookdown.org/max/FES/visualizations-for-numeric-data-exploring-train-ridership-data.html>
+- <https://bookdown.org/max/FES/encoding-categorical-predictors.html>
 :::
