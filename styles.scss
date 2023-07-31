@@ -1,9 +1,20 @@
 /*-- scss:defaults --*/
 
-@import 'https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible&display=swap';
+// 导入 Noto Serif SC 字体作为中文字符的字体
+@import 'https://fonts.googleapis.com/css2?family=Noto+Serif+SC&display=swap';
 
-$font-family: "Atkinson Hyperlegible", sans-serif;
-$font-family-serif: "Atkinson Hyperlegible", sans-serif;
+// 导入 Merriweather 字体作为英文字符的字体
+@import 'https://fonts.googleapis.com/css2?family=Merriweather&display=swap';
+
+// 定义默认字体族
+$font-family-default: "Merriweather", sans-serif;
+$font-family-default-serif: "Merriweather", sans-serif;
+
+// 定义中文字体族
+$font-family-chinese: "Noto Serif SC", serif;
+
+// 定义英文字体族
+$font-family-english: "Merriweather", serif;
 
 /*-- scss:rules --*/
 
@@ -12,5 +23,18 @@ figure {
 
   figcaption {
     text-align: center;
+  }
+
+  // 设置默认字体，让它在选择器中不再影响中文和英文的字体设置
+  font-family: $font-family-default;
+
+  // 将中文字体应用于图像说明和其标题
+  &.chinese {
+    font-family: $font-family-chinese;
+  }
+
+  // 将英文字体应用于图像说明和其标题
+  &.english {
+    font-family: $font-family-english;
   }
 }
