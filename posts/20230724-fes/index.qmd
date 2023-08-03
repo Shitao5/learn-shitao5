@@ -2,11 +2,11 @@
 title: "Feature Engineering and Selection"
 subtitle: "A Practical Approach for Predictive Models"
 date: "2023-07-24"
-date-modified: "2023-07-30"
+date-modified: "2023-08-03"
 image: "cover.jpg"
 categories: 
   - Machine Learning
-  - R
+  - Feature Engineering
 ---
 
 ```{r}
@@ -181,6 +181,51 @@ Advanced predictive modeling and machine learning techniques offer the allure of
 > 先进的预测建模和机器学习技术提供了一种诱人的可能性，即能够在分析员几乎不费力的情况下提取预测变量与响应之间的复杂关系。然而，这种对建模的“无为而治”方法只会让分析员处于劣势。花时间对响应变量、预测变量、预测变量之间的关系以及预测变量与响应之间的关系进行可视化，只会带来对数据更深入的理解。此外，这些知识可能提供关键的见解，以了解数据中可能缺失的特征，并可能需要包含这些特征以改进模型的预测性能。
 
 # Encoding Categorical Predictors
+
+## Encoding Predictors with Many Categories
+
+One potential issue is that resampling might exclude some of the rarer categories from the analysis set. This would lead to dummy variable columns in the data that contain all zeros and, for many models, this would become a numerical issue that will cause an error. Moreover the model will not be able to provide a relevant prediction for new samples that contain this predictor. When a predictor contains a single value, we call this a *zero-variance* predictor because there truly is no variation displayed by the predictor.
+
+The first way to handle this issue is to create the full set of dummy variables and simply remove the zero-variance predictors. This is a simple and effective approach but it may be difficult to know a *priori* what terms will be in the model. In other words, during resampling, there may be a different number of model parameters across resamples. This can be a good side-effect since it captures the variance caused by omitting rarely occurring values and propagates this noise into the resampling estimates of performance.
+
+一个潜在的问题是重新采样可能会将一些较少见的类别排除在分析集之外。这将导致数据中的虚拟变量列包含所有零，并且对于许多模型来说，这将成为一个可能引发错误的数值问题。此外，模型将无法为包含此预测变量的新样本提供相关的预测。当预测变量包含单个值时，我们称之为零方差预测变量，因为预测变量确实没有显示出任何变化。
+
+处理此问题的第一种方法是创建完整的虚拟变量集，然后简单地删除零方差预测变量。这是一种简单有效的方法，但很难预先知道模型中会有哪些项。换句话说，在重新采样期间，模型参数的数量可能在重新采样之间有所不同。这可能是一个好的副作用，因为它捕捉了由于省略罕见出现的值而产生的方差，并将这种噪声传播到性能的重新采样估计中。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

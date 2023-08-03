@@ -5,6 +5,7 @@ date-modified: "2023-07-23"
 image: "tidymodels.png"
 execute: 
   cache: true
+  freeze: true
 categories: 
   - Machine Learning
   - R

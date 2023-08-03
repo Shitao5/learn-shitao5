@@ -1,0 +1,14 @@
+{
+  "hash": "5742b2b29106d5abda0fcff588f0021b",
+  "result": {
+    "markdown": "---\ntitle: \"Feature Engineering\"\ndate: \"2023-08-03\"\ndate-modified: \"2023-08-03\"\nimage: \"ml_frame.png\"\ncategories: \n  - Machine Learning\n  - Feature Engineering\n---\n\n\n\n\n::: {.callout-note title='Progress'}\nLearning Progress: 45.71%.\n:::\n\n::: {.callout-tip title=\"Learning Source\"}\n- <https://leoncuhk.gitbooks.io/feature-engineering/content/>\n:::\n\n# Introduction\n\n数据和特征决定了机器学习的上限，而算法和模型只是逼近这个上限而已。\n那么特征工程到底是什么呢？\n顾名思义，其本质是一项工程运动，目的是**最大限度地从原始数据中提取特征以供算法和模型使用**。\n\n特征工程可以总结如下：\n\n![特征工程总览](featureEngineering2.png){#fig-feature}\n\n# 特征工程系统\n\n![经典的机器学习问题框架图](ml_frame.png){#fig-ml_frame width=65%}\n\n@fig-ml_frame 所示是一个经典的机器学习问题框架图。数据清洗和特征挖掘的工作是在灰色框中框出的部分，即“数据清洗=>特征，标注数据生成=>模型学习=>模型应用”中的前两个步骤。 灰色框中蓝色箭头对应的是离线处理部分。主要工作是：\n\n- 从原始数据，如文本、图像或者应用数据中清洗出特征数据和标注数据。\n- 对清洗出的特征和标注数据进行处理，例如样本采样，样本调权，异常点去除，特征归一化处理，特征变化，特征组合等过程。最终生成的数据主要是供模型训练使用。\n\n以美团点击下单率预测为例，结合实例来介绍一个完整的特征工程系统。首先介绍下点击下单率预测任务，其业务目标是提高团购用户的用户体验，帮助用户更快更好地找到自己想买的单子。这个概念或者说目标看起来比较虚，我们需要将其转换成一个技术目标，便于度量和实现。最终确定的技术目标是点击下单率预估，去预测用户点击或者购买团购单的概率。我们将预测出来点击或者下单率高的单子排在前面，预测的越准确，用户在排序靠前的单子点击、下单的就越多，省去了用户反复翻页的开销，很快就能找到自己想要的单子。**离线我们用常用的衡量排序结果的AUC指标，在线的我们通过ABTest来测试算法对下单率、用户转化率等指标的影响**。\n\n# 数据预处理\n\n![一般的数据挖掘流程](pre.png){#fig-pre width=90%}\n\n## 数据清洗\n\n利用箱形图判断数据批的偏态和尾重：对于标准正态分布的样本，只有极少值为异常值。异常值越多说明尾部越重，自由度越小（即自由变动的量的个数）。而偏态表示偏离程度，异常值集中在较小值一侧，则分布呈左偏态；异常值集中在较大值一侧，则分布呈右偏态。\n\niForest（Isolation Forest）孤立森林是一个基于Ensemble的快速异常检测方法，具有线性时间复杂度和高精准度，是符合大数据处理要求的state-of-the-art算法。其可以用于网络安全中的共计检测，金融交易欺诈检测，疾病检测和噪声数据过滤等。iForest适用于连续数据的异常检测，将异常定义为“容易被孤立的离群点”——可以理解为分布稀疏且离密度高的群体较远的点。用统计学来解释，在数据空间里面，分布稀疏的区域表示数据发生在此区域的概率很低，因此可以认为落在这些区域里的数据是异常的。如 @fig-iforest 所示，黑色的点为异常点，白色点为正常点（在一个簇中）。iForest检测到的异常边界为红色，它可以正确地检测到所有黑色异常点。\n\n![孤立森林](iForest.png){#fig-iforest width=45%}\n\niForest属于Non-parametric和unsupervised的方法，即不用定义数学模型也不需要有标记的训练。对于如何查找哪些点是否容易被孤立（isolated），iForest使用了一套非常高效的策略。假设我们用一个随机超平面来切割（split）数据空间（data space）, 切一次可以生成两个子空间（想象拿刀切蛋糕一分为二）。之后我们再继续用一个随机超平面来切割每个子空间，循环下去，直到每子空间里面只有一个数据点为止。直观上来讲，我们可以发现那些密度很高的簇是可以被切很多次才会停止切割，但是那些密度很低的点很容易很早的就停到一个子空间了。上图里面黑色的点就很容易被切几次就停到一个子空间，而白色点聚集的地方可以切很多次才停止。\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n::: {.callout-tip title=\"To be continued\"}\n- <https://leoncuhk.gitbooks.io/feature-engineering/content/data-preprocessing02.html>\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
