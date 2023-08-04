@@ -2,7 +2,7 @@
 title: "Feature Engineering and Selection"
 subtitle: "A Practical Approach for Predictive Models"
 date: "2023-07-24"
-date-modified: "2023-08-03"
+date-modified: "2023-08-04"
 image: "cover.jpg"
 categories: 
   - Machine Learning
@@ -15,7 +15,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(4, 12)`
+`r stfun::progress(5.3, 13)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -239,5 +239,5 @@ The first way to handle this issue is to create the full set of dummy variables 
 
 
 ::: {.callout-tip title="To be continued"}
-- <https://bookdown.org/max/FES/encoding-categorical-predictors.html>
+- <https://bookdown.org/max/FES/approaches-for-novel-categories.html>
 :::

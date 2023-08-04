@@ -1,7 +1,7 @@
 ---
 title: "Feature Engineering"
 date: "2023-08-03"
-date-modified: "2023-08-03"
+date-modified: "2023-08-04"
 image: "ml_frame.png"
 categories: 
   - Machine Learning
@@ -14,7 +14,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(3.2, 7)`
+`r stfun::progress(4, 8)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -56,9 +56,20 @@ iForest（Isolation Forest）孤立森林是一个基于Ensemble的快速异常�
 
 iForest属于Non-parametric和unsupervised的方法，即不用定义数学模型也不需要有标记的训练。对于如何查找哪些点是否容易被孤立（isolated），iForest使用了一套非常高效的策略。假设我们用一个随机超平面来切割（split）数据空间（data space）, 切一次可以生成两个子空间（想象拿刀切蛋糕一分为二）。之后我们再继续用一个随机超平面来切割每个子空间，循环下去，直到每子空间里面只有一个数据点为止。直观上来讲，我们可以发现那些密度很高的簇是可以被切很多次才会停止切割，但是那些密度很低的点很容易很早的就停到一个子空间了。上图里面黑色的点就很容易被切几次就停到一个子空间，而白色点聚集的地方可以切很多次才停止。
 
+iForest优缺点：
 
+- 具有线性时间复杂度，可以用在含有海量数据的数据集上面。通常树的数量越多，算法越稳定。由于每棵树都是互相独立生成的，因此可以部署在大规模分布式系统上来加速运算。
+- iForest不适用于特别高维的数据。由于每次切数据空间都是随机选取一个维度，建完树后仍然有大量的维度信息没有被使用，导致算法可靠性降低。高维空间还可能存在大量噪音维度和无关维度，影响树的构建。
+- iForest仅对Global Anomaly敏感，即全局稀疏点敏感，不擅长处理局部的相对稀疏点。目前已有改进方法发表：[Improving iForest with Relative Mass](https://link.springer.com/chapter/10.1007/978-3-319-06605-9_42)。
 
+## 数据整理
 
+标准化的前提是特征值服从正态分布，标准化后，其转换成标准正态分布。Z-score 标准化指的是，通过缩放让数据的均值为0（移除均值），标准差为固定值（比如1）。在许多模型里，如SVM的RBF、线性模型的 L1 & L2 正则项对于所有的feature都有这样的假设。
+
+标准化和归一化的区别：
+简单来说，标准化是依照特征矩阵的列处理数据，其通过求z-score的方法，将样本的特征值转换到同一量纲下。归一化是依照特征矩阵的行处理数据，其目的在于样本向量在点乘运算或其他核函数计算相似性时，拥有统一的标准，也就是说都转化为“单位向量”。
+
+# 特征构建
 
 
 
@@ -71,5 +82,5 @@ iForest属于Non-parametric和unsupervised的方法，即不用定义数学模�
 
 
 ::: {.callout-tip title="To be continued"}
-- <https://leoncuhk.gitbooks.io/feature-engineering/content/data-preprocessing02.html>
+- <https://leoncuhk.gitbooks.io/feature-engineering/content/feature-building.html>
 :::
