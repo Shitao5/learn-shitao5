@@ -1,7 +1,7 @@
 ---
 title: "Feature Engineering"
 date: "2023-08-03"
-date-modified: "2023-08-06"
+date-modified: "2023-08-07"
 image: "ml_frame.png"
 categories: 
   - Machine Learning
@@ -14,7 +14,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(4, 8)`
+`r stfun::progress(4.2, 8)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -111,18 +111,30 @@ iForest优缺点：
 
 在实际问题中，为了方便传输和存储，我们一般将数字信息进行压缩，这样就有可能损失部分信息，如何根据已有的信息来重构出全部信号，这便是压缩感知的来源。与特征选择、稀疏表示不同的是：它关注的是如何利用信号本身具有的稀疏性，通过欠采样信息来恢复全部信息。**压缩感知的前提是已知的信息具有稀疏表示。**
 
-```{python}
-from scipy.sparse import csr_matrix
-import numpy as np
-row = np.array([0, 0, 1, 2, 2, 2])
-col = np.array([0, 2, 2, 0, 1, 2])
-data = np.array([1, 2, 3, 4, 5, 6])
-sparse_matrix = csr_matrix((data, (row, col)), shape=(3, 3)) # 稀疏矩阵
-dense_matrix = sparse_matrix.toarray() # 稠密矩阵
-print(dense_matrix)
-```
+## 特征 hash
+
+特征哈希法的目标是把原始的高维特征向量压缩成较低维特征向量，且尽量不损失元素特征值的表达能力。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ::: {.callout-tip title="To be continued"}
-- <https://leoncuhk.gitbooks.io/feature-engineering/content/feature-extracting02.html>
+- <https://leoncuhk.gitbooks.io/feature-engineering/content/feature-extracting03.html>
 :::
