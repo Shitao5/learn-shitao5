@@ -1,0 +1,63 @@
+---
+title: "Applied Machine Learning Using mlr3 in R"
+date: "2023-08-16"
+# date-modified: "2023-08-16"
+image: "logo.png"
+categories: 
+  - Machine Learning
+  - R
+  - mlr3
+---
+
+```{r}
+#| include: false
+1 + 1
+```
+
+::: {.callout-note title='Progress'}
+`r stfun::progress(1.2, 15)`
+:::
+
+::: {.callout-tip title="Learning Source"}
+- <https://mlr3book.mlr-org.com/>
+:::
+
+# Introduction and Overview
+
+`mlr3` by Example
+
+```{r}
+#| message: false
+library(mlr3verse)
+library(mlr3pipelines)
+library(mlr3benchmark)
+```
+
+
+```{r}
+#| warning: false
+#| message: false
+#| eval: false
+set.seed(123)
+
+library(mlr3)
+task = tsk("penguins")
+split = partition(task)
+learner = lrn("classif.rpart")
+
+learner$train(task, row_ids = split$train)
+learner$model
+
+prediction = learner$predict(task, row_ids = split$test)
+prediction
+
+prediction$score(msr("classif.acc"))
+```
+
+
+
+
+
+::: {.callout-tip title="To be continued"}
+- [Data and Basic Modeling](https://mlr3book.mlr-org.com/chapters/chapter2/data_and_basic_modeling.html)
+:::

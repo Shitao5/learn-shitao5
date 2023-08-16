@@ -1,0 +1,14 @@
+{
+  "hash": "4d060f8fa89c9ade84d6e8fc578f8095",
+  "result": {
+    "markdown": "---\ntitle: \"Applied Machine Learning Using mlr3 in R\"\ndate: \"2023-08-16\"\n# date-modified: \"2023-08-16\"\nimage: \"logo.png\"\ncategories: \n  - Machine Learning\n  - R\n  - mlr3\n---\n\n\n\n\n::: {.callout-note title='Progress'}\nLearning Progress: 8%.\n:::\n\n::: {.callout-tip title=\"Learning Source\"}\n- <https://mlr3book.mlr-org.com/>\n:::\n\n# Introduction and Overview\n\n`mlr3` by Example\n\n\n::: {.cell layout-align=\"center\" hash='index_cache/html/unnamed-chunk-2_2e1d035ee01721a5dc6a30f0846afa50'}\n\n```{.r .cell-code}\nlibrary(mlr3verse)\nlibrary(mlr3pipelines)\nlibrary(mlr3benchmark)\n```\n:::\n\n::: {.cell layout-align=\"center\" hash='index_cache/html/unnamed-chunk-3_4af1e2d27439b1850f49c62e29d770a3'}\n\n```{.r .cell-code}\nset.seed(123)\n\nlibrary(mlr3)\ntask = tsk(\"penguins\")\nsplit = partition(task)\nlearner = lrn(\"classif.rpart\")\n\nlearner$train(task, row_ids = split$train)\nlearner$model\n\nprediction = learner$predict(task, row_ids = split$test)\nprediction\n\nprediction$score(msr(\"classif.acc\"))\n```\n:::\n\n\n\n\n\n\n::: {.callout-tip title=\"To be continued\"}\n- [Data and Basic Modeling](https://mlr3book.mlr-org.com/chapters/chapter2/data_and_basic_modeling.html)\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
