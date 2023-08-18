@@ -1,7 +1,7 @@
 ---
 title: "Applied Machine Learning Using mlr3 in R"
 date: "2023-08-16"
-date-modified: "2023-08-17"
+date-modified: "2023-08-18"
 image: "logo.png"
 categories: 
   - Machine Learning
@@ -72,6 +72,8 @@ as.data.table(mlr_learners)[1:3]
 
 ## Tasks
 
+### Constructing Tasks
+
 `mlr3` includes a few predefined machine learning tasks in the `mlr_tasks` Dictionary.
 
 ```{r}
@@ -94,6 +96,60 @@ tsk_mtcars
 ```
 
 The `id` argument is optional and specifies an identifier for the task that is used in plots and summaries; if omitted the variable name of the data will be used as the `id`.
+
+```{r}
+#| message: false
+library(mlr3viz)
+autoplot(tsk_mtcars, type = "pairs")
+```
+
+### Retrieving Data
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ::: {.callout-tip title="To be continued"}
 - [Data and Basic Modeling](https://mlr3book.mlr-org.com/chapters/chapter2/data_and_basic_modeling.html)
