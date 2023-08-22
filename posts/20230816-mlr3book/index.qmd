@@ -1,7 +1,7 @@
 ---
 title: "Applied Machine Learning Using mlr3 in R"
 date: "2023-08-16"
-date-modified: "2023-08-18"
+date-modified: "2023-08-22"
 image: "logo.png"
 categories: 
   - Machine Learning
@@ -15,7 +15,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(2.1, 15)`
+`r stfun::progress(2.2, 15)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -105,23 +105,84 @@ autoplot(tsk_mtcars, type = "pairs")
 
 ### Retrieving Data
 
+```{r}
+c(tsk_mtcars$nrow, tsk_mtcars$ncol)
+```
 
+```{r}
+c(Features = tsk_mtcars$feature_names,
+  Target = tsk_mtcars$target_names)
+```
 
+Row IDs are not used as features when training or predicting but are metadata that allow access to individual observations. Note that row IDs are not the same as row numbers.
 
+This design decision allows tasks and learners to transparently operate on real database management systems, where primary keys are required to be unique, but not necessarily consecutive.
 
+> 行ID在训练或预测时不作为特征使用，而是元数据，用于访问个别观测数据。需要注意的是，行ID与行号不同。
+>
+> 这种设计决策使得任务和学习器能够透明地在真实的数据库管理系统上运行，其中要求主键是唯一的，但不一定连续。
 
+```{r}
+task = as_task_regr(data.frame(x = runif(5), y = runif(5)),
+                    target = "y")
+task$row_ids
 
+task$filter(c(4, 1, 3))
+task$row_ids
+```
 
+```{r}
+tsk_mtcars$data()[1:3]
+tsk_mtcars$data(rows = c(1, 5, 10), cols = tsk_mtcars$feature_names)
+```
 
+### Task Mutators
 
+```{r}
+tsk_mtcars_small = tsk("mtcars")
+tsk_mtcars_small$select("cyl")
+tsk_mtcars_small$filter(2:3)
+tsk_mtcars_small$data()
+```
 
+As `R6` uses reference semantics, you need to use `$clone()` if you want to modify a task while keeping the original object intact.
 
+```{r}
+tsk_mtcars = tsk("mtcars")
+tsk_mtcars_clone = tsk_mtcars$clone()
+tsk_mtcars_clone$filter(1:2)
+tsk_mtcars_clone$head()
+```
 
+To add extra rows and columns to a task, you can use `$rbind()` and `$cbind()` respectively:
 
+```{r}
+tsk_mtcars_small
+tsk_mtcars_small$cbind(data.frame(disp = c(150, 160)))
+tsk_mtcars_small$rbind(data.frame(mpg = 23, cyl = 5, disp = 170))
+tsk_mtcars_small$data()
+```
 
+## Learners
 
+```{r}
+# all the learners available in mlr3
+mlr_learners
+```
 
+```{r}
+lrn("regr.rpart")
+```
 
+All `Learner` objects include the following metadata, which can be seen in the output above:
+
+- `$feature_types`: the type of features the learner can handle.
+- `$packages`: the packages required to be installed to use the learner.
+- `$properties`: the properties of the learner. For example, the “missings” properties means a model can handle missing data, and “importance” means it can compute the relative importance of each feature.
+- `$predict_types`: the types of prediction that the model can make.
+- `$param_set`: the set of available hyperparameters.
+
+### Training
 
 
 
@@ -152,5 +213,5 @@ autoplot(tsk_mtcars, type = "pairs")
 
 
 ::: {.callout-tip title="To be continued"}
-- [Data and Basic Modeling](https://mlr3book.mlr-org.com/chapters/chapter2/data_and_basic_modeling.html)
+- <https://mlr3book.mlr-org.com/chapters/chapter2/data_and_basic_modeling.html#sec-training>
 :::
