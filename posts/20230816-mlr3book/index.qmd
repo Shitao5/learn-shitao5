@@ -1,7 +1,7 @@
 ---
 title: "Applied Machine Learning Using mlr3 in R"
 date: "2023-08-16"
-date-modified: "2023-08-22"
+date-modified: "2023-08-25"
 image: "logo.png"
 categories: 
   - Machine Learning
@@ -184,6 +184,114 @@ All `Learner` objects include the following metadata, which can be seen in the o
 
 ### Training
 
+```{r}
+# load mtcars task
+tsk_mtcars = tsk("mtcars", store_backends = TRUE)
+# load a regression tree
+lrn_rpart = lrn("regr.rpart")
+# pass the task to the learner via $train()
+lrn_rpart$train(tsk_mtcars)
+```
+
+After training, the fitted model is stored in the `$model` field for future inspection and prediction:
+
+```{r}
+lrn_rpart$model
+```
+
+```{r}
+splits = partition(tsk_mtcars)
+splits
+```
+
+```{r}
+lrn_rpart$train(tsk_mtcars, row_ids = splits$train)
+```
+
+### Predicting
+
+```{r}
+prediction = lrn_rpart$predict(tsk_mtcars, row_ids = splits$test)
+prediction
+```
+
+```{r}
+autoplot(prediction)
+```
+
+```{r}
+mtcars_new = data.table(cyl = c(5, 6), disp = c(100, 120),
+  hp = c(100, 150), drat = c(4, 3.9), wt = c(3.8, 4.1),
+  qsec = c(18, 19.5), vs = c(1, 0), am = c(1, 1),
+  gear = c(6, 4), carb = c(3, 5))
+prediction = lrn_rpart$predict_newdata(mtcars_new)
+prediction
+```
+
+### Hyperparameters
+
+```{r}
+lrn_rpart$param_set
+```
+
+```{r}
+# change hyperparameter
+lrn_rpart = lrn("regr.rpart", maxdepth = 1)
+
+lrn_rpart$param_set$values
+```
+
+```{r}
+# learned regression tree
+lrn_rpart$train(tsk("mtcars"))$model
+```
+
+```{r}
+# another way to update hyperparameters
+lrn_rpart$param_set$values$maxdepth = 2
+lrn_rpart$param_set$values
+```
+
+```{r}
+# now with depth 2
+lrn_rpart$train(tsk("mtcars"))$model
+```
+
+```{r}
+# or with set_values()
+lrn_rpart$param_set$set_values(xval = 2, cp = .5)
+lrn_rpart$param_set$values
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -213,5 +321,5 @@ All `Learner` objects include the following metadata, which can be seen in the o
 
 
 ::: {.callout-tip title="To be continued"}
-- <https://mlr3book.mlr-org.com/chapters/chapter2/data_and_basic_modeling.html#sec-training>
+- <https://mlr3book.mlr-org.com/chapters/chapter2/data_and_basic_modeling.html#sec-param-set>
 :::
