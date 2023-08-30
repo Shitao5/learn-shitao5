@@ -2,7 +2,7 @@
 title: "计算机科学导论"
 subtitle: "原书第4版"
 date: "2023-08-13"
-date-modified: "2023-08-28"
+date-modified: "2023-08-30"
 image: "cover.jpg"
 categories: 
   - Computer Science
@@ -14,7 +14,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(259, 463)`
+`r stfun::progress(273, 463)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -367,7 +367,10 @@ $$
 
 - 冲突解决方法有：开放寻址、链表解决法、桶散列法（可能有很多浪费的存储单元）。
 
-## 目录
+# 数据库
+
+- 数据库是一个组织内被应用程序使用的逻辑相一致的相关数据的集合。
+
 
 
 
@@ -392,5 +395,5 @@ $$
 
 
 ::: {.callout-tip title="To be continued"}
-- P259
+- P273
 :::
