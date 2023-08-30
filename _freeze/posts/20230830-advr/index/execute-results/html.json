@@ -1,0 +1,14 @@
+{
+  "hash": "b41ed54f614dc3d1b0ec28650262f1e5",
+  "result": {
+    "markdown": "---\ntitle: \"Advanced R\"\ndate: \"2023-08-30\"\n# date-modified: \"2023-08-07\"\nimage: \"cover.png\"\ncategories: \n  - R\n---\n\n\n\n\n::: {.callout-note title='Progress'}\nLearning Progress: 27.6%.\n:::\n\n::: {.callout-tip title=\"Learning Source\"}\n- <https://adv-r.hadley.nz/index.html>\n:::\n\n# Foundations {-}\n\n# Functions\n\nR uses **lexical scoping**: it looks up the values of names based on how a function is defined, not how it is called. “Lexical” here is not the English adjective that means relating to words or a vocabulary. It’s a technical CS term that tells us that the scoping rules use a parse-time, rather than a run-time structure.\n\nR’s lexical scoping follows four primary rules:\n\n- Name masking\n- Functions versus variables\n- A fresh start\n- Dynamic lookup\n\n> R使用词法作用域（lexical scoping）：它根据函数的定义方式查找名称的值，而不是根据它的调用方式。“词法”在这里不是指与单词或词汇相关的英语形容词。它是一个技术性的计算机科学术语，告诉我们作用域规则使用的是解析时的结构，而不是运行时的结构。\n>\n> R的词法作用域遵循四条主要规则：\n>\n> - 名称屏蔽（Name masking）  \n> - 函数与变量  \n> - 全新的起点  \n> - 动态查找\n\nLexical scoping determines where, but not when to look for values. R looks for values when the function is run, not when the function is created. Together, these two properties tell us that the output of a function can differ depending on the objects outside the function’s environment.\n\n> 词法作用域决定了在哪里查找值，但并不决定何时查找值。R在运行函数时查找值，而不是在创建函数时。这两个属性共同告诉我们，函数的输出可能会因函数环境外部的对象而异。\n\nLazy evaluation is powered by a data structure called a promise, or (less commonly) a thunk. It’s one of the features that makes R such an interesting programming language.\n\n> 惰性求值是由一个叫做 promise 的数据结构支持的，或者更少见的叫做 thunk。它是使R成为一个如此有趣的编程语言的特性之一。\n\nYou cannot manipulate promises with R code. Promises are like a quantum state: any attempt to inspect them with R code will force an immediate evaluation, making the promise disappear. Later, you’ll learn about quosures, which convert promises into an R object where you can easily inspect the expression and the environment.\n\n> 您不能使用R代码操作 promises。Promise 就像一个量子状态：任何试图用R代码检查它们的尝试都会立即导致求值，使 promise 消失。稍后，您将了解到 quosures，它们可以将 promises 转换为R对象，您可以轻松检查表达式和环境。\n\n\n::: {.callout-tip title=\"To be continued\"}\n- <https://adv-r.hadley.nz/functions.html#fun-dot-dot-dot>\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

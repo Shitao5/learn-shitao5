@@ -186,9 +186,15 @@ All `Learner` objects include the following metadata, which can be seen in the o
 
 ```{r}
 # load mtcars task
-tsk_mtcars = tsk("mtcars", store_backends = TRUE)
+tsk_mtcars = tsk("mtcars")
+```
+
+```{r}
 # load a regression tree
 lrn_rpart = lrn("regr.rpart")
+```
+
+```{r}
 # pass the task to the learner via $train()
 lrn_rpart$train(tsk_mtcars)
 ```
@@ -253,6 +259,7 @@ lrn_rpart$param_set$values
 ```
 
 ```{r}
+#| eval: false
 # now with depth 2
 lrn_rpart$train(tsk("mtcars"))$model
 ```
