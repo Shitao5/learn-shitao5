@@ -1,0 +1,46 @@
+---
+title: "数据挖掘"
+date: "2023-09-01"
+# date-modified: "2023-09-01"
+image: "cover.jpg"
+categories: 
+  - Data Science
+---
+
+```{r}
+#| include: false
+1 + 1
+```
+
+::: {.callout-note title='Progress'}
+`r stfun::progress(25, 493)`
+:::
+
+::: {.callout-tip title="Learning Source"}
+- Han J, Kamber M, Pei J. 数据挖掘：概念与技术[M]. 范明, 孟小峰译. 3 版. 机械工业出版社, 2012.
+:::
+
+# 引论
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
