@@ -18,23 +18,28 @@ $font-family-english: "Merriweather", serif;
 
 /*-- scss:rules --*/
 
+body {
+  font-family: $font-family-default;
+
+  &.chinese {
+    font-family: $font-family-chinese;
+  }
+
+  &.english {
+    font-family: $font-family-english;
+  }
+
+  // 修改blockquote部分的字体为正常（取消斜体）
+  blockquote {
+    font-family: $font-family-default;
+    font-style: normal;
+  }
+}
+
 figure {
   text-align: center;
 
   figcaption {
     text-align: center;
-  }
-
-  // 设置默认字体，让它在选择器中不再影响中文和英文的字体设置
-  font-family: $font-family-default;
-
-  // 将中文字体应用于图像说明和其标题
-  &.chinese {
-    font-family: $font-family-chinese;
-  }
-
-  // 将英文字体应用于图像说明和其标题
-  &.english {
-    font-family: $font-family-english;
   }
 }
