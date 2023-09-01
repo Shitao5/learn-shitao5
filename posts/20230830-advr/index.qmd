@@ -116,9 +116,11 @@ Only one environment doesn’t have a parent: the **empty** environment.
 
 The immediate parent of the global environment is the last package you attached, the parent of that package is the second to last package you attached, …
 
+# Conditions
 
+Every condition has default behaviour: errors stop execution and return to the top level, warnings are captured and displayed in aggregate, and messages are immediately displayed. Condition **handlers** allow us to temporarily override or supplement the default behaviour.
 
-
+> 每个条件都有默认行为：错误会停止执行并返回到顶层，警告会被捕获并按聚合方式显示，消息会立即显示。条件处理程序允许我们临时覆盖或补充默认行为。
 
 
 
@@ -171,5 +173,5 @@ The immediate parent of the global environment is the last package you attached,
 
 
 ::: {.callout-tip title="To be continued"}
-- <https://adv-r.hadley.nz/environments.html#super-assignment-->
+- <https://adv-r.hadley.nz/conditions.html#handling-conditions>
 :::

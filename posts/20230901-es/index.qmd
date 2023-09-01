@@ -1,0 +1,200 @@
+---
+title: "Elasticsearch 教程"
+date: "2023-09-01"
+# date-modified: "2023-09-01"
+image: "cover.jpg"
+categories: 
+  - ES
+---
+
+```{r}
+#| include: false
+1 + 1
+```
+
+::: {.callout-note title='Progress'}
+`r stfun::progress(8, 25)`
+:::
+
+::: {.callout-tip title="Learning Source"}
+- <https://www.tizi365.com/archives/590.html>
+:::
+
+# Elasticseach {-}
+
+# 简介
+
+- Elasticsearch 是一个分布式、RESTful 风格的搜索和数据分析引擎, 国内简称ES，Elasticsearch是用java开发的，底层基于Lucene, Lucene是一种全文检索的搜索库，直接使用Lucene还是比较麻烦的，Elasticsearch在Lucene的基础上开发了一个强大的搜索引擎。
+
+- ELK代表了Elasticsearch + Logstash + Kibana 三套软件，他们的作用如下：
+    - Elasticsearch：前面简介提到过，解决海量数据搜索问题。
+    - Logstash：解决数据同步问题，因为我们数据一般存储在Mysql之类的数据库中，需要将数据导入到ES中，Logstash就支持数据同步、数据过滤、转换功能。
+    - Kibana：Elasticsearch数据可视化支持，例如：通过各种图表展示ES的查询结果，也可以在Kibana通过ES查询语句分析数据，起到类似ES Web后台的作用。
+
+# 存储结构
+
+::: {.callout-warning}
+MYSQL 是关系数据库，Elasticsearch是NOSQL类型的数据库，虽然他们都是数据库，但是他们定位不一样，也不是同一类型的数据库，拿来做对比，是因为一方面对MYSQL比较熟悉，另外从使用角度ES的存储结构跟MYSQL比较相似。
+:::
+
+- 在Elasticsearch中**索引**（index）类似mysql的表，代表**文档**（Document）数据的集合，文档指的是ES中存储的一条数据。
+
+- Elasticsearch是面向文档的数据库，文档是最基本的存储单元，文档类似mysql表中的一行数据。简单的说在ES中，文档指的就是一条JSON数据。Elasticsearch中文档使用json格式存储，因此存储上比Mysql要灵活的多，Elasticsearch支持任意格式的json数据。
+
+- 文档中的任何json字段都可以作为查询条件。文档的json格式没有严格限制，可以随意增加、减少字段，甚至每一个文档的格式都不一样也可以。
+
+- 文档由多个json字段（Field）组成， 这里的字段类似mysql中表的字段。当然Elasticsearch中字段也有类型的，下面是常用的字段类型:
+    - 数值类型（包括: long、integer、short、byte、double、float）
+    - text：支持全文搜索
+    - keyword：不支持全文搜索，例如：email、电话这些数据，作为一个整体进行匹配就可以，不需要分词处理。
+    - date：日期类型
+    - boolean
+
+- Elasticsearch的mapping（映射）类似mysql中的表结构定义，每个索引都有一个映射规则，我们可以通过定义索引的映射规则，提前定义好文档的json结构和字段类型，如果没有定义索引的映射规则，Elasticsearch会在写入数据的时候，根据我们写入的数据字段推测出对应的字段类型，相当于自动定义索引的映射规则。
+
+| Elasticsearch存储结构 | MYSQL存储结构 |
+| :-------------------: | :-----------: |
+| index（索引）         | 表            |
+| document（文档）      | 行，一行数据  |
+| Field（字段）         | 表字段        |
+| mapping （映射）      | 表结构定义    |
+
+: 类比MYSQL存储结构 {#tbl-es_mysql}
+
+# 文档 CRUD
+
+- 文档元数据，指的是插入JSON文档的时候，Elasticsearch为这条数据，自动生成的系统字段。元数据的字段名都是以下划线开头的。常见的元数据如下：
+    - _index：代表当前JSON文档所属的索引名字
+    - _type：代表当前JSON文档所属的类型，虽然新版ES废弃了type的用法，但是元数据还是可以看到。
+    - _id：文档唯一Id, 如果我们没有为文档指定id，系统会自动生成
+    - _source：代表我们插入进去的JSON数据
+    - _version：文档的版本号，每修改一次文档数据，字段就会加1， 这个字段新版的ES已经不使用了
+    - _seq_no：文档的版本号, 替代老的_version字段
+    - _primary_term：文档所在主分区，这个可以跟_seq_no字段搭配实现乐观锁。
+
+- 在Elasticsearch插入一个JSON文档，又叫**索引文档**， 注意这里的索引跟前面提到的文档所属的索引名，不是一回事，很晕吧，其实主要翻译问题，我们将数据插入到ES的过程，其实就是创建索引的过程，所以插入文档，也叫做索引文档，这里索引是动词， 而文档属于哪个索引（index），这里的索引代表一个分类，有数据库的概念，是个名词。搞不清楚也没关系，知道索引文档的意思，其实就是往ES插入数据就行。
+
+# 文档类型定义
+
+- 精确值通常指的就是数值类型、时间、布尔值、字符串的keyword类型，这些不可分割的数据类型，精确值搜索效率比较高，精确值匹配类似MYSQL中根据字段搜索，例如：拿一个手机号去搜索数据，对于每一个文档的手机号字段，要么相等，要么不等，不会做别的计算。
+
+- 全文类型，指的就是text类型，会涉及分词处理，存储到ES中的数据不是原始数据，是一个个关键词。例如：我们有一个title字段，数据类型是text，我们插入"上海复旦大学"这个字符串，经过分词处理，可能变成："上海"、"复旦大学"、"大学" 这些关键词，然后根据这些关键词建倒排索引。
+
+- 查看索引映射规则：
+
+    ```json
+    GET /order/_mapping
+    ```
+
+# 查询 {-}
+
+# 基本语法结构
+
+```json
+GET /{索引名}/_search
+{
+	"from" : 0,  // 返回搜索结果的开始位置
+  	"size" : 10, // 分页大小，一次返回多少数据
+  	"_source" :[ ...需要返回的字段数组... ],
+	"query" : { ...query子句... },
+	"aggs" : { ..aggs子句..  },
+	"sort" : { ..sort子句..  }
+}
+```
+
+- query子句主要用来编写类似SQL的Where语句，支持布尔查询（and/or）、IN、全文搜索、模糊匹配、范围查询（大于小于）。
+
+- aggs子句，主要用来编写统计分析语句，类似SQL的group by语句。
+
+- sort子句，用来设置排序条件，类似SQL的order by语句。
+
+- ES查询的分页主要通过from和size参数设置，类似MYSQL 的limit和offset语句。
+
+- _source用于设置查询结果返回什么字段，类似Select语句后面指定字段。
+
+# query 查询
+
+## 匹配单个字段
+
+```json
+GET /{索引名}/_search
+{
+  "query": {
+    "match": {
+      "{FIELD}": "{TEXT}"
+    }
+  }
+}
+```
+
+如果title字段的数据类型是text类型，搜索关键词会进行分词处理。
+
+## 精确匹配单个字段
+
+如果我们想要类似SQL语句中的等值匹配，不需要进行分词处理，例如：订单号、手机号、时间字段，不需要分值处理，只要精确匹配。通过term实现精确匹配语法：
+
+```json
+GET /{索引名}/_search
+{
+  "query": {
+    "term": {
+      "{FIELD}": "{VALUE}"
+    }
+  }
+}
+```
+
+## 通过terms实现SQL的in语句
+
+如果我们要实现SQL中的in语句，一个字段包含给定数组中的任意一个值就匹配。terms语法：
+
+```json
+GET /order_v2/_search
+{
+  "query": {
+    "terms": {
+      "{FIELD}": [
+        "{VALUE1}",
+        "{VALUE2}"
+      ]
+    }
+  }
+}
+```
+
+## 范围查找
+
+通过range实现范围查询，类似SQL语句中的>, >=, <, <=表达式。range语法：
+
+```json
+GET /{索引名}/_search
+{
+  "query": {
+    "range": {
+      "{FIELD}": {
+        "gte": 10, 
+        "lte": 20
+      }
+    }
+  }
+}
+```
+
+范围参数：
+
+- gt：大于（>）
+- gte：大于且等于（>=）
+- lt：小于（<）
+- lte：小于且等于（<=）
+
+## bool组合查询
+
+
+
+
+
+
+::: {.callout-tip title="To be continued"}
+- <https://www.tizi365.com/archives/631.html>
+:::
+

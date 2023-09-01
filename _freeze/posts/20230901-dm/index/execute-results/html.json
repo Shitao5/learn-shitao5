@@ -1,0 +1,14 @@
+{
+  "hash": "30d2622cf87f1bea3a37913dd660816c",
+  "result": {
+    "markdown": "---\ntitle: \"数据挖掘\"\ndate: \"2023-09-01\"\n# date-modified: \"2023-09-01\"\nimage: \"cover.jpg\"\ncategories: \n  - Data Science\n---\n\n\n\n\n::: {.callout-note title='Progress'}\nLearning Progress: 5.07%.\n:::\n\n::: {.callout-tip title=\"Learning Source\"}\n- Han J, Kamber M, Pei J. 数据挖掘：概念与技术[M]. 范明, 孟小峰译. 3 版. 机械工业出版社, 2012.\n:::\n\n# 引论\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
