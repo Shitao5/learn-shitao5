@@ -1,7 +1,7 @@
 ---
 title: "数据挖掘"
 date: "2023-09-01"
-# date-modified: "2023-09-01"
+date-modified: "2023-09-04"
 image: "cover.jpg"
 categories: 
   - Data Science
@@ -13,7 +13,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(25, 493)`
+`r stfun::progress(33, 493)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -22,7 +22,9 @@ categories:
 
 # 引论
 
+- 为便于决策，数据仓库中的数据围绕主题（如顾客、商品、供应商和活动）组织。数据存储从历史的角度（如过去的 6 ~ 12 个月）提供信息，并且通常是汇总的。
 
+- 通常，数据仓库用称作**数据立方体**（data cube）的多维数据结构建模。其中，每个**维**对应于模式中的一个或一组属性，而每个**单元**存放某种聚集度量值，如 count 或 sum。数据立方体提供数据的多维视图，并允许预计算和快速访问汇总数据。
 
 
 
