@@ -1,7 +1,7 @@
 ---
 title: "Elasticsearch 教程"
 date: "2023-09-01"
-# date-modified: "2023-09-01"
+date-modified: "2023-09-04"
 image: "cover.jpg"
 categories: 
   - ES
@@ -13,7 +13,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(8, 25)`
+`r stfun::progress(13, 25)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -27,8 +27,11 @@ categories:
 - Elasticsearch 是一个分布式、RESTful 风格的搜索和数据分析引擎, 国内简称ES，Elasticsearch是用java开发的，底层基于Lucene, Lucene是一种全文检索的搜索库，直接使用Lucene还是比较麻烦的，Elasticsearch在Lucene的基础上开发了一个强大的搜索引擎。
 
 - ELK代表了Elasticsearch + Logstash + Kibana 三套软件，他们的作用如下：
+
     - Elasticsearch：前面简介提到过，解决海量数据搜索问题。
+    
     - Logstash：解决数据同步问题，因为我们数据一般存储在Mysql之类的数据库中，需要将数据导入到ES中，Logstash就支持数据同步、数据过滤、转换功能。
+    
     - Kibana：Elasticsearch数据可视化支持，例如：通过各种图表展示ES的查询结果，也可以在Kibana通过ES查询语句分析数据，起到类似ES Web后台的作用。
 
 # 存储结构
@@ -44,10 +47,15 @@ MYSQL 是关系数据库，Elasticsearch是NOSQL类型的数据库，虽然他�
 - 文档中的任何json字段都可以作为查询条件。文档的json格式没有严格限制，可以随意增加、减少字段，甚至每一个文档的格式都不一样也可以。
 
 - 文档由多个json字段（Field）组成， 这里的字段类似mysql中表的字段。当然Elasticsearch中字段也有类型的，下面是常用的字段类型:
+
     - 数值类型（包括: long、integer、short、byte、double、float）
+    
     - text：支持全文搜索
+    
     - keyword：不支持全文搜索，例如：email、电话这些数据，作为一个整体进行匹配就可以，不需要分词处理。
+    
     - date：日期类型
+    
     - boolean
 
 - Elasticsearch的mapping（映射）类似mysql中的表结构定义，每个索引都有一个映射规则，我们可以通过定义索引的映射规则，提前定义好文档的json结构和字段类型，如果没有定义索引的映射规则，Elasticsearch会在写入数据的时候，根据我们写入的数据字段推测出对应的字段类型，相当于自动定义索引的映射规则。
@@ -64,12 +72,19 @@ MYSQL 是关系数据库，Elasticsearch是NOSQL类型的数据库，虽然他�
 # 文档 CRUD
 
 - 文档元数据，指的是插入JSON文档的时候，Elasticsearch为这条数据，自动生成的系统字段。元数据的字段名都是以下划线开头的。常见的元数据如下：
+
     - _index：代表当前JSON文档所属的索引名字
+    
     - _type：代表当前JSON文档所属的类型，虽然新版ES废弃了type的用法，但是元数据还是可以看到。
+    
     - _id：文档唯一Id, 如果我们没有为文档指定id，系统会自动生成
+    
     - _source：代表我们插入进去的JSON数据
+    
     - _version：文档的版本号，每修改一次文档数据，字段就会加1， 这个字段新版的ES已经不使用了
+    
     - _seq_no：文档的版本号, 替代老的_version字段
+    
     - _primary_term：文档所在主分区，这个可以跟_seq_no字段搭配实现乐观锁。
 
 - 在Elasticsearch插入一个JSON文档，又叫**索引文档**， 注意这里的索引跟前面提到的文档所属的索引名，不是一回事，很晕吧，其实主要翻译问题，我们将数据插入到ES的过程，其实就是创建索引的过程，所以插入文档，也叫做索引文档，这里索引是动词， 而文档属于哪个索引（index），这里的索引代表一个分类，有数据库的概念，是个名词。搞不清楚也没关系，知道索引文档的意思，其实就是往ES插入数据就行。
@@ -183,11 +198,261 @@ GET /{索引名}/_search
 范围参数：
 
 - gt：大于（>）
+
 - gte：大于且等于（>=）
+
 - lt：小于（<）
+
 - lte：小于且等于（<=）
 
 ## bool组合查询
+
+```json
+GET /{索引名}/_search
+{
+  "query": {
+    "bool": { // bool查询
+      "must": [], // must条件，类似SQL中的and, 代表必须匹配条件
+      "must_not": [], // must_not条件，跟must相反，必须不匹配条件
+      "should": [] // should条件，类似SQL中or, 代表匹配其中一个条件
+    }
+  }
+}
+```
+可以任意选择must、must_not和should条件的参数都是一个数组，意味着他们都支持设置多个条件。
+
+# 全文搜索
+
+ES通过分词处理、相关度计算解决不同文章相关度对比问题。ES内置了一些相关度算法，例如：TF/IDF算法，大体上思想就是，如果一个关键词在一篇文章出现的频率高，并且在其他文章中出现的少，那说明这个关键词与这篇文章的相关度很高。
+
+分词就是为了提取搜索关键词，理解搜索的意图，我们平时在百度搜索内容的时候，输入的内容可能很长，但不是每个字都对搜索有帮助，所以通过分词算法，我们输入的搜索关键词，会进一步分解成多个关键词。
+
+在ES中测试分词效果：
+
+```json
+GET /_analyze
+{
+  "text": "需要分词的内容",
+  "analyzer": "分词器"
+}
+```
+
+目前中文分词器比较常用的有：smartcn和ik两种。smartcn是目前ES官方推荐的中文分词插件，不过目前不支持自定义词库；ik支持自定义扩展词库。
+
+# 排序
+
+ES的默认排序是根据相关性分数排序，如果我们想根据查询结果中的指定字段排序，需要使用sort Processors处理。
+
+```json
+GET /{索引名}/_search
+{
+  "query": {
+    ...查询条件....
+  },
+  "sort": [
+    {
+      "{Field1}": { // 排序字段1
+        "order": "desc" // 排序方向，asc或者desc, 升序和降序
+      }
+    },
+    {
+      "{Field2}": { // 排序字段2
+        "order": "desc" // 排序方向，asc或者desc, 升序和降序
+      }
+    }
+    ....多个排序字段.....
+  ]
+}
+```
+
+# 聚合分析 {-}
+
+# 统计分析概念
+
+ES聚合查询类似SQL的GROUP by，一般统计分析主要分为两个步骤：
+
+- 分组
+
+- 组内聚合
+
+## 核心概念
+
+满足特定条件的文档的集合，叫做**桶**。桶的就是一组数据的集合，对数据分组后，得到一组组的数据，就是一个个的桶。
+
+ES中桶聚合，指的就是先对数据进行分组，ES支持多种分组条件，例如：支持类似SQL的group by根据字段分组，当然ES比SQL更强大，支持更多的分组条件，以满足各种统计需求。
+
+::: {.callout-note}
+桶等同于组，分桶和分组是一个意思，ES使用桶代表一组相同特征的数据。
+:::
+
+## ES聚合查询语法
+
+```json
+{
+  "aggregations" : {
+    "<aggregation_name>" : {
+        "<aggregation_type>" : {
+            <aggregation_body>
+        }
+        [,"aggregations" : { [<sub_aggregation>]+ } ]? // 嵌套聚合查询，支持多层嵌套
+    }
+    [,"<aggregation_name_2>" : { ... } ]* // 多个聚合查询，每个聚合查询取不同的名字
+  }
+}
+```
+
+说明：
+
+- aggregations：代表聚合查询语句，可以简写为aggs
+
+- <aggregation_name>：代表一个聚合计算的名字，可以随意命名，因为ES支持一次进行多次统计分析查询，后面需要通过这个名字在查询结果中找到我们想要的计算结果。
+
+- <aggregation_type>：聚合类型，代表我们想要怎么统计数据，主要有两大类聚合类型，桶聚合和指标聚合，这两类聚合又包括多种聚合类型，例如：指标聚合：sum、avg， 桶聚合：terms、Date histogram等等。
+
+- <aggregation_body>：聚合类型的参数，选择不同的聚合类型，有不同的参数。
+
+- aggregation_name_2：代表其他聚合计算的名字，意思就是可以一次进行多种类型的统计。
+
+例子：
+
+```json
+GET /order/_search
+{
+    "size" : 0, // 设置size=0的意思就是，仅返回聚合查询结果，不返回普通query查询结果。
+    "aggs" : { // 聚合查询语句的简写
+        "popular_colors" : { // 给聚合查询取个名字，叫popular_colors
+            "terms" : { // 聚合类型为，terms，terms是桶聚合的一种，类似SQL的group by的作用，根据字段分组，相同字段值的文档分为一组。
+              "field" : "color" // terms聚合类型的参数，这里需要设置分组的字段为color，根据color分组
+            }
+        }
+    }
+}
+```
+
+等价SQL如下：
+
+```sql
+SELECT COUNT(color) 
+FROM order
+GROUP BY color
+```
+
+# 指标聚合
+
+## 统计函数
+
+ES指标聚合，就是类似SQL的统计函数，指标聚合可以单独使用，也可以跟桶聚合一起使用。
+
+常用的统计函数如下：
+
+- Value Count：类似sql的count函数，统计总数
+
+    ```json
+    GET /sales/_search?size=0
+    {
+      "aggs": {
+        "types_count": { // 聚合查询的名字，随便取个名字
+          "value_count": { // 聚合类型为：value_count
+            "field": "type" // 计算type这个字段值的总数
+          }
+        }
+      }
+    }
+    ```
+
+- Cardinality：类似SQL的count(DISTINCT 字段)，统计不重复的数据总数
+
+    ```json
+    POST /sales/_search?size=0
+    {
+        "aggs" : {
+            "type_count" : { // 聚合查询的名字，随便取一个
+                "cardinality" : { // 聚合查询类型为：cardinality
+                    "field" : "type" // 根据type这个字段统计文档总数
+                }
+            }
+        }
+    }
+    ```
+
+
+- Avg：求平均值
+
+    ```json
+    POST /exams/_search?size=0
+    {
+      "aggs": {
+        "avg_grade": { // 聚合查询名字，随便取一个名字
+          "avg": { // 聚合查询类型为: avg
+            "field": "grade" // 统计grade字段值的平均值
+          }
+        }
+      }
+    }
+    ```
+
+- Sum：求和（同Avg）
+
+- Max：求最大值（同Avg）
+
+- Min：求最小值（同Avg）
+
+## 综合例子
+
+实际应用中经常先通过query查询，搜索索引中的数据，然后对query查询的结果进行统计分析。
+
+```json
+GET /sales/_search
+{
+  "size": 0, // size = 0,代表不想返回query查询结果，只要统计结果
+  "query": { // 设置query查询条件，后面的aggs统计，仅对query查询结果进行统计
+    "constant_score": {
+      "filter": {
+        "match": {
+          "type": "hat"
+        }
+      }
+    }
+  },
+  "aggs": { // 统计query查询结果, 默认情况如果不写query语句，则代表统计所有数据
+    "hat_prices": { // 聚合查询名字，计算price总和
+      "sum": {
+        "field": "price"
+      }
+    },
+    "min_price": { // 聚合查询名字，计算price最小值
+      "min": { 
+        "field": "price" 
+      }
+    },
+    "max_price": { // 聚合查询名字，计算price最大值
+      "max": { 
+        "field": "price"
+      }
+    }
+  }
+}
+```
+
+# 分组统计
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -195,6 +460,6 @@ GET /{索引名}/_search
 
 
 ::: {.callout-tip title="To be continued"}
-- <https://www.tizi365.com/archives/631.html>
+- <https://www.tizi365.com/archives/646.html>
 :::
 
