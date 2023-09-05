@@ -1,7 +1,7 @@
 ---
 title: "Advanced R"
 date: "2023-08-30"
-date-modified: "2023-08-31"
+date-modified: "2023-09-05"
 image: "cover.png"
 categories: 
   - R
@@ -13,11 +13,12 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(8.2, 25)`
+`r stfun::progress(9.4, 25)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
 - <https://adv-r.hadley.nz/index.html>
+- 中文翻译由 ChatGPT 3.5 提供
 :::
 
 # Foundations {-}
@@ -37,9 +38,12 @@ R’s lexical scoping follows four primary rules:
 >
 > R的词法作用域遵循四条主要规则：
 >
-> - 名称屏蔽（Name masking）  
+> - 名称屏蔽（Name masking） 
+>
 > - 函数与变量  
+>
 > - 全新的起点  
+>
 > - 动态查找
 
 Lexical scoping determines where, but not when to look for values. R looks for values when the function is run, not when the function is created. Together, these two properties tell us that the output of a function can differ depending on the objects outside the function’s environment.
@@ -122,33 +126,97 @@ Every condition has default behaviour: errors stop execution and return to the t
 
 > 每个条件都有默认行为：错误会停止执行并返回到顶层，警告会被捕获并按聚合方式显示，消息会立即显示。条件处理程序允许我们临时覆盖或补充默认行为。
 
+`tryCatch()` registers exiting handlers, and is typically used to handle error conditions. It allows you to override the default error behaviour. For example, the following code will return `NA` instead of throwing an error:
+
+```{r}
+f3 <- function(x) {
+  tryCatch(
+    error = function(cnd) NA,
+    log(x)
+  )
+}
+
+f3(3)
+f3("x")
+```
+
+The handlers set up by `tryCatch()` are called **exiting** handlers because after the condition is signalled, control passes to the handler and never returns to the original code, effectively meaning that the code exits.
+
+> 由 `tryCatch()` 设置的处理程序被称为**退出处理程序**，因为在条件被发出后，控制权传递给处理程序，不再返回到原始代码，实际上意味着代码退出执行。
 
 
+::: {.callout-warning}
+这章有点看不懂，暂缓。
+:::
+
+# Functional Progarmming {-}
+
+```{r}
+#| message: false
+library(purrr)
+```
 
 
+A **functional** is a function that takes a function as an input and returns a vector as output. Here's a simple functional: it calls the function provided as input with 1000 random uniform numbers. 
 
+> 一个**函数式**是一个接受函数作为输入并返回向量作为输出的函数。这是一个简单的函数式示例：它使用 1000 个随机均匀数调用提供的输入函数。
 
+```{r}
+randomise <- function(f) f(runif(1e3))
+randomise(mean)
+randomise(mean)
+randomise(sum)
+```
 
+The map functions also have shortcuts for extracting elements from a vector, powered by  `purrr::pluck()`. You can use a character vector to select elements by name, an integer vector to select by position, or a list to select by both name and position. These are very useful for working with deeply nested lists, which often arise when working with JSON. 
 
+> map 函数还具有从向量中提取元素的快捷方式，由 `purrr::pluck()` 提供支持。你可以使用字符向量按名称选择元素，使用整数向量按位置选择元素，或者使用列表同时按名称和位置选择元素。这在处理深层嵌套的列表时非常有用，这种情况在处理 JSON 数据时经常出现。
 
+```{r}
+#| error: true
+x <- list(
+  list(-1, x = 1, y = c(2), z = "a"),
+  list(-2, x = 4, y = c(5, 6), z = "b"),
+  list(-3, x = 8, y = c(9, 10, 11))
+)
 
+# Select by name
+map_dbl(x, "x")
 
+# Or by position
+map_dbl(x, 1)
 
+# Or both
+map_dbl(x, list("y", 1))
 
+# You'll get an error if a component doesn't exist
+map_chr(x, "z")
 
+# Unless you supply a .default value
+map_chr(x, "z", .default = NA)
+```
 
+Note there’s a subtle difference between placing extra arguments inside an anonymous function compared with passing them to `map()`. Putting them in an anonymous function means that they will be evaluated every time `f()` is executed, not just once when you call `map()`. This is easiest to see if we make the additional argument random:
 
+> 需要注意的是，在匿名函数中放置额外的参数与将它们传递给 `map()` 之间存在微妙的差异。将它们放在匿名函数中意味着它们将在每次执行 `f()` 时被评估，而不仅仅是在调用 `map()` 时评估一次。如果我们将额外的参数设置为随机值，这一点将变得最容易理解：
 
+```{r}
+plus <- function(x, y) round(x + y, 2)
 
+x <- rep(0, 4)
+map_dbl(x, plus, runif(1))
+map_dbl(x, ~ plus(.x, runif(1)))
+```
 
+```{r}
+# Purrr style
+by_cyl <- split(mtcars, mtcars$cyl)
 
-
-
-
-
-
-
-
+by_cyl %>% 
+  map(~ lm(mpg ~ wt, data = .x)) %>% 
+  map(coef) %>% 
+  map_dbl(2)
+```
 
 
 
@@ -173,5 +241,5 @@ Every condition has default behaviour: errors stop execution and return to the t
 
 
 ::: {.callout-tip title="To be continued"}
-- <https://adv-r.hadley.nz/conditions.html#handling-conditions>
+- <https://adv-r.hadley.nz/functionals.html#map-variants>
 :::

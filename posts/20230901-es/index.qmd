@@ -1,7 +1,7 @@
 ---
 title: "Elasticsearch 教程"
 date: "2023-09-01"
-date-modified: "2023-09-04"
+date-modified: "2023-09-05"
 image: "cover.jpg"
 categories: 
   - ES
@@ -13,7 +13,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(13, 25)`
+`r stfun::progress(25, 25)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -269,7 +269,7 @@ GET /{索引名}/_search
 
 # 统计分析概念
 
-ES聚合查询类似SQL的GROUP by，一般统计分析主要分为两个步骤：
+ES聚合查询类似SQL的GROUP BY，一般统计分析主要分为两个步骤：
 
 - 分组
 
@@ -279,7 +279,7 @@ ES聚合查询类似SQL的GROUP by，一般统计分析主要分为两个步骤�
 
 满足特定条件的文档的集合，叫做**桶**。桶的就是一组数据的集合，对数据分组后，得到一组组的数据，就是一个个的桶。
 
-ES中桶聚合，指的就是先对数据进行分组，ES支持多种分组条件，例如：支持类似SQL的group by根据字段分组，当然ES比SQL更强大，支持更多的分组条件，以满足各种统计需求。
+ES中桶聚合，指的就是先对数据进行分组，ES支持多种分组条件，例如：支持类似SQL的GROUP BY根据字段分组，当然ES比SQL更强大，支持更多的分组条件，以满足各种统计需求。
 
 ::: {.callout-note}
 桶等同于组，分桶和分组是一个意思，ES使用桶代表一组相同特征的数据。
@@ -305,11 +305,11 @@ ES中桶聚合，指的就是先对数据进行分组，ES支持多种分组条�
 
 - aggregations：代表聚合查询语句，可以简写为aggs
 
-- <aggregation_name>：代表一个聚合计算的名字，可以随意命名，因为ES支持一次进行多次统计分析查询，后面需要通过这个名字在查询结果中找到我们想要的计算结果。
+- \<aggregation_name\>：代表一个聚合计算的名字，可以随意命名，因为ES支持一次进行多次统计分析查询，后面需要通过这个名字在查询结果中找到我们想要的计算结果。
 
-- <aggregation_type>：聚合类型，代表我们想要怎么统计数据，主要有两大类聚合类型，桶聚合和指标聚合，这两类聚合又包括多种聚合类型，例如：指标聚合：sum、avg， 桶聚合：terms、Date histogram等等。
+- \<aggregation_type\>：聚合类型，代表我们想要怎么统计数据，主要有两大类聚合类型，桶聚合和指标聚合，这两类聚合又包括多种聚合类型，例如：指标聚合：sum、avg， 桶聚合：terms、Date histogram等等。
 
-- <aggregation_body>：聚合类型的参数，选择不同的聚合类型，有不同的参数。
+- \<aggregation_body\>：聚合类型的参数，选择不同的聚合类型，有不同的参数。
 
 - aggregation_name_2：代表其他聚合计算的名字，意思就是可以一次进行多种类型的统计。
 
@@ -436,30 +436,252 @@ GET /sales/_search
 
 # 分组统计
 
+Elasticsearch桶聚合，目的就是数据分组，先将数据按指定的条件分成多个组，然后对每一个组进行统计。 组的概念跟桶是等同的，在ES中统一使用桶（bucket）这个术语。
 
+ES桶聚合的作用跟SQL的group by的作用是一样的，区别是ES支持更加强大的数据分组能力，SQL只能根据字段的唯一值进行分组，分组的数量跟字段的唯一值的数量相等，例如: group by 店铺id， 去掉重复的店铺ID后，有多少个店铺就有多少个分组。
 
+## 聚合类型
 
+ES常用的桶聚合如下：
 
+- Terms聚合：类似SQL的group by，根据字段唯一值分组
 
+    ```json
+    GET /order/_search?size=0
+    {
+      "aggs": {
+        "shop": { // 聚合查询的名字，随便取个名字
+          "terms": { // 聚合类型为: terms
+            "field": "shop_id" // 根据shop_id字段值，分桶
+          }
+        }
+      }
+    }
+    ```
 
+- Histogram聚合：根据数值间隔分组，例如: 价格按100间隔分组，0、100、200、300等等
 
+    ```json
+    POST /sales/_search?size=0
+    {
+        "aggs" : {
+            "prices" : { // 聚合查询名字，随便取一个
+                "histogram" : { // 聚合类型为：histogram
+                    "field" : "price", // 根据price字段分桶
+                    "interval" : 50 // 分桶的间隔为50，意思就是price字段值按50间隔分组
+                }
+            }
+        }
+    }
+    ```
 
+- Date histogram聚合：根据时间间隔分组，例如：按月、按天、按小时分组
 
+    ```json
+    POST /sales/_search?size=0
+    {
+        "aggs" : {
+            "sales_over_time" : { // 聚合查询名字，随便取一个
+                "date_histogram" : { // 聚合类型为: date_histogram
+                    "field" : "date", // 根据date字段分组
+                    "calendar_interval" : "month", //     分组间隔：month代表每月、支持minute（每分钟）、hour（每小时）、day（每天）、week（每周）、year（每年）
+                    "format" : "yyyy-MM-dd" // 设置返回结果中桶key的时间格式
+                }
+            }
+        }
+    }
+    ```
 
+- Range聚合：按数值范围分组，例如: 0-150一组，150-200一组，200-500一组。
 
+    ```json
+    GET /_search
+    {
+       "aggs" : {
+            "price_ranges" : { // 聚合查询名字，随便取一个
+               "range" : { // 聚合类型为： range
+                    "field" : "price", // 根据price字段分桶
+                    "ranges" : [ // 范围配置
+                       { "to" : 100.0 }, // 意思就是 price <= 100的文档归类到一个桶
+                        { "from" : 100.0, "to" : 200.0 }, // price>100 and price<200的文档归类到一个桶
+                        { "from" : 200.0 } // price>200的文档归类到一个桶
+                   ]
+               }
+            }
+        }
+    }
+    ```
 
+## 综合例子
 
+```json
+GET /cars/_search
+{
+    "size": 0, // size=0代表不需要返回query查询结果，仅仅返回aggs统计结果
+    "query" : { // 设置查询语句，先赛选文档
+        "match" : {
+            "make" : "ford"
+        }
+    },
+    "aggs" : { // 然后对query搜索的结果，进行统计
+        "colors" : { // 聚合查询名字
+            "terms" : { // 聚合类型为：terms 先分桶
+              "field" : "color"
+            },
+            "aggs": { // 通过嵌套聚合查询，设置桶内指标聚合条件
+              "avg_price": { // 聚合查询名字
+                "avg": { // 聚合类型为: avg指标聚合
+                  "field": "price" // 根据price字段计算平均值
+                }
+              },
+              "sum_price": { // 聚合查询名字
+                "sum": { // 聚合类型为: sum指标聚合
+                  "field": "price" // 根据price字段求和
+                }
+              }
+            }
+        }
+    }
+}
+```
 
+# 多桶排序
 
+类似terms、histogram、date_histogram这类桶聚合都会动态生成多个桶，如果生成的桶特别多，我们如何确定这些桶的排序顺序，如何限制返回桶的数量。
 
+默认情况，ES会根据doc_count文档总数，降序排序。
 
+ES桶聚合支持两种方式排序：
 
+- 内置排序
 
+    - _count：按文档数排序。对 terms 、 histogram 、 date_histogram 有效
+    
+    - _term：按词项的字符串值的字母顺序排序。只在 terms 内使用
+    
+    - _key：按每个桶的键值数值排序, 仅对 histogram 和 date_histogram 有效
+    
+    例子：
+    
+    ```json
+    GET /cars/_search
+    {
+       "size" : 0,
+       "aggs" : {
+            "colors" : { // 聚合查询名字，随便取一个
+                "terms" : { // 聚合类型为: terms
+                  "field" : "color", 
+                  "order": { // 设置排序参数
+                   "_count" : "asc"  // 根据_count排序，asc升序，desc降序
+                  }
+               }
+            }
+       }
+    }
+    ```
 
+- 按度量指标排序
 
+    通常情况下，我们根据桶聚合分桶后，都会对桶内进行多个维度的指标聚合，所以我们也可以根据桶内指标聚合的结果进行排序。
 
+    ```json
+    GET /cars/_search
+    {
+       "size" : 0,
+       "aggs" : {
+           "colors" : { // 聚合查询名字
+                "terms" : { // 聚合类型: terms，先分桶
+                  "field" : "color", // 分桶字段为color
+                  "order": { // 设置排序参数
+                    "avg_price" : "asc"  // 根据avg_price指标聚合结果，升序排序。
+                  }
+                },
+                "aggs": { // 嵌套聚合查询，设置桶内聚合指标
+                    "avg_price": { // 聚合查询名字，前面排序引用的就是这个名字
+                        "avg": {"field": "price"} // 计算price字段平均值
+                    }
+                }
+            }
+        }
+    }
+    ```
 
-::: {.callout-tip title="To be continued"}
-- <https://www.tizi365.com/archives/646.html>
-:::
+如果分桶的数量太多，可以通过给桶聚合增加一个size参数限制返回桶的数量：
 
+```json
+GET /_search
+{
+    "aggs" : {
+        "products" : { // 聚合查询名字
+            "terms" : { // 聚合类型为: terms
+                "field" : "product", // 根据product字段分桶
+                "size" : 5 // 限制最多返回5个桶
+            }
+        }
+    }
+}
+```
+
+# SQL {-}
+
+# SQL 简介
+
+我们可以直接通过REST API执行SQL语句，语法格式如下：
+
+```json
+POST /_sql?format=txt
+{
+    "query": "这里书写SQL语句"
+}
+```
+
+# SQL 语法
+
+ES 支持的 SQL 命令：
+
+- 查询ES索引的字段和类型
+
+    ```json
+    POST /_sql?format=txt
+    {
+       "query": "SHOW COLUMNS FROM library"
+    }
+    ```
+
+- 将ES中所有的索引都列出来
+
+    ```json
+    POST /_sql?format=txt
+    {
+        "query": "SHOW TABLES"
+    }
+    ```
+
+- 展示ES支持的SQL函数有哪些
+
+    ```json
+    POST /_sql?format=txt
+    {
+        "query": "SHOW FUNCTIONS"
+    }
+    ```
+
+# SQL 全文搜索
+
+ES SQL语法虽然支持like语句，但是like并不是使用全文搜索算法，ES SQL语句中主要通过MATCH函数实现全文搜索。
+
+```json
+POST /_sql?format=txt
+{
+    "query": "SELECT author, name FROM library WHERE MATCH(author, 'frank')"
+}
+```
+
+通过SCORE()函数实现相关度排序：
+
+```json
+POST /_sql?format=txt
+{
+    "query": "SELECT author, name FROM library WHERE MATCH(author, 'frank') ORDER BY SCORE()"
+}
+```
