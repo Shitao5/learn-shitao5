@@ -1,0 +1,222 @@
+---
+title: "mlr3verse 技术手册"
+date: "2023-09-07"
+# date-modified: "2023-09-07"
+image: "cover.jpg"
+categories: 
+  - Machine Learning
+  - R
+  - mlr3
+---
+
+::: {.callout-note title='Progress'}
+`r stfun::progress(18, 137)`
+:::
+
+::: {.callout-tip title="Learning Source"}
+- 张敬信老师 QQ 群（222427909）文件
+- <https://github.com/zhjx19/RConf15/tree/main>
+:::
+
+```{r}
+#| message: false
+library(mlr3verse)
+```
+
+# 基础知识
+
+## 任务：封装数据
+
+任务是表格数据的封装，自变量为特征，因变量为目标或结果变量。
+
+```{r}
+tsks() # 查看所有自带任务
+```
+
+```{r}
+# 创建任务
+dat = tsk("german_credit")$data() # 提取数据
+task = as_task_classif(dat, target = "credit_risk")
+task
+```
+
+```{r}
+# 选择特征
+task$select(cols = setdiff(task$feature_names, "telephone"))
+task
+```
+
+```{r}
+# 划分训练集、测试集
+set.seed(1)
+split = partition(task, ratio = .7)
+```
+
+`stratify = TRUE` 默认按目标变量分层，得到训练集和测试集的索引（行号）。
+
+## 学习器：封装算法
+
+```{r}
+lrns()  # 查看所有自带学习器名字
+```
+
+```{r}
+# 选择随机森林分类学习器
+learner = lrn("classif.ranger", num.trees = 100, predict_type = "prob")
+learner
+```
+
+学习器 `$model` 属性为 `NULL`，用 `$train()` 方法在训练集上训练模型，模型结果存入 `$model`，再用 `predict()` 方法在测试集上做预测，得到结果是 `Prediction` 对象。
+
+```{r}
+learner$train(task, row_ids = split$train)
+learner$model
+```
+
+```{r}
+#| eval: false
+prediction = learner$predict(task, row_ids = split$test)
+prediction
+```
+
+## 性能评估
+
+```{r}
+msrs() # 查看所有支持的性能度量指标
+```
+
+用预测对象的 `$score()` 方法，计算该度量指标的得分：
+
+```{r}
+#| eval: false
+prediction$score(msr("classif.acc"))  # 准确率
+```
+
+```{r}
+#| eval: false
+# 绘制 ROC 曲线
+library(precrec)
+autoplot(prediction, type = "roc")
+```
+
+```{r}
+#| eval: false
+prediction$score(msr("classif.auc"))  # auc 面积
+```
+
+## 重抽样
+
+```{r}
+rsmps()  # 查看所有支持的重抽样方法
+```
+
+```{r}
+cv10 = rsmp("cv", folds = 10)  # 10 折交叉验证
+```
+
+### 实例化重抽样对象
+
+```{r}
+cv10$instantiate(task)  # 实例化
+cv10$iters  # 数据副本数
+cv10$train_set(1)  # 第 1 个数据副本的训练集索引
+cv10$test_set(1)   # 第 1 个数据副本的测试集索引
+```
+
+### 使用重抽样
+
+```{r}
+#| message: false
+rr =  resample(task, learner, cv10, store_models = TRUE)
+```
+
+```{r}
+rr$aggregate(msr("classif.acc"))  # 所有重抽样的平均准确率
+```
+
+```{r}
+rr$score(msr("classif.acc"))  # 各个重抽样的平均准确率
+```
+
+```{r}
+#| eval: false
+
+# 查看第 1 个数据副本（第 1 折）上的结果
+rr$resampling$train_set(1)  # 第 1 折的训练集索引
+rr$learners[[1]]$model      # 第 1 折学习器的拟合模型
+rr$predictions()[[1]]       # 第 1 折的预测结果
+```
+
+## 基准测试
+
+基准测试（benchmark）用来比较不同学习器（算法）、在多个任务（数据）和/或不同重抽样策略（多个数据副本）上的平均性能表现。
+
+基准测试时有个关键问题：测试的公平性。即每个算法的每次测试必须在相同的重抽样训练集拟合模型，在相同的重抽样测试集评估性能。这些事情 `beachmark()` 会自动做好。
+
+```{r}
+tasks = tsk("sonar")  # 可以多任务
+learners = lrns(c("classif.rpart", "classif.kknn", "classif.ranger", "classif.svm"),
+                predict_type = "prob")
+design = benchmark_grid(tasks, learners, rsmps("cv", folds = 5))
+design
+```
+
+```{r}
+bmr = benchmark(design)  # 执行基准测试
+bmr$aggregate(list(msr("classif.acc"), msr("classif.auc")))  # 汇总基准测试结果
+```
+
+```{r}
+# 可视化：对比性能
+autoplot(bmr, type = "roc")  # ROC 曲线
+autoplot(bmr, measure = msr("classif.auc"))  # AUC 箱线图
+```
+
+## 可视化
+
+mlr3viz 包定义了 `autoplot()` 函数来用 ggplot2 绘图。通常一个对象有不止一种类型的图，可以通过 `type` 参数来改变绘图。图形使用 viridis 的调色板，外观由 theme 参数控制，默认是 minimal 主题。
+
+### 可视化任务
+
+#### 分类任务
+
+```{r}
+task = tsk("penguins")
+task$select(c("body_mass", "bill_length"))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+::: {.callout-tip title="To be continued"}
+- 分类任务
+:::
+
