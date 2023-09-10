@@ -1,7 +1,7 @@
 ---
 title: "mlr3verse 技术手册"
 date: "2023-09-07"
-date-modified: "2023-09-08"
+date-modified: "2023-09-10"
 image: "cover.jpg"
 categories: 
   - Machine Learning
@@ -10,7 +10,7 @@ categories:
 ---
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(57, 137)`
+`r stfun::progress(70, 137)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -634,21 +634,216 @@ chunks_lrn$train(tsk("iris"))
 
 这多个基学习器可以是同质的，比如都用决策树或都用神经网络，以 Bagging 和 Boosting 模式为代表；也可以是异质的，即采用不同的算法，以 Stacking 模式为代表。
 
+### 装袋法（Bagging）
 
+Bagging 采用的是并行机制，即基学习器的训练之间没有前后顺序可以同时进行。
 
+Bagging 是用“有放回” 抽样（Bootstrap 法）的方式抽取训练集，对于包含 $m$ 个样本的训练集，进
+行 $m$ 次有放回的随机抽样操作，得到样本子集（有重复）中有接近 36.8% 的样本没有被抽到。
 
+按照同样的方式重复进行，就可以采集到 $T$ 个包含 $m$ 个样本的数据副本，从而训练出 $T$ 个基学习器。
 
+最终对这 $T$ 个基学习器的输出进行结合，分类问题就采用“多数决”，回归问题就采用“取平均”。
 
+```{r}
+# 单分支：数据子抽样 + 决策树
+single_path = po("subsample") %>>% lrn("classif.rpart")
+# 复制 10 次得到 10 个分支，再接类平均
+graph_bag = ppl("greplicate", single_path, n = 10) %>>%
+  po("classifavg")
+# 可视化结构关系
+graph_bag$plot()
+```
 
+```{r}
+# 转为图学习器，可与普通学习器一样使用
+baglrn = as_learner(graph_bag)
+baglrn$train(tsk("iris"))
+```
 
+### 提升法（Boosting）
 
+Boosting 采用的是串行机制，即基学习器的训练存在依赖关系，按次序一一进行训练（实现上可以做
+到并行）。
 
+基本思想：基模型的训练集按照某种策略每次都进行一定的转化，对所有基模型预测的结果进行线性合
+成产生最终的预测结果。
 
+从偏差-方差分解来看，Boosting 算法主要关注于降低偏差，每轮的迭代都关注于训练过程中预测错误的样本，将弱学习器提升为强学习器。
 
+### 堆叠法（Stacking）
 
+Stacking 法，采用的是分阶段机制，将若干基模型的输出作为输入，再接一层主学习器，得到最终的预测。
 
+将训练好的所有基模型对训练集进行预测，第 $j$ 个基模型对第 $i$ 个训练样本的预测值将作为新的训练集中第 $i$ 个样本的第 $j$ 个特征值，最后基于新的训练集进行训练。同理，预测的过程也要先经过所有基模型的预测形成新的测试集，最后再对测试集进行预测。
 
+用于堆叠的基模型通常采用不同的模型，作用在相同的训练集上。
 
+为了充分利用数据，Stacking 通常采用 $k$ 折交叉训练法（类似 $k$ 折交叉验证）：每个基学习器分别在各个 $k-1$ 折数据上训练，在其剩下的 1 折数据上预测，就可以得到对任意 1 折数据的预测结果，进而用于训练主模型。
+
+```{r}
+graph_stack = gunion(list(
+  po("learner_cv", lrn("regr.lm")),
+  po("learner_cv", lrn("regr.svm")),
+  po("nop")
+)) %>>%
+  po("featureunion") %>>%
+  lrn("regr.ranger")
+
+graph_stack$plot()
+```
+
+```{r}
+#| eval: false
+# 转为图学习器，可与普通学习器一样使用
+stacklrn = as_learner(graph_stack)
+stacklrn$train(tsk("mtcars"))
+```
+
+# 特征工程
+
+机器学习中的数据预处理，通常也统称为特征工程，主要包括：缺失值插补、特征变换，目的是提升模型性能。
+
+## 特征工程概述
+
+用 mlr3pipelines 包实现特征工程。
+
+```{r}
+# 查看所有 PipeOp
+po()
+```
+
+```{r}
+gr = po("scale") %>>% po("pca", rank. = 2)
+gr$plot()
+```
+
+特征工程管道的三种用法：
+
+1. 调试：查看特征工程步对输入数据做了什么
+
+    ```{r}
+    # 训练特征工程管道：提供任务，访问特征工程之后的数据
+    task = tsk("iris")
+    gr$train(task)[[1]]$data()
+    ```
+
+    ```{r}
+    # 将训练好的特征工程管道，用于新的数据
+    gr$predict(task$filter(1:5))[[1]]$data()
+    ```
+
+2. 用于机器学习：原始任务经过特征工程管道变成预处理之后的任务，再正常用于机器学习流程
+
+    ```{r}
+    newtask = gr$train(task)[[1]]
+    newtask
+    ```
+
+3. 用于机器学习：再接一个学习器，转化成图学习器，同普通学习器一样使用，适合对特征工程步、ML 算法一起联动调参
+
+    ```{r}
+    gr = gr %>>% lrn("classif.rpart")
+    gr$plot()
+    ```
+
+    ```{r}
+    gr_learner = as_learner(gr)
+    gr_learner
+    ```
+
+## 缺失值插补
+
+目前支持的插补方法：
+
+```{r}
+as.data.table(mlr_pipeops)[tags %in% "missings", "key"]
+```
+
+### 简单插补
+
+```{r}
+task = tsk("pima")
+task$missings()
+```
+
+```{r}
+# 常数插补
+po = po("imputeconstant", param_vals = list(
+  constant = -999, affect_columns = selector_name("glucose")
+))
+new_task = po$train(list(task = task))[[1]]
+new_task$missings()
+```
+
+```{r}
+# 均值插补
+po = po("imputemean")
+new_task = po$train(list(task = task))[[1]]
+new_task$missings()
+```
+
+### 随机抽样插补
+
+通过从非缺失的训练数据中随机抽样来插补特征。
+
+```{r}
+po = po("imputesample")
+new_task = po$train(list(task = task))[[1]]
+new_task$missings()
+```
+
+### 直方图法插补
+
+```{r}
+po = po("imputehist")
+new_task = po$train(list(task = task))[[1]]
+new_task$missings()
+```
+
+### 学习器插补
+
+```{r}
+# 决策树插补
+po = po("imputelearner", lrn("regr.rpart"))
+new_task = po$train(list(task = task))[[1]]
+new_task$missings()
+```
+
+```{r}
+# KNN插补，训练KNN学习器时，先用直方图法插补
+po = po("imputelearner", 
+        po("imputehist") %>>% lrn("regr.kknn"))
+new_task = po$train(list(task = task))[[1]]
+new_task$missings()
+```
+
+## 特征工程
+
+### 特征缩放
+
+不同数值型特征的数据量纲可能相差多个数量级，这对很多数据模型会有很大影响，所以有必要做归一化处理，就是将列或行对齐并转化为一致。
+
+```{r}
+#| message: false
+library(tidyverse)
+df = as_tibble(iris) %>% 
+  set_names(str_c("x", 1:4), "Species")
+task = as_task_classif(df, target = "Species")
+```
+
+#### 标准化
+
+标准化也称为 Z 标准化，将数据变成均值为 0，标准差为 1。
+
+```{r}
+pos = po("scale")  # 参数 scale = FALSE，只做中心化
+pos$train(list(task))[[1]]$data()
+```
+
+注：中心化后，0 就代表均值，更方便模型解释。
+
+#### 归一化
 
 
 
