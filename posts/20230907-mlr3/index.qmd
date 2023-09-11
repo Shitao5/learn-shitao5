@@ -1,7 +1,7 @@
 ---
 title: "mlr3verse 技术手册"
 date: "2023-09-07"
-date-modified: "2023-09-10"
+date-modified: "2023-09-11"
 image: "cover.jpg"
 categories: 
   - Machine Learning
@@ -10,13 +10,21 @@ categories:
 ---
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(70, 137)`
+`r stfun::progress(103, 137)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
 - 张敬信老师 QQ 群（222427909）文件
 - <https://github.com/zhjx19/RConf15/tree/main>
 :::
+
+```{r}
+#| include: false
+#| label: setup
+
+options(datatable.print.nrows = 6)
+```
+
 
 ```{r}
 #| message: false
@@ -720,37 +728,37 @@ gr$plot()
 
 特征工程管道的三种用法：
 
-1. 调试：查看特征工程步对输入数据做了什么
+1. <p>调试：查看特征工程步对输入数据做了什么</p>
 
-    ```{r}
-    # 训练特征工程管道：提供任务，访问特征工程之后的数据
-    task = tsk("iris")
-    gr$train(task)[[1]]$data()
-    ```
+```{r}
+# 训练特征工程管道：提供任务，访问特征工程之后的数据
+task = tsk("iris")
+gr$train(task)[[1]]$data()
+```
 
-    ```{r}
-    # 将训练好的特征工程管道，用于新的数据
-    gr$predict(task$filter(1:5))[[1]]$data()
-    ```
+```{r}
+# 将训练好的特征工程管道，用于新的数据
+gr$predict(task$filter(1:5))[[1]]$data()
+```
 
-2. 用于机器学习：原始任务经过特征工程管道变成预处理之后的任务，再正常用于机器学习流程
+2. <p>用于机器学习：原始任务经过特征工程管道变成预处理之后的任务，再正常用于机器学习流程</p>
 
-    ```{r}
-    newtask = gr$train(task)[[1]]
-    newtask
-    ```
+```{r}
+newtask = gr$train(task)[[1]]
+newtask
+```
 
-3. 用于机器学习：再接一个学习器，转化成图学习器，同普通学习器一样使用，适合对特征工程步、ML 算法一起联动调参
+3. <p>用于机器学习：再接一个学习器，转化成图学习器，同普通学习器一样使用，适合对特征工程步、ML 算法一起联动调参</p>
 
-    ```{r}
-    gr = gr %>>% lrn("classif.rpart")
-    gr$plot()
-    ```
+```{r}
+gr = gr %>>% lrn("classif.rpart")
+gr$plot()
+```
 
-    ```{r}
-    gr_learner = as_learner(gr)
-    gr_learner
-    ```
+```{r}
+gr_learner = as_learner(gr)
+gr_learner
+```
 
 ## 缺失值插补
 
@@ -845,11 +853,502 @@ pos$train(list(task))[[1]]$data()
 
 #### 归一化
 
+归一化是将数据线性放缩到 $\left[0, 1\right]$（根据需要也可以线性放缩到 $\left[a, b\right]$）, 一般还同时考虑指标一致化，将正向指标（值越大越好）和负向指标（值越小越好）都变成正向。
 
+正向指标：
 
+$$
+x_i'=\frac{x_i - \text{min} x_i}{\text{max} x_i - \text{min} x_i}
+$$
 
+负向指标：
 
+$$
+x_i'=\frac{\text{max} x_i - x_i}{\text{max} x_i - \text{min} x_i}
+$$
 
+```{r}
+pop = po("scalerange", param_vals = list(lower = 0, upper = 1))
+pop$train(list(task))[[1]]$data()
+```
+
+#### 行规范化
+
+行规范化，常用于文本数据或聚类算法，是保证每行具有单位范数，即每行的向量“长度”相同。想象一下，$m$ 个特征下，每行数据都是 $m$ 维空间中的一个点，做行规范化能让这些点都落在单位球面上（到原点的距离均为 1）。
+
+行规范化一般采用 L2 范数：
+
+$$
+x_{ij}' = \frac{x_{ij}}{\|x_i\|} = \frac{x_{ij}}{\sqrt{\sum_{j=1}^m x_{ij}^2}}
+$$
+
+```{r}
+pop = po("spatialsign")
+pop$train(list(task))[[1]]$data()
+```
+
+### 特征变换
+
+#### 非线性特征
+
+对于数值特征 $x_1, x_2, \cdots$，可以穿件更多的多项式特征：$x_1^2, x_1, x_2^2, x2, \cdots$，这相当于是用自变量的更高阶泰勒公式去逼近因变量。
+
+```{r}
+pop = po("modelmatrix", formula = ~ . ^ 2 + I(x1 ^ 2) + log(x2))
+pop$train(list(task))[[1]]$data()
+```
+
+另一种常用的非线性特征是基于自然样条的样条特征（暂时没有专门的PipeOp）：
+
+```{r}
+pop = po("modelmatrix", formula = ~ splines::ns(x1, 5))
+pop$train(list(task))[[1]]$data()
+```
+
+#### 计算新特征
+
+管道运算“mutate”，根据以公式形式给出的表达式添加特征，这些表达式可能取决于其他特征的值。这可以增加新的特征，也可以改变现有的特征。
+
+```{r}
+pom = po("mutate", mutation = list(
+  x1_p = ~ x1 + 1,
+  Area1 = ~ x1 * x2,
+  Area2 = ~ x3 * x4,
+  Area = ~ Area1 + Area2
+))
+pom$train(list(task))[[1]]$data()
+```
+
+利用正则表达式从复杂字符串列提取出相关信息，并转化为因子特征：
+
+```{r}
+po_ftextract = po("mutate", mutation = list(
+  fare_per_person = ~ fare / (parch + sib_sp + 1),
+  deck = ~ factor(str_sub(cabin, 1, 1)),
+  title = ~ factor(str_extract(name, "(?<=, ).*(?=\\.)")),
+  surname = ~ factor(str_extract(name, "^.*(?=,)")),
+  ticket_prefix = ~ factor(str_extract(ticket, "^.*(?= )"))
+))
+po_ftextract$train(list(tsk("titanic")))[[1]]$data()
+```
+
+若数据噪声太多的问题，通常就需要做数据平滑。
+
+```{r}
+pom = po("mutate", mutation = list(
+  x1_s = ~ slider::slide_dbl(x1, mean, .before = 2, .after = 2) # 五点移动平均
+))
+dat = pom$train(list(task = task))[[1]]$data()
+```
+
+```{r}
+library(patchwork)
+p1 = ggplot(dat, aes(1:150, x1)) + geom_line()
+p2 = ggplot(dat, aes(1:150, x1_s)) + geom_line()
+p1 / p2
+```
+
+```{r}
+# colapply：应用函数到任务的每一列，常用于类型转换
+poca = po("colapply", applicator = as.character)
+```
+
+```{r}
+# renamecolumns：修改列名
+pop = po("renamecolumns", param_vals = list(
+  renaming = c("Petal.Length" = "PL")
+))
+```
+
+#### 正态性变换
+
+Box-Cox 变换是更神奇的正态性变换，用最大似然估计选择最优的 $\lambda$ 值，让非负的非正态数据变成正态数据：
+
+$$
+y' = 
+\begin{cases}
+\ln y  & \lambda = 0 \\
+(y^{\lambda} - 1)/ \lambda  & \lambda \neq 0
+\end{cases}
+$$
+
+```{r}
+pop = po("boxcox")
+pop$train(list(task))[[1]]$data()
+```
+
+若数据包含 0 或负数，则 Box-Cox 变换不再适用，可以改用同样原理的 Yeo-Johnson 变换：
+
+$$
+y' = 
+\begin{cases}
+\ln (y+1)                                 & \lambda = 0, y \geq 0\\
+\frac{(y + 1)^{\lambda} - 1}{\lambda}     & \lambda \neq 0, y \geq 0\\
+- \ln (1-y)                               & \lambda = 2, y < 0\\
+\frac{(1-y)^{2-\lambda} - 1}{\lambda - 2} & \lambda \neq 2, y < 0
+\end{cases}
+$$
+
+```{r}
+pop = po("yeojohnson")
+pop$train(list(task))[[1]]$data()
+```
+
+#### 连续变量分箱
+
+在统计和机器学习中，有时需要将连续变量转化为离散变量，称为连续变量离散化或分箱，常用于银行风控建模，特别是线性回归或 Logistic 回归模型。
+
+分箱的好处有：
+
+1. 使得结果更便于分析和解释。比如，年龄从中年到老年，患高血压比例增加25%，而年龄每增加一岁，患高血压比例不一定有显著变化；
+
+1. 简化模型，将自变量与因变量间非线性的潜在的关系，转化为简单的线性关系。当然，分箱也可能带来问题：简化的模型关系可能与潜在的模型关系不一致（甚至发现的是错误的模型关系）、删除数据中的细微差别、切分点可能没有实际意义。
+
+```{r}
+# 等宽分箱
+pop = po("histbin", param_vals = list(breaks = 4))
+pop$train(list(task))[[1]]$data()
+```
+
+```{r}
+# 分位数分箱
+pop = po("quantilebin", numsplits = 4)
+pop$train(list(task))[[1]]$data()
+```
+
+### 特征降维
+
+有时数据集可能包含过多特征，甚至是冗余特征，可以用降维技术进压缩特征，但通常会降低模型性能。
+
+#### PCA
+
+$n$ 个特征，若转化为 $n$ 个主成分，则会保留原始数据的 100% 信息，但这就失去了降维的意义。所以1一般是只选择前若干个主成分，一般原则是选择至保留 85% 以上信息的主成分。
+
+```{r}
+pop = po("pca", rank. = 2)
+pop$train(list(task))[[1]]$data()
+```
+
+#### 核 PCA
+
+PCA 适用于数据的线性降维。而核主成分分析（Kernel PCA, KPCA）可实现数据的非线性降维，用于处理线性不可分的数据集。
+
+KPCA 的大致思路是：对于输入空间中的矩阵 $X$，先用一个非线性映射把 $X$ 中的所有样本映射到一个高维甚至是无穷维的特征空间（使其线性可分），然后在这个高维空间进行 PCA 降维。
+
+#### ICA：独立成分分析
+
+独立成分分析，提取统计意义上的独立成分：
+
+```{r}
+pop = po("ica", n.comp = 3)
+pop$train(list(task))[[1]]$data()
+```
+
+#### NMF：非负矩阵分解
+
+对于任意给定的非负矩阵 $V$，NMF 算法能够寻找到非负矩阵 $W$ 和非负矩阵 $H$，使它们的积为矩阵。非负矩阵分解的方法在保证矩阵的非负性的同时能够减少数据量，相当于把 $n$ 维的数据降维到 $r$ 维。
+
+```{r}
+# BiocManager::install("Biobase")
+pop = po("nmf", rank = 3)
+pop$train(list(task))[[1]]$data()
+```
+
+#### 剔除常量特征
+
+从任务中剔除常量特征。对于每个特征，计算不同于其众数值的比例。所有比例低于可设置阈值的特征都会从任务中剔除。缺失值可以被忽略，也可以视为与非缺失值不同的常规值。
+
+```{r}
+data = data.table(y = runif(10), a = 1:10, b = rep(1, 10), 
+                  c = rep(1:2, each = 5))
+task_ex = as_task_regr(data, target = "y")
+po = po("removeconstants")  # 剔除常量特征 b
+po$train(list(task_ex))[[1]]$data()
+```
+
+### 分类特征
+
+#### 因子折叠
+
+管道运算“collapsefactors”，对因子或有序因子进行折叠，折叠训练样本中最少的水平，直到剩下 `target_level_count` 个水平。然而，那些出现率高于 `no_collapse_above_prevalence` 的水平会被保留。对于因子变量，它们被折叠到下一个更大的水平，对于有序变量，稀有变量被折叠到相邻的类别，以样本数较少者为准。
+
+训练集中没有出现的水平在预测集中不会被使用，因此经常与因子修正结合起来使用。
+
+```{r}
+dat = tibble(color = factor(starwars$skin_color), y = 1)
+dat %>% count(color)
+```
+
+```{r}
+task = as_task_regr(dat, target = "y")
+poc = po("collapsefactors", target_level_count = 5)
+poc$train(list(task))[[1]]$data() %>% count(color)
+```
+
+#### 因子修正
+
+管道运算“fixfactors”（参数：`droplevels = TRUE`）确保预测过程中的因子水平与训练过程中的相同；可能会在之前丢弃空的训练因子水平。
+
+注意，如果发现未见过的因子水平，这可能会在预测期间引入缺失值。
+
+```{r}
+dattrain = data.table(
+  a = factor(c("a", "b", "c", NA), levels = letters),
+  b = ordered(c("a", "b", "c", NA)),
+  target = 1:4
+)
+dattrain
+```
+
+```{r}
+dattest = data.table(
+  a = factor(c("a", "b", "c", "d"), levels = letters[10:1]),
+  b = ordered(c("a", "b", "c", "d")),
+  target = 1:4
+)
+dattest
+```
+
+```{r}
+task_train = as_task_regr(dattrain, "target")
+task_test = as_task_regr(dattest, "target")
+po = po("fixfactors")
+po$train(list(task_train))
+```
+
+```{r}
+po$predict(list(task_test))[[1]]$data()
+```
+
+#### 因子编码
+
+对因子、有序因子、字符特征进行编码。参数 `method` 指定编码方法：
+
+- “one-hot”：独热编码；
+
+- “treatment”：虚拟编码，创建 $n-1$ 列，留出每个因子变量的第一个因子水平（见`stats::conc.treatment()`）；
+
+- “helmert”：根据 Helmert 对比度创建列（见`stats::conc.helmert()`）；
+
+- “poly”：根据正交多项式创建对比列（见`stats::conc.poly()`）；
+
+- “sum”：创建对比度相加为零的列，（见`stats::conc.sum()`）
+
+新创建的列按模式 `[column-name].[x]` 命名，其中 `x` 是 ”one-hot” 和 ”treatment” 编码的各自因子水平，否则是一个整数序列。
+
+```{r}
+task = tsk("penguins")
+poe = po("encode", method = "one-hot")   # 独热编码
+poe$train(list(task))[[1]]$data()[, 7:11]
+```
+
+```{r}
+poe = po("encode", method = "treatment")  # 虚拟编码
+poe$train(list(task))[[1]]$data()[, 7:9]
+```
+
+```{r}
+poe = po("encode", method = "helmert")  # Helmert 编码
+poe$train(list(task))[[1]]$data()[, 7:9]
+```
+
+```{r}
+poe = po("encode", method = "poly")  # 多项编码
+poe$train(list(task))[[1]]$data()[, 7:9]
+```
+
+```{r}
+poe = po("encode", method = "sum")  # sum 编码
+poe$train(list(task))[[1]]$data()[, 7:9]
+```
+
+::: {.callout-warning}
+以下内容暂缓：
+
+- 效应编码
+
+- 日期时间特征
+
+- 文本特征
+:::
+
+### 处理不均衡数据
+
+通过采样对任务进行类平衡，可能有利于对不平衡的训练数据进行分类，采样只发生在训练阶段。
+
+#### 欠采样与过采样
+
+欠采样：只保留多数类的一部分行；过采样：对少数类进行超量采样（重复数据点）。
+
+PipeOp 名字为 ”classbalancing”，参数：
+
+- ratio：相对于 `$reference` 值，要保留的类的行数的比率，默认为 1；
+
+- reference：`$ratio` 的值是根据什么来衡量的。可以是 “all”（默认值，所有类的平均实例数），“major”（拥有最多实例的类的实例数），“minor”（拥有最少实例的类的实例数），“nonmajor”（除主要类外所有类的平均实例数），“nonminor”（除次要类外所有类的平均实例数），以及 “one”（`$ratio` 决定每个类的实例数）；
+
+- adjust：哪些类要向上/向下采样。可以是 “all”（默认）、“major”、“minor”、“nonmajor”、“nonminor”、“upsample”（只过采样）和“downsample”（只欠采样）；
+
+- shuffle：是否对结果任务的行进行洗牌，默认为 `TRUE`。如果数据被过采样且 `shuffle = FALSE`，结果任务将以原始顺序显示原始行（在欠采样中不被移除），然后是所有新添加的行，按目标类别排序。
+
+过/欠采样的过程如下：
+
+- 首先，计算” 目标类计数”，方法是取 `reference` 参数所指示的所有类的平均数（例如，如果 reference 参数是 ”nonmajor”：所有不是 “major” 类的类的平均数，即拥有最多样本的类），然后将其与比率参数的值相乘。如果 reference 是 ”one”，那么“目标类计数” 就是比率的值（即 1 * 比率）。
+
+- 然后，对于每个被 `adjust` 参数引用的类（例如，若调整是“nonminor”：每个不是样本最少的类），PipeOpClassBalancing 要么抛出样本（欠采样），要么增加与随机选择的样本相等的额外行（过采样），直到这些类的样本数等于“目标类计数”。
+
+- 使用 `task$filter()` 来删除行。当在过采样过程中添加相同的行时，那么由于[混淆]，不能使用 `task$row_roles$use` 来复制行；而是使用 `task$rbind()` 函数，并附加一个新的 data.table，其中包含所有被复制的行，其次数正好与被添加的行相同。
+
+```{r}
+task = tsk("german_credit")
+table(task$truth())
+```
+
+```{r}
+## 欠采样
+opb_down = po("classbalancing", reference = "minor", adjust = "major")
+# 默认ratio = 1, 若ratio = 2, 结果是600 good, 300 bad
+result = opb_down$train(list(task))[[1]]
+table(result$truth())
+```
+
+```{r}
+## 过采样
+opb_up = po("classbalancing", reference = "major", adjust = "minor")
+# 默认ratio = 1, 若ratio = 2, 结果是700 good, 1400 bad
+result = opb_up$train(list(task))[[1]]
+table(result$truth())
+```
+
+#### SMOTE 法
+
+用 SMOTE 算法创建少数类别的合成观测，生成一个更平衡的数据集。该算法为每个少数类观测取样，基于该观测的 $K$ 个最近邻居生成新观测。它只能应用于具有纯数值特征的任务。详见 `smotefamily::SMOTE`。
+
+PipeOp 名字：“smote”，其参数（具体参阅 `SMOTE()`）：
+
+- K：用于抽取新值的近邻的数量；
+
+- dup_size：合成的少数实例在原始多数实例数量上的期望次数。
+
+```{r}
+# 只支持double 型特征, 需安装 smotefamily 包
+pop = po("colapply", applicator = as.numeric,
+         affect_columns = selector_type("integer")) %>>%
+  po("encodeimpact") %>>%
+  po("smote", K = 5, dup_size = 1)  # 少数类增加 1 倍
+result = pop$train(task)[[1]]
+table(result$truth())
+```
+
+### 目标变换
+
+为了提高预测能力，对于异方差或右偏的因变量数据，经常需要做取对数变换、或 Box-Cox 变换，以变成正态数据，再进行回归建模，预测值要回到原数据量级，还要做逆变换。
+
+mlr3pipelines 包还提供了目标变换管道，将目标变换及其逆变换，都封装到图学习器，这样就省了手动做两次变换，还能整体进行调参或基准测试。
+
+对于方差逐渐变大的异方差的时间序列数据，或右偏分布的数据，可以尝试做对数变换或开平方变换，以稳定方差和变成正态分布。
+
+对数变换特别有用，因为具有可解释性：**对数值的变化是原始尺度上的相对（百分比）变化**。若使用以 10 为底的对数，则对数刻度上每增加 1 对应原始刻度上的乘以 10。
+
+注意，原始数据若存在零或负，则不能取对数或开根号，解决办法是做平移：$a = \max \{ 0, -\min \{x_i\} + \varepsilon \}$
+
+```{r}
+task = tsk("mtcars")
+learner = lrn("regr.lm")
+g_ppl = ppl("targettrafo", graph = learner)
+g_ppl$param_set$values$targetmutate.trafo = function(x) log(x)
+g_ppl$param_set$values$targetmutate.inverter = function(x) list(response = exp(x$response))
+g_ppl$plot()
+```
+
+```{r}
+gl = as_learner(g_ppl)
+gl$train(task)
+gl$predict(task)
+```
+
+# 嵌套重抽样
+
+构建模型，是如何从一组潜在的候选模型（如不同的算法，不同的超参数，不同的特征子集）中选择最佳模型。在构建模型过程中所使用的重抽样划分，不应该原样用来评估最终选择模型的性能。
+
+通过在相同的测试集或相同的 CV 划分上反复评估学习器，测试集的信息会“泄露”到评估中，导致最终的性能估计偏于乐观。
+
+模型构建的所有部分（包括模型选择、预处理）都应该纳入到训练数据的模型寻找过程中。测试集应该只使用一次，测试集只有在模型完全训练好之后才能被使用，例如已确定好了超参数。这样从测试集获得的性能才是真实性能的无偏估计。
+
+对于本身需要重抽样的步骤（如超参数调参），这需要两个嵌套的重抽样循环，即内层调参和外层评估都需要重抽样策略。
+
+下面从实例来看：
+
+1. 使用3 折交叉验证来获得不同的非测试集和测试集（外层重抽样）
+
+2. 在非测试集上使用 4 折交叉验证来获得不同的内层训练集和内层测试集（内层重抽样）
+
+3. 使用内层数据划分来做超参数调参
+
+4. 使用经过内层重抽样调参的最优超参数在外层非测试集上拟合学习器
+
+5. 评估学习器在外层测试集上的性能
+
+6. 对外层重抽样的三折中的每一折重复执行 2 - 5
+
+7. 三个性能值被汇总为一个无偏的性能估计
+
+过程看起来复杂，实现非常简单，只需要将内层重抽样放在自动调参器，外层重抽样放在 `resample()` 中，其中的学习器换成自动调参器。
+
+```{r}
+#| results: hide
+# 内层重抽样（超参数调参）
+at = auto_tuner(
+  tuner = tnr("grid_search", resolution = 10),
+  learner = lrn("classif.rpart", cp = to_tune(lower = .001, upper = .1)),
+  resampling = rsmp("cv", folds = 4),
+  measure = msr("classif.acc"),
+  term_evals = 5
+)
+
+# 外层重抽样
+task = tsk("pima")
+outer_resampling = rsmp("cv", folds = 3)
+rr = resample(task, at, outer_resampling, store_models = TRUE)
+```
+
+```{r}
+# 提取内层重抽样结果，查看最优的超参数
+extract_inner_tuning_results(rr)
+```
+
+```{r}
+# 查看外层重抽样的每次结果
+rr$score()
+```
+
+```{r}
+# 查看外层重抽样的平均模型性能
+rr$aggregate()
+```
+
+```{r}
+#| results: hide
+# 用全部数据自动调参，预测新数据
+at$train(task)
+dat = task$data()[1:5, -1]
+at$predict_newdata(dat)
+```
+
+```{r}
+#| eval: false
+# 若改用tune_nested() 函数，嵌套重抽样过程还可以进一步简化
+rr = tune_nested(
+  tuner = tnr("grid_search", resolution = 10),
+  task = task,
+  learner = lrn("classif.rpart", cp = to_tune(lower = .001, upper = .1)),
+  inner_resampling = rsmp("cv", folds = 4),
+  outer_resampling = rsmp("cv", folds = 3),
+  measure = msr("classif.acc"),
+  term_evals = 5
+)
+```
+
+# 超参数调参
 
 
 
@@ -883,6 +1382,6 @@ pos$train(list(task))[[1]]$data()
 
 
 ::: {.callout-tip title="To be continued"}
-- 集成学习
+- 超参数调参
 :::
 
