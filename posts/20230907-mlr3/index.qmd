@@ -1,7 +1,7 @@
 ---
 title: "mlr3verse 技术手册"
 date: "2023-09-07"
-date-modified: "2023-09-11"
+date-modified: "2023-09-12"
 image: "cover.jpg"
 categories: 
   - Machine Learning
@@ -10,7 +10,7 @@ categories:
 ---
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(103, 137)`
+`r stfun::progress(137, 137)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -1350,38 +1350,615 @@ rr = tune_nested(
 
 # 超参数调参
 
+机器学习的模型参数是模型的一阶（直接）参数，是训练模型时用梯度下降法寻优的参数，比如正则化回归模型的回归系数；而超参数是模型的二阶参数，需要事先设定为某值，才能开始训练一阶模型参数，比如正则化回归模型的惩罚参数、KNN 的邻居数等。
 
+超参数会对所训练模型的性能产生重大影响，所以不能是随便或凭经验随便指定，而是需要设定很多种备选配置，从中选出让模型性能最优的超参数配置，这就是**超参数调参**。
 
+超参数调参是用 mlr3tuning 包实现，是一项多方联动的系统工作，需要设定：搜索空间、学习器、任务、重抽样策略、模型性能度量指标、终止条件。
 
+```{r}
+learner = lrn("classif.svm")
+learner$param_set  # 查看学习器的超参数
+```
 
+## 独立调参
 
+适合传统的机器学习套路：将数据集按留出法重抽样划分为训练集和测试集，在训练集上做内层重抽样，多次“训练集拟合模型+ 验证集评估性能”，根据平均性能选出最优超参数。
 
+1. 选取任务，划分数据集，将测试集索引设置为留出
 
+```{r}
+task = tsk("iris")
+split = partition(task, ratio = .8)
+task$set_row_roles(split$test, "holdout")
+```
 
+2. 选择学习器，同时指定部分超参数，需要调参的超参数用 `to_tune()` 设定搜索范围：
 
+```{r}
+learner = lrn("classif.svm", type = "C-classification", kernel = "radial",
+              cost = to_tune(.1, 10), gamma = to_tune(0, 5))
+```
 
+3. 用 `tune()` 对学习器做超参数调参，需要设定（有些是可选）：
 
+```{r}
+#| results: hide
+instance = tune(
+  tuner = tnr("grid_search", batch_size = 5),
+  task = task,
+  learner = learner,
+  resampling = rsmp("cv", folds = 5),
+  measures = msr("classif.ce")
+)
+```
 
+4. 提取超参数调参结果
 
+```{r}
+instance$result
+```
 
+```{r}
+#| eval: false
+instance$archive  # 调参档案
+```
 
+```{r}
+autoplot(instance, type = "surface", cols_x = c("cost", "gamma"))
+```
 
+5. 用最优超参数更新学习器参数，在训练集上训练模型，在测试集上做预测
 
+```{r}
+learner$param_set$values = instance$result_learner_param_vals
+learner$train(task)
+predictions = learner$predict(task, row_ids = split$test)
+predictions
+```
 
+## 自动调参器
 
+上述独立调参有两个不足：
 
+- 调参得到的最优超参数需要手动更新到学习器；
 
+- 不方便实现嵌套重抽样。
 
+自动调参器可以弥补上述不足，AutoTuner 是将超参数调参与学习器封装到一起，能实现自动调参的过程，并且可以像其他学习器一样使用。
 
+1. 创建任务、选择学习器
 
+```{r}
+task = tsk("iris")
+learner = lrn("classif.svm", type = "C-classification", kernel = "radial")
+```
 
+2. 用 `ps()` 生成搜索空间，用 `auto_tuner()` 创建自动调参器，注意：不需要提供任务，其它参数与独立调参的 `tune()` 基本一样：
 
+```{r}
+search_space = ps(cost = p_dbl(0.1, 10), gamma = p_int(0, 5))
+at = auto_tuner(
+  tuner = tnr("grid_search"),
+  learner = learner,
+  search_space = search_space,
+  resampling = rsmp("cv", folds = 5),
+  measure = msr("classif.ce")
+)
+```
 
+3. 外层采用 4 折交叉验证重抽样，设置 `store_models = TRUE` 保存每次的模型：
 
+```{r}
+#| results: hide
+rr = resample(task, at, rsmp("cv", folds = 4), store_models = TRUE)
+```
 
+这就是执行嵌套重抽样，外层（整体拟合模型+ 评估）循环 4 次，每次内层（超参数调参）循环 5 次。
 
+4. 查看结果：
 
-::: {.callout-tip title="To be continued"}
-- 超参数调参
-:::
+```{r}
+rr$aggregate()  # 总的平均模型性能, 也可以提供其它度量
+rr$score()      # 外层 4 次迭代的每次结果
+extract_inner_tuning_results(rr)  # 内层每次的调参结果
+```
 
+```{r}
+#| eval: false
+extract_inner_tuning_archives(rr) # 内层调参档案
+```
+
+5. 在全部数据上自动调参，预测新数据
+
+```{r}
+#| results: hide
+at$train(task)
+dat = task$data()[1:5, -1]
+at$predict_newdata(dat)
+```
+
+注：调参结束后，也可以取出最优超参数，更新学习器参数：
+
+```{r}
+learner$param_set$values = at$tuning_result$learner_param_vals[[1]]
+```
+
+或者按最优超参数重新创建学习器。
+
+另外，上述的“自动调参+ 外层重抽样”，若改用嵌套调参 `tune_nested()` 实现，代码会更加简洁：
+
+```{r}
+#| eval: false
+rr = tune_nested(
+  tuner = tnr("grid_search"),
+  task = task,
+  learner = learner,
+  search_space = search_space,
+  inner_resampling = rsmp("cv", folds = 5),
+  outer_resampling = rsmp("cv", folds = 4),
+  measure = msr("classif.ce")
+)
+```
+
+## 定制搜索空间
+
+用 `ps()` 创建搜索空间，它支持 5 种超参数类型构建：
+
+- `p_dbl()`：实值型（double）
+
+- `p_int()`：整数型
+
+- `p_fct()`：离散型（factor）
+
+- `p_lgl()`：逻辑性
+
+- `p_uty()`：Untyped
+
+```{r}
+search_space = ps(cost = p_dbl(.1, 10),
+                  kernel = p_fct(c("polynomial", "radial")))
+```
+
+### 变换
+
+对于数值型超参数，在调参时经常希望前期的点比后期的点更密集一些。这可以通过对数-指数变换来实现，这也适用于大范围搜索空间。
+
+```{r}
+tibble(x = 1:20,
+       y = exp(seq(log(3), log(50), length.out = 20))) %>% 
+  ggplot(aes(x, y)) +
+  geom_point()
+```
+
+当 $x$ 均匀变化时，变换后作为超参数能前密后疏。
+
+```{r}
+search_space = ps(
+  cost = p_dbl(log(.1), log(10), trafo = \(x) exp(x)),
+  kernel = p_fct(c("polynomial", "radial"))
+)
+```
+
+```{r}
+# 查看调参网格
+params = generate_design_grid(search_space, resolution = 5)
+params
+```
+
+### 依赖关系
+
+有些超参数只有在另一个参数取某些值时才有意义。例如，支持向量机有一个 `degree` 参数，只有在 `kernel` 为 ”polynomial” 时才有效。这可以用 `depends` 参数来指定：
+
+```{r}
+search_space = ps(
+  cost = p_dbl(log(.1), log(10), trafo = \(x) exp(x)),
+  kernel = p_fct(c("polynomial", "radial")),
+  degree = p_int(1, 3, depends = kernel == "polynomial")
+)
+```
+
+### 图学习器调参
+
+图学习器一旦成功创建，就可以像普通学习器一样使用，超参数调参时，原算法的超参数名字都自动带了学习器名字前缀，另外还可以对管道参数调参。
+
+```{r}
+task = tsk("pima")
+```
+
+该任务包含缺失值，还有若干因子特征，都需要做预处理：插补和特征工程。
+
+```{r}
+prep = gunion(list(
+  po("imputehist"),
+  po("missind", affect_columns = selector_type(c("numeric", "integer")))
+)) %>>%
+  po("featureunion") %>>%
+  po("encode") %>>%
+  po("removeconstants")
+```
+
+选择三个学习器：KNN、SVM、Ranger 作为三分支分别拟合模型，再合并分支保证是一个输出结果：
+
+```{r}
+learners = list(
+  knn = lrn("classif.kknn", id = "kknn"),
+  svm = lrn("classif.svm", id = "svm", type = "C-classification"),
+  rf = lrn("classif.ranger", id = "ranger")
+)
+graph = ppl("branch", learners)
+```
+
+将预处理图和算法图连接得到整个图，并可视化图：
+
+```{r}
+graph = prep %>>% graph
+graph$plot()
+```
+
+转化为图学习器，查看其超参数：
+
+```{r}
+glearner = as_learner(graph)
+glearner$param_set
+```
+
+可见，所有超参数都多了学习器或管道名字前缀，比如 kknn.k 是KNN 学习器的邻居数参数 k。
+
+嵌套重抽样超参数调参，与前文语法一样，为了加速计算，启动并行：
+
+```{r}
+future::plan("multicore")
+```
+
+设置搜索空间，用 `tune_nested()` 做嵌套调参：
+
+```{r}
+#| results: hide
+search_space = ps(
+  branch.selection = p_fct(c("kknn", "svm", "ranger")),
+  kknn.k = p_int(3, 50, logscale = TRUE,
+                 depends = branch.selection == "kknn"),
+  svm.cost = p_dbl(-1, 1, trafo = \(x) 10^x,
+                   depends = branch.selection == "svm"),
+  ranger.mtry = p_int(1, 8,
+                      depends = branch.selection == "ranger")
+)
+rr = tune_nested(
+  tuner = tnr("random_search"),
+  task = task,
+  learner = glearner,
+  inner_resampling = rsmp("cv", folds = 3),
+  outer_resampling = rsmp("cv", folds = 4),
+  measure = msr("classif.ce"),
+  term_evals = 10
+)
+```
+
+查看结果：
+
+```{r}
+rr$aggregate()    # 总的平均模型性能
+rr$score()        # 外层 4 次迭代每次的模型性能
+```
+
+# 特征选择
+
+当数据集包含很多特征时，只提取最重要的部分特征来建模，称为**特征选择**。特征选择可以增强模型的解释性、加速学习过程、改进学习器性能。
+
+常用的特征选择方法有两种：过滤法、包装法。另外，有些学习器内部提供了选择有助于做预测的特征子集的方法，称为是嵌入法。
+
+## 过滤法
+
+过滤法，基于某种衡量特征重要度的指标（如相关系数），用外部算法计算变量的排名，只选用排名靠前的若干特征，用 mlr3filters 包实现。
+
+### 基于重要度指标
+
+过滤法给每个特征计算一个重要度指标值，基于此可以对特征进行排序，然后就可以选出特征子集。
+
+```{r}
+task = tsk("sonar")
+filter = flt("auc")
+as.data.table(filter$calculate(task))
+```
+
+### 基于学习器的变量重要度
+
+有些学习器可以计算变量重要度，特别是基于树的模型，目前支持：
+
+"classif.featureless"，"regr.featureless"，"classif.ranger"，"regr.ranger"，"classif.rpart"，"regr.rpart"，"classif.xgboost"，"regr.xgboost"
+
+有些学习器需要在创建时” 激活” 其变量重要性度量。例如，通过 ranger 包来使用随机森林的 ”impurity” 度量：
+
+```{r}
+task = tsk("iris")
+learner = lrn("classif.ranger", importance = "impurity")
+filter = flt("importance", learner = learner)
+filter$calculate(task)
+as.data.table(filter)
+```
+
+使用上述特征选择可以对特征得分可视化，根据肘法确定保留特征数，然后用 `task$select()` 选择特征；也可以直接通过管道连接学习器构建图学习器：
+
+```{r}
+task = tsk("spam")
+graph = po("filter", filter = flt("auc"), filter.frac = .5) %>>%
+  po("learner", lrn("classif.rpart"))
+graph$plot()
+```
+
+```{r}
+learner = as_learner(graph)
+rr = resample(task, learner, rsmp("cv", folds = 5))
+rr$aggregate()
+```
+
+## 包装法
+
+包装法，随机选择部分特征拟合模型并评估模型性能，通过交叉验证找到最佳的特征子集，用 mlr3fselect 包实现。
+
+包装法特征选择，与超参数调参道理完全一样。
+
+### 独立特征选择
+
+适合传统的机器学习套路：将数据集按留出法重抽样划分为训练集和测试集，在训练集上做内层重抽样，多次“训练集拟合模型 + 验证集评估性能”，根据平均性能选出最优特征子集。
+
+1. 选取任务，划分数据集，将测试集索引设置为留出
+
+```{r}
+task = tsk("pima")
+split = partition(task, ratio = .8)
+task$set_row_roles(split$test, "holdout")
+```
+
+2. 选择学习器
+
+```{r}
+learner = lrn("classif.rpart")
+```
+
+3. 用 `fselect()` 对学习器做特征选择
+
+```{r}
+#| results: hide
+instance = fselect(
+  fselector = fs("rfe"),
+  task = task,
+  learner = learner,
+  resampling = rsmp("cv", folds = 4),
+  measures = msr("classif.ce"),
+  term_evals = 10,
+  store_models = TRUE
+)
+```
+
+查看特征选择结果：
+
+```{r}
+instance$result  # 最佳特征子集
+```
+
+```{r}
+instance$archive  # 特征选择档案
+```
+
+4. 对任务选择特征自己，拟合最终模型
+
+```{r}
+task$select(instance$result_feature_set)
+learner$train(task)
+```
+
+### 自动特征选择
+
+上述独立特征选择有两个不足：
+
+- 特征选择得到的最优特征子集需要手动更新到任务；
+
+- 不方便实现嵌套重抽样。
+
+自动特征选择器可以弥补上述不足，AutoFSelector 是将特征选择与学习器封装到一起，能实现自动特征选择的过程，并且可以像其他学习器一样使用。
+
+1. 创建任务、选择学习器
+
+```{r}
+task = tsk("pima")
+learner = lrn("classif.rpart")
+```
+
+2. 用 `auto_fselector()` 创建自动特征选择器，注意：不需要提供任务，其它参数与独立特征选择的 `fselect()` 基本一样：
+
+```{r}
+afs = auto_fselector(
+  fselector = fs("random_search", batch_size = 5),
+  learner = lrn("classif.rpart"),
+  resampling = rsmp("cv", folds = 4),
+  measure = msr("classif.ce"),
+  term_evals = 10
+)
+```
+
+3. 外层采用 5 折交叉验证重抽样，设置 `store_models = TRUE` 保存每次的模型：
+
+```{r}
+#| results: hide
+rr = resample(task, afs, rsmp("cv", folds = 5), store_models = TRUE)
+```
+
+查看结果：
+
+```{r}
+rr$aggregate()  # 总的平均模型性能, 也可以提供其它度量
+```
+
+注：若外层重抽样不想做这么多次，可直接用留出重抽样，或者划分训练集测试集，然后将 afs 当学习器使用。
+
+另外，上述的“自动特征选择+ 外层重抽样”，若改用嵌套特征选择 `fselect_nested()` 实现，代码会更加简洁：
+
+```{r}
+#| eval: false
+rr = fselect_nested(
+  fselector = fs("random_search", batch_size = 5),
+  task = tsk("pima"),
+  learner = lrn("classif.rpart"),
+  inner_resampling = rsmp("cv", folds = 4),
+  outer_resampling = rsmp("cv", folds = 5),
+  measure = msr("classif.ce"),
+  term_evals = 10
+)
+```
+
+# 模型解释
+
+机器学习模型预测性能强大，但天生不好解释。R 有两个通用框架致力于机器学习模型的解释（支持但不属于 mlr3verse）：iml 包和 DALEX 包。
+
+## iml 包
+
+iml 包提供了分析任何黑盒机器学习模型的工具。
+
+```{r}
+dat = tsk("penguins")$data() %>% na.omit()
+task = as_task_classif(dat, target = "species")
+learner = lrn("classif.ranger", predict_type = "prob")
+learner$train(task)
+learner$model
+```
+
+iml 包中的所有解释方法都需要机器学习模型和数据封装在 Predictor 对象中。
+
+```{r}
+library(iml)
+```
+
+### 特征效应
+
+特征效应（FeatureEffects），是计算所有给定特征对模型预测的影响。实现了不同的方法：累积局部效应（ALE）图，部分依赖图（PDP）和个体条件期望（ICE）曲线。
+
+```{r}
+mod = Predictor$new(learner, data = dat, y = "species")
+effect = FeatureEffects$new(mod)
+effect$plot(features = c("bill_length", "bill_depth",
+                         "flipper_length", "body_mass", "year"))
+```
+
+可见，除了年份，所有的特征都提供了有意义的可解释信息。
+
+### 夏普利值
+
+计算具有夏普利（Shapley）值的单个观测的特征贡献（一种来自合作博弈理论的方法），即单个数据点的特征值是如何影响其预测的。
+
+```{r}
+mod = Predictor$new(learner, data = dat, y = "species")
+shapley = Shapley$new(mod, x.interest = dat[1,])
+plot(shapley)
+```
+
+$\phi$值给出了纵轴上数值的概率增加或减少，例如，如果 `bill_depth = 18.7`，那么一只企鹅是 Gentoo 企鹅的可能性就比较小，而是 Adelie 企鹅的可能性则比 Chinstrap 企鹅大得多。
+
+### 特征重要度
+
+根据特征重排后模型的预测误差的增量，计算特征的重要度。
+
+```{r}
+mod = Predictor$new(learner, data = dat, y = "species")
+imp = FeatureImp$new(mod, loss = "ce")
+imp$plot(features = c("bill_length", "bill_depth",
+                      "flipper_length", "body_mass", "year"))
+```
+
+可见，bill_length 具有很高的特征重要度。
+
+注：以上模型解释也可以分别在训练集和测试集上来做，以看对比效果。
+
+## DALEX 包
+
+DALEX 包可以透视任何模型并帮助探索和解释其行为，用各种方法帮助理解输入变量和模型输出之间的联系，有助于在单个观测以及整个数据特征的层面上解释模型。所有的模型解释器都是与模型无关的，可以在不同的模型之间进行比较。该包是 “DrWhy.AI” 可视化模型解释系列包的基石。
+
+![模型解释方法分类](DALEX.jpg){#fig-DALEX}
+
+以 fifa 数据，预测球员价值 value_eur 为例。
+
+```{r}
+#| message: false
+library(DALEX)
+library(DALEXtra)
+fifa[, c("nationality", "overall", "potential", "wage_eur")] = NULL
+fifa = fifa %>% mutate(across(everything(), .fns = as.numeric))
+```
+
+创建任务，选择包含 250 棵决策树的随机森林学习器，训练模型：
+
+```{r}
+task = as_task_regr(fifa, target = "value_eur")
+ranger = lrn("regr.ranger", num.trees = 250)
+ranger$train(task)
+ranger$model
+```
+
+在开始解释模型行为之前，先创建一个解释器：
+
+```{r}
+ranger_exp = explain_mlr3(ranger, data = fifa, y = fifa$value_eur,
+                          label = "Ranger RF")
+```
+
+### 特征层面的解释
+
+`model_parts()` 函数基于排列组合的重要度来计算变量的重要度：
+
+```{r}
+fifa_vi = model_parts(ranger_exp)
+head(fifa_vi)
+```
+
+```{r}
+plot(fifa_vi, max_vars = 12, show_boxplots = FALSE)
+```
+
+一旦知道了哪些变量是最重要的，就可以使用部分依赖图来显示模型（平均而言）如何随着选定变量的变化而变化。在本例中，它们显示了特定变量和球员价值之间的平均关系。
+
+```{r}
+vars = c("age", "movement_reactions", "skill_ball_control", "skill_dribbling")
+fifa_pd = model_profile(ranger_exp, variables = vars)$agr_profiles
+fifa_pd
+```
+
+```{r}
+plot(fifa_pd)
+```
+
+可见，大多数球员特征的一般趋势是相同的。技能越高，球员的价值就越高，只有一个变量例外——年龄。
+
+### 观测层面的解释
+
+探索模型在单个观测/球员身上的表现，下面以 Cristiano Ronaldo 为例。
+
+```{r}
+ronaldo = fifa["Cristiano Ronaldo", ]
+ronaldo_bd = predict_parts(ranger_exp, new_observation = ronaldo)
+head(ronaldo_bd)
+```
+
+```{r}
+plot(ronaldo_bd)
+```
+
+上图展示了各变量对最终预测的贡献估计。Ronaldo 是一名前锋，因此影响他身价的特征是那些与进攻有关的特征，如 attacking_ volleys 或 skill_dribbling。唯一具有负向影响的特征是 age。
+
+检查模型的局部行为的另一种方法是用 SHapley Additive exPlanations（SHAP）。它在局部显示了变量对单一观测的贡献。
+
+```{r}
+ronaldo_shap = predict_parts(ranger_exp, new_observation = ronaldo,
+                             type = "shap")
+plot(ronaldo_shap)
+```
+
+特征效应有部分依赖关系图，对于观测也有相应的版本：Ceteris Paribus。它显示了当只改变一个变量而其他变量保持不变时，模型对观测的反应（蓝点代表原始值）：
+
+```{r}
+ronaldo_cp = predict_profile(ranger_exp, ronaldo, variables = vars)
+plot(ronaldo_cp, variables = vars)
+```
+
+更多机器学习模型解释理论方法请参阅 Interpretable Machine Learning: A Guide for Making Black
+Box Models Explainable.
