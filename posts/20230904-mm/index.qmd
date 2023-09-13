@@ -2,7 +2,7 @@
 title: "精通计量"
 subtitle: "从原因到结果的探寻之旅"
 date: "2023-09-04"
-date-modified: "2023-09-12"
+date-modified: "2023-09-13"
 image: "cover.jpg"
 categories: 
   - Econometrics
@@ -15,7 +15,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(26, 184)`
+`r stfun::progress(31, 184)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -78,11 +78,11 @@ categories:
 
 - 标准误总结的是估计值因为随机抽样而产生的变动状况。我们要避免混淆「变量的标准差」和「统计量的标准误」。
 
+- 在实际中，当对样本均值的抽样方差进行量化时，我们实际使用的是**估计的标准误**（estimated standard error）。通过在 $SE(\bar{Y})$ 的计算公式中使用 $S(Y_i)$ 代替 $\sigma_Y$，就可以得到这个估计值。具体而言，样本均值的估计标准误差可以写为：$\hat{SE}(\bar{Y})=\frac{S(Y_i)}{\sqrt{n}}$。
 
+- 一个精彩的统计学事实是，如果 $E(Y_i)$ 确实等于 $\mu$，那么——只要样本规模足够大——$t(\mu)$ 值的抽样分布就会非常接近于钟型的标准正态分布。无论 $Y_i$ 本身是否是正态分布，这个性质都是成立的，这被称为**中心极限定理**（Central Limit Theorem，CLT）。中心极限定理允许我们就可得数据支持还是不支持 $E(Y_i)$ 等于 $\mu$ 的假设进行经验决策。
 
-
-
-
+# 回归
 
 
 
@@ -105,6 +105,6 @@ categories:
 
 
 ::: {.callout-tip title="To be continued"}
-- 随机实验
+- 回归
 :::
 

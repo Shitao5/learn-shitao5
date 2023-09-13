@@ -336,6 +336,7 @@ autoplot(pred, task, type = "pca")
 #### 分类重抽样结果
 
 ```{r}
+#| results: hide
 # "boxplot"/"histogram" 图：箱线图展示性能度量的分布
 task = tsk("sonar")
 learner = lrn("classif.rpart", predict_type = "prob")
@@ -357,6 +358,7 @@ autoplot(rr, type = "prc")
 
 ```{r}
 #| warning: false
+#| results: hide
 # "prediction" 图：展示两个特征表示的测试集样本点和以背景色区分的预测类别
 task = tsk("pima")
 task$filter(seq(100))
@@ -369,6 +371,7 @@ autoplot(rr, type = "prediction")
 
 ```{r}
 #| warning: false
+#| results: hide
 # 若将学习器的预测类型改为"prob"，则用颜色深浅展示概率值
 learner = lrn("classif.rpart", predict_type = "prob")
 resampling = rsmp("cv", folds = 3)
@@ -378,6 +381,7 @@ autoplot(rr, type = "prediction")
 
 ```{r}
 #| warning: false
+#| results: hide
 # 上面是只绘制测试集，也可以加入训练集
 learner = lrn("classif.rpart", predict_type = "prob",
               predict_sets = c("train", "test"))
@@ -388,6 +392,7 @@ autoplot(rr, type = "prediction",
 ```
 
 ```{r}
+#| results: hide
 # "prediction" 图也可以绘制分类特征
 task = tsk("german_credit")
 task$filter(seq(100))
@@ -401,6 +406,7 @@ autoplot(rr, type = "prediction")
 #### 回归重抽样结果
 
 ```{r}
+#| results: hide
 # "prediction" 图：绘制一个特征与响应的散点图，散点表示测试集中的观测
 task = tsk("boston_housing")
 task$select("age")
@@ -412,6 +418,7 @@ autoplot(rr, type = "prediction")
 ```
 
 ```{r}
+#| results: hide
 # 若将学习器的预测类型改为"se"，还可以加上置信带
 learner = lrn("regr.lm", predict_type = "se")
 resampling = rsmp("cv", folds = 3)
@@ -420,6 +427,7 @@ autoplot(rr, type = "prediction")
 ```
 
 ```{r}
+#| results: hide
 # 上面是只绘制测试集，也可以加入训练集
 task$select("age")
 learner = lrn("regr.lm", predict_type = "se",
@@ -431,6 +439,7 @@ autoplot(rr, type = "prediction",
 ```
 
 ```{r}
+#| results: hide
 # 还可以将预测面添加到背景
 task = tsk("boston_housing")
 task$select(c("age", "rm"))
@@ -646,8 +655,7 @@ chunks_lrn$train(tsk("iris"))
 
 Bagging 采用的是并行机制，即基学习器的训练之间没有前后顺序可以同时进行。
 
-Bagging 是用“有放回” 抽样（Bootstrap 法）的方式抽取训练集，对于包含 $m$ 个样本的训练集，进
-行 $m$ 次有放回的随机抽样操作，得到样本子集（有重复）中有接近 36.8% 的样本没有被抽到。
+Bagging 是用“有放回” 抽样（Bootstrap 法）的方式抽取训练集，对于包含 $m$ 个样本的训练集，进行 $m$ 次有放回的随机抽样操作，得到样本子集（有重复）中有接近 36.8% 的样本没有被抽到。
 
 按照同样的方式重复进行，就可以采集到 $T$ 个包含 $m$ 个样本的数据副本，从而训练出 $T$ 个基学习器。
 
@@ -671,11 +679,9 @@ baglrn$train(tsk("iris"))
 
 ### 提升法（Boosting）
 
-Boosting 采用的是串行机制，即基学习器的训练存在依赖关系，按次序一一进行训练（实现上可以做
-到并行）。
+Boosting 采用的是串行机制，即基学习器的训练存在依赖关系，按次序一一进行训练（实现上可以做到并行）。
 
-基本思想：基模型的训练集按照某种策略每次都进行一定的转化，对所有基模型预测的结果进行线性合
-成产生最终的预测结果。
+基本思想：基模型的训练集按照某种策略每次都进行一定的转化，对所有基模型预测的结果进行线性合成产生最终的预测结果。
 
 从偏差-方差分解来看，Boosting 算法主要关注于降低偏差，每轮的迭代都关注于训练过程中预测错误的样本，将弱学习器提升为强学习器。
 
@@ -1666,7 +1672,13 @@ as.data.table(filter$calculate(task))
 
 有些学习器可以计算变量重要度，特别是基于树的模型，目前支持：
 
-"classif.featureless"，"regr.featureless"，"classif.ranger"，"regr.ranger"，"classif.rpart"，"regr.rpart"，"classif.xgboost"，"regr.xgboost"
+- "classif.featureless"，"regr.featureless"
+
+- "classif.ranger"，"regr.ranger"
+
+- "classif.rpart"，"regr.rpart"
+
+- "classif.xgboost"，"regr.xgboost"
 
 有些学习器需要在创建时” 激活” 其变量重要性度量。例如，通过 ranger 包来使用随机森林的 ”impurity” 度量：
 

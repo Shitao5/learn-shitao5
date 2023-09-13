@@ -1,7 +1,7 @@
 ---
 title: "Advanced R"
 date: "2023-08-30"
-date-modified: "2023-09-05"
+date-modified: "2023-09-13"
 image: "cover.png"
 categories: 
   - R
@@ -13,7 +13,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(9.4, 25)`
+`r stfun::progress(10, 25)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -156,6 +156,7 @@ The handlers set up by `tryCatch()` are called **exiting** handlers because afte
 library(purrr)
 ```
 
+# Functionals
 
 A **functional** is a function that takes a function as an input and returns a vector as output. Here's a simple functional: it calls the function provided as input with 1000 random uniform numbers. 
 
@@ -218,6 +219,124 @@ by_cyl %>%
   map_dbl(2)
 ```
 
+There are three basic ways to loop over a vector with a for loop:
+
+- Loop over the elements: `for (x in xs)`
+
+- Loop over the numeric indices: `for (i in seq_along(xs))`
+
+- Loop over the names: `for (nm in names(xs))`
+
+The first form is analogous to the `map()` family. The second and third forms are equivalent to the `imap()` family which allows you to iterate over the values and the indices of a vector in parallel.
+
+`imap()` is like `map2()` in the sense that your `.f` gets called with two arguments, but here both are derived from the vector. `imap(x, f)` is equivalent to `map2(x, names(x), f)` if `x` has names, and `map2(x, seq_along(x), f)` if it does not.
+
+> 有三种基本方法可以使用for循环遍历向量：
+>
+> 遍历元素：`for (x in xs)`
+>
+> 遍历数值索引：`for (i in seq_along(xs))`
+>
+> 遍历名称：`for (nm in names(xs))`
+>
+> 第一种形式类似于 `map()` 家族。第二和第三种形式等同于 `imap()` 家族，它允许你同时迭代向量的值和索引。
+>
+> `imap()` 类似于 `map2()`，因为你的 `.f` 会被调用两次，但这里的两个参数都来自向量。如果 `x` 有名称，`imap(x, f)` 等同于 `map2(x, names(x), f)`，如果没有名称，就等同于 `map2(x, seq_along(x), f)`。
+
+`reduce()` is a useful way to generalise a function that works with two inputs (a binary function) to work with any number of inputs. 
+
+`reduce()` 是一种有用的方式，可以将一个适用于两个输入（二进制函数）的函数泛化为适用于任意数量的输入。
+
+```{r}
+set.seed(1231)
+l <- map(1:4, ~ sample(1:10, 15, replace = TRUE))
+str(l)
+
+# 查找出现在每个元素中的值
+reduce(l, intersect)
+
+# 查找所有出现的值
+reduce(l, union)
+```
+
+```{r}
+# accumulate 返回中间结果
+accumulate(l, intersect)
+```
+
+If you’re using `reduce()` in a function, you should always supply `.init`. Think carefully about what your function should return when you pass a vector of length 0 or 1, and make sure to test your implementation.
+
+> 如果你在函数中使用 `reduce()`，你应该始终提供 `.init` 参数。仔细考虑当你传递长度为 0 或 1 的向量时，你的函数应该返回什么，并确保测试你的实现。
+
+A **predicate functional** applies a predicate to each element of a vector. purrr provides seven useful functions which come in three groups:
+
+- `some(.x, .p)` returns `TRUE` if *any* element matches;
+
+- `every(.x, .p)` returns `TRUE` if *all* elements match;
+
+- `none(.x, .p)` returns `TRUE` if *no* element matches.
+
+These are similar to `any(map_lgl(.x, .p))`, `all(map_lgl(.x, .p))` and `all(map_lgl(.x, negate(.p)))` but they terminate early: `some()` returns `TRUE` when it sees the first `TRUE`, and `every()` and `none()` return `FALSE` when they see the first `FALSE` or `TRUE` respectively.
+
+- `detect(.x, .p)` returns the value of the first match; `detect_index(.x, .p)` returns the location of the first match.
+
+- `keep(.x, .p)` keeps all matching elements; `discard(.x, .p)` drops all matching elements.
+
+> **谓词函数**将谓词应用于向量的每个元素。purrr 提供了七个有用的函数，分为三组：
+>
+> - `some(.x, .p)`：如果任何元素匹配，则返回 `TRUE`；
+>
+> - `every(.x, .p)`：如果所有元素都匹配，则返回 `TRUE`；
+>
+> - `none(.x, .p)`：如果没有元素匹配，则返回 `TRUE`。
+>
+> 这些函数类似于 `any(map_lgl(.x, .p))`、`all(map_lgl(.x, .p))` 和 `all(map_lgl(.x, negate(.p)))`，但它们会提前终止：`some()` 在看到第一个 `TRUE` 时返回 `TRUE`，`every()`  和 `none()` 在看到第一个 `FALSE` 或 `TRUE` 时分别返回 `FALSE`。
+>
+> - `detect(.x, .p)`：返回第一个匹配的值；`detect_index(.x, .p)`：返回第一个匹配的位置。
+>
+> - `keep(.x, .p)`：保留所有匹配的元素；`discard(.x, .p)`：删除所有匹配的元素。
+
+```{r}
+df = data.frame(x = 1:3, y = letters[1:3])
+detect(df, is.factor)
+detect_index(df, is.factor)
+
+str(keep(df, is.factor))
+str(discard(df, is.factor))
+```
+
+`map()` and `modify()` come in variants that also take predicate functions, transforming only the elements of `.x` where `.p` is `TRUE`.
+
+> `map()` 和 `modify()` 有一些变体，它们还接受谓词函数，只会在 `.p` 为 `TRUE` 的情况下转换 `.x` 的元素。
+
+```{r}
+df = data.frame(
+  num1 = c(0, 10, 20),
+  num2 = c(5, 6, 7),
+  chr1 = c("a", "b", "c"),
+  stringsAsFactors = FALSE
+)
+
+str(map_if(df, is.numeric, mean))
+str(modify_if(df, is.numeric, mean))
+str(map(keep(df, is.numeric), mean))
+```
+
+# Function Factories
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -241,5 +360,5 @@ by_cyl %>%
 
 
 ::: {.callout-tip title="To be continued"}
-- <https://adv-r.hadley.nz/functionals.html#map-variants>
+- <https://adv-r.hadley.nz/function-factories.html>
 :::
