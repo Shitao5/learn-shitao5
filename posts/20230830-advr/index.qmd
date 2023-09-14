@@ -1,7 +1,7 @@
 ---
 title: "Advanced R"
 date: "2023-08-30"
-date-modified: "2023-09-13"
+date-modified: "2023-09-14"
 image: "cover.png"
 categories: 
   - R
@@ -13,7 +13,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(10, 25)`
+`r stfun::progress(10.2, 25)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -324,17 +324,47 @@ str(map(keep(df, is.numeric), mean))
 
 # Function Factories
 
+A **function factory** is a function that makes functions. Here’s a very simple example: we use a function factory (`power1()`) to make two child functions (`square()` and `cube()`):
 
+```{r}
+power1 = function(exp) {
+  function(x) {
+    x ^ exp
+  }
+}
 
+square = power1(2)
+cube = power1(3)
 
+square(3)
+cube(3)
+```
 
+```{r}
+#| message: false
+library(rlang)
+library(ggplot2)
+library(scales)
+```
 
+```{r}
+square
+cube
+```
 
+It’s obvious where `x` comes from, but how does R find the value associated with `exp`? Simply printing the manufactured functions is not revealing because the bodies are identical; the contents of the enclosing environment are the important factors. We can get a little more insight by using `rlang::env_print()`. That shows us that we have two different environments (each of which was originally an execution environment of `power1()`). The environments have the same parent, which is the enclosing environment of `power1()`, the global environment.
 
+> 显然，`x` 的值是明显的，但 R 如何找到与 `exp` 相关联的值呢？仅仅打印制造出的函数并不能揭示这一点，因为它们的主体是相同的；封闭环境的内容才是重要因素。我们可以通过使用 `rlang::env_print()` 来获得更多的见解。这将显示我们有两个不同的环境（每个最初都是 `power1()` 的执行环境）。这些环境具有相同的父级，即 `power1()` 的封闭环境，也就是全局环境。
 
+```{r}
+env_print(square)
+env_print(cube)
+```
 
-
-
+```{r}
+fn_env(square)$exp
+fn_env(cube)$exp
+```
 
 
 
@@ -360,5 +390,5 @@ str(map(keep(df, is.numeric), mean))
 
 
 ::: {.callout-tip title="To be continued"}
-- <https://adv-r.hadley.nz/function-factories.html>
+- <https://adv-r.hadley.nz/function-factories.html#forcing-evaluation>
 :::
