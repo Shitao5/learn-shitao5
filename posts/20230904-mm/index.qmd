@@ -2,7 +2,7 @@
 title: "精通计量"
 subtitle: "从原因到结果的探寻之旅"
 date: "2023-09-04"
-date-modified: "2023-09-13"
+date-modified: "2023-09-15"
 image: "cover.jpg"
 categories: 
   - Econometrics
@@ -15,7 +15,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(31, 184)`
+`r stfun::progress(34, 184)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -84,8 +84,9 @@ categories:
 
 # 回归
 
+- 回归（regression）就是比较具有相同可观测特性的处理组和控制组。基于回归进行因果推断的前提假设是，当处理组和控制组在可观察的关键变量上都一样时，我们看不见的因素造成的选择偏误几乎都能得到消除。
 
-
+- 要从学校选择决策中分离偶然性，最重要的第一步是，使进入私立大学和公立大学的学生之间最明显、最重要的差别保持不变。通过这种方式，我们希望（虽然不能保证）做到其他条件不变。
 
 
 
