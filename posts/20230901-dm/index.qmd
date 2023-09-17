@@ -2,7 +2,7 @@
 title: "数据挖掘"
 subtitle: "概念与技术"
 date: "2023-09-01"
-date-modified: "2023-09-10"
+date-modified: "2023-09-16"
 image: "cover.jpg"
 categories: 
   - Data Science
@@ -14,7 +14,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(93, 493)`
+`r stfun::progress(93, 493, stop = TRUE)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
