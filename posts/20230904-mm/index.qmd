@@ -2,7 +2,7 @@
 title: "精通计量"
 subtitle: "从原因到结果的探寻之旅"
 date: "2023-09-04"
-date-modified: "2023-09-15"
+date-modified: "2023-09-18"
 image: "cover.jpg"
 categories: 
   - Econometrics
@@ -15,7 +15,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(34, 184)`
+`r stfun::progress(38, 184)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -88,7 +88,9 @@ categories:
 
 - 要从学校选择决策中分离偶然性，最重要的第一步是，使进入私立大学和公立大学的学生之间最明显、最重要的差别保持不变。通过这种方式，我们希望（虽然不能保证）做到其他条件不变。
 
+- 通过强调规模更大的组别，这种加权平均方式能够更有效地利用数据，而且，也可能因此给出在统计上更精确的私立学校-公立学校毕业生收入差异估计值。
 
+- 匹配（matching）比较的本质是要做到苹果和苹果比、橘子和橘子比。不加控制的比较所得差值如此之大，反映出的是选择偏误：向私立大学提出入学申请并被录取的学生，无论去哪里上学都会有更高的收入水平。
 
 
 

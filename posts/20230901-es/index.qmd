@@ -4,7 +4,7 @@ date: "2023-09-01"
 date-modified: "2023-09-05"
 image: "cover.jpg"
 categories: 
-  - ES
+  - Elasticsearch
 ---
 
 ```{r}
