@@ -7,7 +7,7 @@ include-after-body:
   - _includes/div-giscus.html
 ---
 
-这是待阅读的内容：
+以下是待阅读的内容：
 
 - book1
 

@@ -20,6 +20,7 @@ categories:
 
 ::: {.callout-tip title="Learning Source"}
 - <https://mlr3book.mlr-org.com/>
+- 中文翻译由 ChatGPT 3.5 提供
 :::
 
 # Getting Started {.unnumbered}
