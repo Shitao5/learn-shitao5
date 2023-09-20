@@ -1,12 +1,13 @@
 ---
 title: "About"
 date: "2023-06-18"
+date-modified: "2023-09-20"
 include-in-header:
   - _includes/giscus.html
 include-after-body:
   - _includes/div-giscus.html
 ---
 
-This is a [Quarto Website](https://quarto.org/docs/websites) that contains study notes by [Shitao5](https://shitao5.org/).
+The best way to learn technology is to practice while you study, and mastering knowledge requires revisiting the old while learning the new. This is a [Quarto Website](https://quarto.org/docs/websites) that hosts study notes by [Shitao](https://shitao5.org/).
 
-这是一个 [Quarto Website](https://quarto.org/docs/websites)，存放了[诗涛](https://shitao5.org/)的学习笔记。
+学习技术最好的方式是边看边练，掌握知识最需要的是温故知新。这是一个 [Quarto Website](https://quarto.org/docs/websites)，存放了[诗涛](https://shitao5.org/)的学习笔记。

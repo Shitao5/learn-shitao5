@@ -20,6 +20,8 @@ website:
     right:
       - text: About
         href: about.qmd
+      - text: To Read
+        href: toread.qmd
       - text: Shitao's Blog
         href: https://shitao5.org/
       - icon: github
