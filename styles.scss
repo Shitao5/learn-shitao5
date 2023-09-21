@@ -16,24 +16,59 @@ $font-family-chinese: "Noto Serif SC", serif;
 // 定义英文字体族
 $font-family-english: "Merriweather", serif;
 
+// 定义默认字体大小
+$font-size-default: 17px;
+
+// 定义标题字体大小
+$font-size-h1: $font-size-default + 4px; // h1 标题字体大小比默认大1像素
+$font-size-h2: $font-size-default + 2px; // h2 标题字体大小与默认相同
+$font-size-h3: $font-size-default      ; // h3 标题字体大小比默认小1像素
+$font-size-h4: $font-size-default - 1px; // h4 标题字体大小比默认小1像素
+$font-size-h5: $font-size-default - 1px; // h5 标题字体大小比默认小1像素
+
 /*-- scss:rules --*/
 
 body {
   font-family: $font-family-default;
+  font-size: $font-size-default - 1px; // 缩小默认字体一号
 
   &.chinese {
     font-family: $font-family-chinese;
+    font-size: $font-size-default - 1px; // 缩小中文字体一号
   }
 
   &.english {
     font-family: $font-family-english;
+    font-size: $font-size-default - 1px; // 缩小英文字体一号
   }
 
   // 修改blockquote部分的字体为正常（取消斜体）
   blockquote {
     font-family: $font-family-default;
     font-style: normal;
+    font-size: $font-size-default - 1px; // 缩小字体一号
   }
+}
+
+// 自定义各级标题的字体大小
+h1 {
+  font-size: $font-size-h1;
+}
+
+h2 {
+  font-size: $font-size-h2;
+}
+
+h3 {
+  font-size: $font-size-h3;
+}
+
+h4 {
+  font-size: $font-size-h4;
+}
+
+h5 {
+  font-size: $font-size-h5;
 }
 
 figure {

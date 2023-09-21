@@ -2,7 +2,7 @@
 title: "精通计量"
 subtitle: "从原因到结果的探寻之旅"
 date: "2023-09-04"
-date-modified: "2023-09-18"
+date-modified: "2023-09-21"
 image: "cover.jpg"
 categories: 
   - Econometrics
@@ -15,7 +15,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(38, 184)`
+`r stfun::progress(41, 184)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -92,7 +92,19 @@ categories:
 
 - 匹配（matching）比较的本质是要做到苹果和苹果比、橘子和橘子比。不加控制的比较所得差值如此之大，反映出的是选择偏误：向私立大学提出入学申请并被录取的学生，无论去哪里上学都会有更高的收入水平。
 
+- 虽然回归是件相当了不起的事情，但是我们将它视为一种自动配对器。具体来说，回归估计值是在我们简化的匹配矩阵中针对各类构造出的组别进行多种匹配比较后计算出的加权平均值。
 
+- 回归方法中的关键元素是：
+
+    - 因变量（dependent variable）
+    
+    - 处理变量（treatment variable）
+    
+    - 一组控制变量（control variable）
+    
+- 处理变量和控制变量之间的区别是概念性的，不是形式上的。你的研究问题和选择的经验研究策略决定了变量的选择，也决定了它们各自发挥的作用。
+
+- 使用对数因变量，可以将回归估计值解释为百分比变化。
 
 
 

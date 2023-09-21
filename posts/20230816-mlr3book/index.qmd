@@ -1,7 +1,7 @@
 ---
 title: "Applied Machine Learning Using mlr3 in R"
 date: "2023-08-16"
-date-modified: "2023-08-25"
+date-modified: "2023-09-21"
 image: "logo.png"
 categories: 
   - Machine Learning
@@ -15,7 +15,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(2.2, 15)`
+`r stfun::progress(2.5, 15)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -31,8 +31,14 @@ library(mlr3verse)
 library(mlr3pipelines)
 library(mlr3benchmark)
 library(ggplot2)
+```
+
+```{r}
+#| label: setup
+#| include: false
 
 theme_set(theme_minimal())
+options(datatable.print.topn = 4)
 ```
 
 # Introduction and Overview
@@ -42,7 +48,6 @@ theme_set(theme_minimal())
 ```{r}
 #| warning: false
 #| message: false
-#| eval: false
 set.seed(123)
 
 task = tsk("penguins")
@@ -57,6 +62,31 @@ prediction
 
 prediction$score(msr("classif.acc"))
 ```
+
+The `mlr3` interface also lets you run more complicated experiments in just a few lines of code:
+
+```{r}
+#| eval: false
+#| echo: false
+tasks = tsks(c("breast_cancer", "sonar"))
+
+glrn_rf_tuned = as_learner(
+  ppl("robustify") %>>% 
+    auto_tuner(tnr("grid_search", resolution = 5),
+    lrn("classif.ranger", num.trees = to_tune(200, 500)),
+    rsmp("holdout"))
+)
+glrn_rf_tuned$id = "RF"
+
+# 这里报错
+glrn_stack = as_learner(ppl("robustify") %>>% ppl("stacking",
+    lrns(c("classif.rpart", "classif.kknn")),
+    lrn("classif.log_reg")
+))
+glrn_stack$id = "Stack"
+```
+
+
 
 We use dictionaries to group large collections of relevant objects so they can be listed and retrieved easily.
 For example, you can see an overview of available learners (that are in loaded packages) and their properties with `as.data.table(mlr_learners)` or by calling the sugar function without any arguments, e.g. `lrn()`.
@@ -169,6 +199,7 @@ tsk_mtcars_small$data()
 ```{r}
 # all the learners available in mlr3
 mlr_learners
+# lrns()
 ```
 
 ```{r}
@@ -178,9 +209,13 @@ lrn("regr.rpart")
 All `Learner` objects include the following metadata, which can be seen in the output above:
 
 - `$feature_types`: the type of features the learner can handle.
+
 - `$packages`: the packages required to be installed to use the learner.
+
 - `$properties`: the properties of the learner. For example, the “missings” properties means a model can handle missing data, and “importance” means it can compute the relative importance of each feature.
+
 - `$predict_types`: the types of prediction that the model can make.
+
 - `$param_set`: the set of available hyperparameters.
 
 ### Training
@@ -188,14 +223,10 @@ All `Learner` objects include the following metadata, which can be seen in the o
 ```{r}
 # load mtcars task
 tsk_mtcars = tsk("mtcars")
-```
 
-```{r}
 # load a regression tree
 lrn_rpart = lrn("regr.rpart")
-```
 
-```{r}
 # pass the task to the learner via $train()
 lrn_rpart$train(tsk_mtcars)
 ```
@@ -204,14 +235,10 @@ After training, the fitted model is stored in the `$model` field for future insp
 
 ```{r}
 lrn_rpart$model
-```
 
-```{r}
 splits = partition(tsk_mtcars)
 splits
-```
 
-```{r}
 lrn_rpart$train(tsk_mtcars, row_ids = splits$train)
 ```
 
@@ -220,9 +247,7 @@ lrn_rpart$train(tsk_mtcars, row_ids = splits$train)
 ```{r}
 prediction = lrn_rpart$predict(tsk_mtcars, row_ids = splits$test)
 prediction
-```
 
-```{r}
 autoplot(prediction)
 ```
 
@@ -257,10 +282,7 @@ lrn_rpart$train(tsk("mtcars"))$model
 # another way to update hyperparameters
 lrn_rpart$param_set$values$maxdepth = 2
 lrn_rpart$param_set$values
-```
 
-```{r}
-#| eval: false
 # now with depth 2
 lrn_rpart$train(tsk("mtcars"))$model
 ```
@@ -271,16 +293,292 @@ lrn_rpart$param_set$set_values(xval = 2, cp = .5)
 lrn_rpart$param_set$values
 ```
 
+### Baseline Learners
+
+Baselines are useful in model comparison and as fallback learners. For regression, we have implemented the baseline `lrn("regr.featureless")`, which always predicts new values to be the mean (or median, if the `robust` hyperparameter is set to `TRUE`) of the target in the training data:
+
+基线在模型比较和作为备用学习器中非常有用。对于回归问题，我们已经实现了名为 `lrn("regr.featureless")` 的基线，它总是预测新值为训练数据中目标的均值（如果鲁棒性参数设置为 `TRUE`，则为中位数）：
+
+```{r}
+task = as_task_regr(data.frame(x = runif(1000), y = rnorm(1000, 2, 1)),
+                    target = "y")
+lrn("regr.featureless")$train(task, 1:995)$predict(task, 996:1000)
+```
+
+It is good practice to test all new models against a baseline, and also to include baselines in experiments with multiple other models. In general, a model that does not outperform a baseline is a ‘bad’ model, on the other hand, a model is not necessarily ‘good’ if it outperforms the baseline.
+
+> 在实践中，对所有新模型进行与基线的测试是一个良好的做法，同时在与多个其他模型进行实验时也要包括基线。通常情况下，如果一个模型无法超越基线，那么它可以被视为是一个不好的模型；另一方面，如果一个模型超越了基线，也不一定就是一个好模型。
+
+## Evaluation
+
+```{r}
+lrn_rpart = lrn("regr.rpart")
+tsk_mtcars = tsk("mtcars")
+splits = partition(tsk_mtcars)
+lrn_rpart$train(tsk_mtcars, splits$train)
+prediction = lrn_rpart$predict(tsk_mtcars, splits$test)
+```
+
+### Measures
+
+```{r}
+as.data.table(msr())[1:3]
+```
+
+```{r}
+measure = msr("regr.mae")
+measure
+```
+
+### Scoring Predictions
+
+Note that all task types have default measures that are used if the argument to `$score()` is omitted, for regression this is the mean squared error (`msr("regr.mse")`).
+
+```{r}
+prediction$score()
+prediction$score(measure)
+prediction$score(msrs(c("regr.mse", "regr.mae")))
+```
+
+### Technical Measures
+
+`mlr3` also provides measures that do not quantify the quality of the predictions of a model, but instead provide ‘meta’-information about the model. These include:
+
+- `msr("time_train")`: The time taken to train a model.
+
+- `msr("time_predict")`: The time taken for the model to make predictions.
+
+- `msr("time_both")`: The total time taken to train the model and then make predictions.
+
+- `msr("selected_features")`: The number of features selected by a model, which can only be used if the model has the “selected_features” property.
+
+```{r}
+measures = msrs(c("time_train", "time_predict", "time_both"))
+prediction$score(measures, learner = lrn_rpart)
+```
+
+These can be used after model training and predicting because we automatically store model run times whenever `$train()` and `$predict()` are called, so the measures above are equivalent to:
+
+```{r}
+c(lrn_rpart$timings, both = sum(lrn_rpart$timings))
+```
+
+The `selected_features` measure calculates how many features were used in the fitted model.
+
+```{r}
+msr_sf = msr("selected_features")
+msr_sf
+```
+
+```{r}
+# accessed hyperparameters with `$param_set`
+msr_sf$param_set
+```
+
+```{r}
+msr_sf$param_set$values$normalize = TRUE
+prediction$score(msr_sf, task = tsk_mtcars, learner = lrn_rpart)
+```
+
+Note that we passed the task and learner as the measure has the `requires_task` and `requires_learner` properties.
+
+## Our First Regression Experiment
+
+We have now seen how to train a model, make predictions and score them. What we have not yet attempted is to ascertain if our predictions are any ‘good’. So before look at how the building blocks of `mlr3` extend to classification, we will take a brief pause to put together everything above in a short experiment to assess the quality of our predictions. We will do this by comparing the performance of a featureless regression learner to a decision tree with changed hyperparameters.
+
+> 我们已经了解了如何训练模型、进行预测并对其进行评分。但是，我们尚未尝试确定我们的预测是否“好”。因此，在深入研究 `mlr3` 的构建模块如何扩展到分类之前，我们将简要停顿一下，通过一个简短的实验来评估我们预测的质量。我们将通过比较无特征的回归学习器与更改超参数的决策树的性能来进行评估。
 
 
+```{r}
+set.seed(349)
+tsk_mtcars = tsk("mtcars")
+splits = partition(tsk_mtcars)
+lrn_featureless = lrn("regr.featureless")
+lrn_rpart = lrn("regr.rpart", cp = .2, maxdepth = 5)
+measures = msrs(c("regr.mse", "regr.mae"))
 
+# train learners
+lrn_featureless$train(tsk_mtcars, splits$train)
+lrn_rpart$train(tsk_mtcars, splits$train)
+# make and score predictions
+lrn_featureless$predict(tsk_mtcars, splits$test)$score(measures)
+lrn_rpart$predict(tsk_mtcars, splits$test)$score(measures)
+```
 
+## Classification
 
+### Our First Classification Experiment
 
+```{r}
+set.seed(349)
+tsk_penguins = tsk("penguins")
+splits = partition(tsk_penguins)
+lrn_featureless = lrn("classif.featureless")
+lrn_rpart = lrn("classif.rpart", cp = .2, maxdepth = 5)
+measure = msr("classif.acc")
 
+# train learners
+lrn_featureless$train(tsk_penguins, splits$train)
+lrn_rpart$train(tsk_penguins, splits$train)
 
+# make and score predictions
+lrn_featureless$predict(tsk_penguins, splits$test)$score(measure)
+lrn_rpart$predict(tsk_penguins, splits$test)$score(measure)
+```
 
+### TaskClassif
 
+```{r}
+as.data.table(tsks())[task_type == "classif"]
+```
+
+The `sonar` task is an example of a binary classification problem, as the target can only take two different values, in `mlr3` terminology it has the “twoclass” property:
+
+```{r}
+tsk_sonar = tsk("sonar")
+tsk_sonar
+```
+
+```{r}
+tsk_sonar$class_names
+```
+
+In contrast, `tsk("penguins")` is a multiclass problem as there are more than two species of penguins; it has the “multiclass” property:
+
+```{r}
+tsk_penguins = tsk("penguins")
+tsk_penguins$properties
+tsk_penguins$class_names
+```
+
+A further difference between these tasks is that binary classification tasks have an extra field called `$positive`, which defines the ‘positive’ class. In binary classification, as there are only two possible class types, by convention one of these is known as the ‘positive’ class, and the other as the ‘negative’ class. It is arbitrary which is which, though often the more ‘important’ (and often smaller) class is set as the positive class. You can set the positive class during or after construction. If no positive class is specified then `mlr3` assumes the first level in the `target` column is the positive class, which can lead to misleading results.
+
+> 这两种任务之间的另一个区别是，二分类任务有一个额外的字段称为 `$positive`，它定义了“正类”（positive class）。在二分类问题中，由于只有两种可能的类别类型，按照惯例，其中一种被称为“正类”，另一种被称为“负类”。哪个是哪个是任意的，尽管通常更“重要”（通常更小）的类别被设置为正类。您可以在构建期间或之后设置正类。如果未指定正类，则 `mlr3` 假定目标列中的第一个级别是正类，这可能导致误导性的结果。
+
+```{r}
+Sonar = tsk_sonar$data()
+tsk_classif = as_task_classif(Sonar, target = "Class", positive = "R")
+tsk_classif$positive
+```
+
+```{r}
+# changing after construction
+tsk_classif$positive = "M"
+tsk_classif$positive
+```
+
+### LearnerClassif and MeasureClassif
+
+Classification learners, which inherit from `LearnerClassif`, have nearly the same interface as regression learners. However, a key difference is that the possible predictions in classification are either `"response"` – predicting an observation’s class (a penguin’s species in our example, this is sometimes called “hard labeling”) – or `"prob"` – predicting a vector of probabilities, also called “posterior probabilities”, of an observation belonging to each class. In classification, the latter can be more useful as it provides information about the confidence of the predictions:
+
+> 分类学习器（继承自 `LearnerClassif`）几乎具有与回归学习器相同的接口。然而，分类中的一个关键区别是，分类问题中可能的预测结果要么是 `"response"` （预测观测的类别，例如我们示例中的企鹅物种，有时称为“硬标签”），要么是 `"prob"` （预测属于每个类别的概率向量，也称为“后验概率”）。在分类中，后者可能更有用，因为它提供了有关预测的置信度信息：
+
+```{r}
+lrn_rpart = lrn("classif.rpart", predict_type = "prob")
+lrn_rpart$train(tsk_penguins, splits$train)
+prediction = lrn_rpart$predict(tsk_penguins, splits$test)
+prediction
+```
+
+Also, the interface for classification measures, which are of class `MeasureClassif`, is identical to regression measures. The key difference in usage is that you will need to ensure your selected measure evaluates the prediction type of interest. To evaluate "response" predictions, you will need measures with `predict_type = "response"`, or to evaluate probability predictions you will need `predict_type = "prob"`. The easiest way to find these measures is by filtering the `mlr_measures` dictionary:
+
+> 此外，分类度量标准的接口，其类别为 `MeasureClassif`，与回归度量标准完全相同。在使用上的主要区别在于，您需要确保所选的度量标准评估感兴趣的预测类型。要评估 `“response”` 预测，您需要使用 `predict_type = "response"` 的度量标准，或者要评估概率预测，您需要使用 `predict_type = "prob"` 的度量标准。查找这些度量标准的最简单方法是通过筛选 `mlr_measures` 字典：
+
+```{r}
+as.data.table(msr())[
+  task_type == "classif" & predict_type == "prob" &
+  !sapply(task_properties, \(x) "twoclass" %in% x)
+]
+```
+
+```{r}
+measures = msrs(c("classif.mbrier", "classif.logloss", "classif.acc"))
+prediction$score(measures)
+```
+
+### PredictionClassif, Confusion Matrix, and Thresholding
+
+`PredictionClassif` objects have two important differences from their regression analog. Firstly, the added field `$confusion`, and secondly the added method `$set_threshold()`.
+
+> `PredictionClassif` 对象与其回归模型的预测对象有两个重要的区别。首先是新增的字段 `$confusion`，其次是新增的方法 `$set_threshold()`。
+
+#### Confusion Matrix
+
+```{r}
+prediction$confusion
+```
+
+The rows in a confusion matrix are the predicted class and the columns are the true class. All off-diagonal entries are incorrectly classified observations, and all diagonal entries are correctly classified. In this case, the classifier does fairly well classifying all penguins, but we could have found that it only classifies the Adelie species well but often conflates Chinstrap and Gentoo, for example.
+
+> 混淆矩阵中的行表示预测的类别，列表示真实的类别。所有非对角线条目都是被错误分类的观测值，而所有对角线条目都是被正确分类的。在这种情况下，分类器在对所有企鹅进行分类时表现得相当不错，但我们也可能发现它只能很好地对 Adelie 物种进行分类，但经常将 Chinstrap 和 Gentoo 混为一谈。
+
+```{r}
+#| label: fig-confusion_matrix
+#| fig-cap: "Counts of each class label in the ground truth data (left) and predictions (right)."
+autoplot(prediction)
+```
+
+In the binary classification case, the top left entry corresponds to true positives, the top right to false positives, the bottom left to false negatives and the bottom right to true negatives. Taking `tsk_sonar` as an example with `M` as the positive class:
+
+> 在二分类情况下，左上角的条目对应于真正例（true positives），右上角对应于假正例（false positives），左下角对应于假负例（false negatives），右下角对应于真负例（true negatives）。以 `tsk_sonar` 为例，`M` 为正类：
+
+```{r}
+splits = partition(tsk_sonar)
+lrn_rpart$
+  train(tsk_sonar, splits$train)$
+  predict(tsk_sonar, splits$test)$
+  confusion
+```
+
+#### Thresholding
+
+**阈值化**
+
+This 50% value is known as the threshold and it can be useful to change this threshold if there is class imbalance (when one class is over- or under-represented in a dataset), or if there are different costs associated with classes, or simply if there is a preference to ‘over’-predict one class. As an example, let us take `tsk("german_credit")` in which 700 customers have good credit and 300 have bad. Now we could easily build a model with around “70%” accuracy simply by always predicting a customer will have good credit:
+
+> 这个 50% 的值被称为阈值，如果数据集中存在类别不平衡（即一个类别在数据集中过多或过少出现），或者不同的类别具有不同的成本，或者只是有一种“过度”预测一种类别的倾向，那么更改这个阈值可能会很有用。举个例子，让我们看看 `tsk("german_credit")`，其中有 700 个客户信用良好，300 个客户信用不良。现在，我们可以很容易地构建一个模型，总是预测客户会有良好的信用，从而获得 “70%” 左右的准确性：
+
+```{r}
+task_credit = tsk("german_credit")
+lrn_featureless = lrn("classif.featureless", predict_type = "prob")
+splits = partition(task_credit)
+lrn_featureless$train(task_credit, splits$train)
+prediction = lrn_featureless$predict(task_credit, splits$test)
+prediction$score(msr("classif.acc"))
+```
+
+::: {.callout-caution}
+TODO：等待后续添加交叉引用
+:::
+
+While this model may appear to have good performance on the surface, in fact, it just ignores all ‘bad’ customers – this can create big problems in this finance example, as well as in healthcare tasks and other settings where false positives cost more than false negatives (see Section 13.1 for cost-sensitive classification).
+
+Thresholding allows classes to be selected with a different probability threshold, so instead of predicting that a customer has bad credit if P(good) < 50%, we might predict bad credit if P(good) < 70% – notice how we write this in terms of the positive class, which in this task is ‘good’. Let us see this in practice:
+
+> 虽然这个模型表面上看起来性能不错，但实际上它只是忽略了所有“不良”的客户 - 这在金融示例以及在医疗任务和其他一些情况下可能会带来很大问题，特别是在假阳性的成本高于假阴性的情况下（请参见第13.1节的成本敏感分类）。
+>
+> 阈值化允许使用不同的概率阈值选择类别，因此，与其在P(好) < 50%时预测客户信用不良，我们可以在P(好) < 70%时预测客户信用不良。请注意，我们是根据正类别来表示这一点，而在这个任务中正类别是“好”。让我们看看实际应用中的情况：
+
+```{r}
+prediction$set_threshold(0.7)
+prediction$score(msr("classif.acc"))
+```
+
+```{r}
+lrn_rpart = lrn("classif.rpart", predict_type = "prob")
+lrn_rpart$train(task_credit, splits$train)
+prediction = lrn_rpart$predict(task_credit, splits$test)
+prediction$score(msr("classif.acc"))
+prediction$confusion
+```
+
+```{r}
+prediction$set_threshold(0.7)
+prediction$score(msr("classif.acc"))
+prediction$confusion
+```
+
+### Task Column Roles
 
 
 
@@ -329,5 +627,5 @@ lrn_rpart$param_set$values
 
 
 ::: {.callout-tip title="To be continued"}
-- <https://mlr3book.mlr-org.com/chapters/chapter2/data_and_basic_modeling.html#sec-param-set>
+- <https://mlr3book.mlr-org.com/chapters/chapter2/data_and_basic_modeling.html#sec-row-col-roles>
 :::
