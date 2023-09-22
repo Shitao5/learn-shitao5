@@ -1,7 +1,7 @@
 ---
 title: "Applied Machine Learning Using mlr3 in R"
 date: "2023-08-16"
-date-modified: "2023-09-21"
+date-modified: "2023-09-22"
 image: "logo.png"
 categories: 
   - Machine Learning
@@ -15,7 +15,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(2.5, 15)`
+`r stfun::progress(3.1, 15)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -578,11 +578,12 @@ prediction$score(msr("classif.acc"))
 prediction$confusion
 ```
 
-### Task Column Roles
+# Evaluation and Benchmarking
 
+**Resampling Does Not Avoid Model Overfitting**: 
+A common **misunderstanding** is that holdout and other more advanced resampling strategies can prevent model overfitting. In fact, these methods just make overfitting visible as we can separately evaluate train/test performance. Resampling strategies also allow us to make (nearly) unbiased estimations of the generalization error.
 
-
-
+> **重采样不能避免模型过拟合**：一个常见的误解是，留出策略和其他更高级的重采样策略可以防止模型过拟合。实际上，这些方法只是使过拟合问题更加显而易见，因为我们可以单独评估训练/测试性能。重采样策略还允许我们对泛化误差进行（几乎）无偏估计。
 
 
 
@@ -627,5 +628,5 @@ prediction$confusion
 
 
 ::: {.callout-tip title="To be continued"}
-- <https://mlr3book.mlr-org.com/chapters/chapter2/data_and_basic_modeling.html#sec-row-col-roles>
+- <https://mlr3book.mlr-org.com/chapters/chapter3/evaluation_and_benchmarking.html#sec-holdout-scoring>
 :::

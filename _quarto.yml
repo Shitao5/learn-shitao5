@@ -41,10 +41,13 @@ format:
       dark: [darkly, styles-dark.scss]
     toc: true
     number-sections: true
-    code-copy: true
     code-overflow: wrap
     code-link: true
     link-external-newwindow: true
+    code-fold: show
+    code-tools:
+      source: true
+      toggle: true
 
 date-format: iso
 # license: CC BY-SA
