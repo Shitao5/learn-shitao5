@@ -44,10 +44,9 @@ format:
     code-overflow: wrap
     code-link: true
     link-external-newwindow: true
-    code-fold: show
     code-tools:
       source: true
-      toggle: true
+      toggle: false
 
 date-format: iso
 # license: CC BY-SA

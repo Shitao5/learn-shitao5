@@ -1,7 +1,7 @@
 ---
 title: "Elasticsearch Guide [8.10]"
 date: "2023-09-20"
-# date-modified: "2023-09-05"
+date-modified: "2023-09-25"
 image: "cover.jpg"
 categories: 
   - Elasticsearch
@@ -124,6 +124,8 @@ Cross-cluster replication is active-passive. The index on the primary cluster is
 :::
 
 # Search your data
+
+## Filter search results
 
 
 

@@ -1,7 +1,7 @@
 ---
 title: "Applied Machine Learning Using mlr3 in R"
 date: "2023-08-16"
-date-modified: "2023-09-22"
+date-modified: "2023-09-25"
 image: "logo.png"
 categories: 
   - Machine Learning
@@ -15,7 +15,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(3.1, 15)`
+`r stfun::progress(3.3, 15)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -585,13 +585,121 @@ A common **misunderstanding** is that holdout and other more advanced resampling
 
 > **重采样不能避免模型过拟合**：一个常见的误解是，留出策略和其他更高级的重采样策略可以防止模型过拟合。实际上，这些方法只是使过拟合问题更加显而易见，因为我们可以单独评估训练/测试性能。重采样策略还允许我们对泛化误差进行（几乎）无偏估计。
 
+## Holdout and Scoring
+
+In practice, one would usually create an intermediate model, which is trained on a subset of the available data and then tested on the remainder of the data. The performance of this intermediate model, obtained by comparing the model predictions to the ground truth, is an estimate of the generalization performance of the final model, which is the model fitted on all data.
+
+> 在实践中，通常会创建一个中间模型，该模型在可用数据的子集上进行训练，然后在剩余的数据上进行测试。通过将模型的预测与真实情况进行比较，中间模型的性能可以作为最终模型的泛化性能的估计。最终模型是在所有可用数据上训练的模型。
+
+```{r}
+tsk_penguins = tsk("penguins")
+splits = partition(tsk_penguins)
+lrn_rpart = lrn("classif.rpart")
+lrn_rpart$train(tsk_penguins, splits$train)
+prediction = lrn_rpart$predict(tsk_penguins, splits$test)
+prediction$score(msr("classif.acc"))
+```
+
+## Resampling
+
+### Constructing a Resampling Strategy
+
+```{r}
+as.data.table(rsmp())
+```
+
+```{r}
+rsmp("holdout", ratio = .8)
+```
+
+```{r}
+# three-fold CV
+cv3 = rsmp("cv", folds = 3)
+# subsampling with 3 repeats and 9/10 ratio
+ss390 = rsmp("subsampling", repeats = 3, ratio = .9)
+# 2-repeats 5-fold cv
+rcv25 = rsmp("repeated_cv", repeats = 2, folds = 5)
+```
+
+When a `"Resampling"` object is constructed, it is simply a definition for how the data splitting process will be performed on the task when running the resampling strategy. However, it is possible to manually instantiate a resampling strategy, i.e., generate all train-test splits, by calling the `$instantiate()` method on a given task.
+
+> 当构建一个 `"Resampling"` 对象时，它只是对在运行重采样策略时如何执行数据拆分过程的定义。然而，可以通过在给定任务上调用 `$instantiate()` 方法来手动实例化一个重采样策略，即生成所有的训练-测试拆分。
+
+```{r}
+cv3$instantiate(tsk_penguins)
+# first 5 observations in first traininng set
+cv3$train_set(1)[1:5]
+# fitst 5 observations in thirt test set
+cv3$test_set(3)[1:5]
+```
+
+When the aim is to fairly compare multiple learners, best practice dictates that all learners being compared use the same training data to build a model and that they use the same test data to evaluate the model performance. Resampling strategies are instantiated automatically for you when using the `resample()` method. Therefore, manually instantiating resampling strategies is rarely required but might be useful for debugging or digging deeper into a model’s performance.
+
+> 当目标是公平比较多个学习器时，最佳实践要求所有进行比较的学习器都使用相同的训练数据来构建模型，并且它们使用相同的测试数据来评估模型性能。在使用 `resample()` 方法时，重采样策略会自动为您实例化。因此，手动实例化重采样策略很少是必需的，但在调试或深入研究模型性能时可能会有用。
+
+### Resampling Experiments
+
+The `resample()` function takes a given `Task`, `Learner`, and `Resampling` object to run the given resampling strategy. `resample()` repeatedly fits a model on training sets, makes predictions on the corresponding test sets and stores them in a `ResampleResult` object, which contains all the information needed to estimate the generalization performance.
+
+`resample()` 函数接受给定的任务（`Task`）、学习器（`Learner`）和重采样（`Resampling`）对象，以运行给定的重采样策略。`resample()` 函数会在训练集上反复拟合模型，在相应的测试集上进行预测，并将预测结果存储在 `ResampleResult` 对象中，该对象包含了估算泛化性能所需的所有信息。
+
+```{r}
+#| results: hide
+rr = resample(tsk_penguins, lrn_rpart, cv3)
+```
+
+```{r}
+rr
+```
+
+```{r}
+# calculate the score for each iteration
+acc = rr$score(msr("classif.ce"))
+acc[, .(iteration, classif.ce)]
+```
+
+```{r}
+# aggregated score across all resampling iterations
+rr$aggregate(msr("classif.ce"))
+```
+
+By default, the majority of measures will aggregate scores using a macro average, which first calculates the measure in each resampling iteration separately, and then averages these scores across all iterations. However, it is also possible to aggregate scores using a micro average, which pools predictions across resampling iterations into one `Prediction` object and then computes the measure on this directly:
+
+> 默认情况下，大多数性能度量会使用宏平均（macro average）来汇总分数，它首先在每个重采样迭代中分别计算度量，然后在所有迭代中对这些分数进行平均。但也可以使用微平均（micro average）来汇总分数，它将重采样迭代中的预测汇总到一个 `Prediction` 对象中，然后直接在该对象上计算度量：
+
+```{r}
+rr$aggregate(msr("classif.ce", average = "micro"))
+```
+
+::: {.callout-caution}
+TODO：等待后续添加交叉引用
+:::
+
+To visualize the resampling results, you can use the `autoplot.ResampleResult()` function to plot scores across folds as boxplots or histograms (@fig-resamp-viz). Histograms can be useful to visually gauge the variance of the performance results across resampling iterations, whereas boxplots are often used when multiple learners are compared side-by-side (see Section 3.3).
+
+> 要可视化重采样结果，您可以使用 `autoplot.ResampleResult()` 函数绘制跨折叠的分数箱线图或直方图（@fig-resamp-viz）。直方图可以用于直观评估跨重采样迭代的性能结果方差，而箱线图通常用于比较多个学习器并排放置在一起时（请参阅第3.3节）。
+
+```{r}
+#| results: hide
+rr = resample(tsk_penguins, lrn_rpart, rsmp("cv", folds = 10))
+```
 
 
+```{r}
+#| layout-ncol: 2
+#| label: fig-resamp-viz
+#| fig-subcap: 
+#|   - "Boxplot of accuracy scores."
+#|   - "Histogram of accuracy scores."
+#| fig-cap: "Boxplot and Histogram of accuracy scores."
+#| fig-alt: "Left: a boxplot ranging from 0.875 to 1.0 and the interquartile range between 0.925 and 0.7. Right: a histogram with five bars in a roughly normal distribution with mean 0.95, minimum 0.875 and maximum 1.0."
+#| message: false
 
+autoplot(rr, measure = msr("classif.acc"), type = "boxplot")
+autoplot(rr, measure = msr("classif.acc"), type = "histogram")
+```
 
-
-
-
+### ResampleResult Objects
 
 
 
@@ -628,5 +736,5 @@ A common **misunderstanding** is that holdout and other more advanced resampling
 
 
 ::: {.callout-tip title="To be continued"}
-- <https://mlr3book.mlr-org.com/chapters/chapter3/evaluation_and_benchmarking.html#sec-holdout-scoring>
+- <https://mlr3book.mlr-org.com/chapters/chapter3/evaluation_and_benchmarking.html#sec-resampling-inspect>
 :::
