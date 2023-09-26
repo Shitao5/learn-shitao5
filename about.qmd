@@ -1,13 +1,13 @@
 ---
 title: "About"
 date: "2023-06-18"
-date-modified: "2023-09-20"
+date-modified: "2023-09-26"
 include-in-header:
   - _includes/giscus.html
 include-after-body:
   - _includes/div-giscus.html
 ---
 
-The best way to learn is by practicing as you study, and mastering knowledge often requires revisiting and learning anew. This is a [Quarto Website](https://quarto.org/docs/websites) that houses the reading and study notes of [Shitao](https://shitao5.org/).
+Learning requires a combination of studying and practical application, and mastering knowledge involves both reviewing what you already know and learning new things. This is a [Quarto Website](https://quarto.org/docs/websites), where [Shitao](https://shitao5.org/) stores his reading and study notes.
 
-学习最好的方式是边看边练，掌握知识最需要的是温故知新。这是一个 [Quarto Website](https://quarto.org/docs/websites)，存放了[诗涛](https://shitao5.org/)的阅读和学习笔记。
+学习要边学边练，掌握需温故知新。这是一个 [Quarto Website](https://quarto.org/docs/websites)，存放了[诗涛](https://shitao5.org/)的阅读和学习笔记。

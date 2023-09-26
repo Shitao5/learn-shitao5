@@ -1,7 +1,7 @@
 ---
 title: "Applied Machine Learning Using mlr3 in R"
 date: "2023-08-16"
-date-modified: "2023-09-25"
+date-modified: "2023-09-26"
 image: "logo.png"
 categories: 
   - Machine Learning
@@ -15,7 +15,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(3.3, 15)`
+`r stfun::progress(3.6, 15)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -673,11 +673,13 @@ rr$aggregate(msr("classif.ce", average = "micro"))
 
 ::: {.callout-caution}
 TODO：等待后续添加交叉引用
+
+已加，待检查
 :::
 
-To visualize the resampling results, you can use the `autoplot.ResampleResult()` function to plot scores across folds as boxplots or histograms (@fig-resamp-viz). Histograms can be useful to visually gauge the variance of the performance results across resampling iterations, whereas boxplots are often used when multiple learners are compared side-by-side (see Section 3.3).
+To visualize the resampling results, you can use the `autoplot.ResampleResult()` function to plot scores across folds as boxplots or histograms (@fig-resamp-viz). Histograms can be useful to visually gauge the variance of the performance results across resampling iterations, whereas boxplots are often used when multiple learners are compared side-by-side (see @sec-benchmarking).
 
-> 要可视化重采样结果，您可以使用 `autoplot.ResampleResult()` 函数绘制跨折叠的分数箱线图或直方图（@fig-resamp-viz）。直方图可以用于直观评估跨重采样迭代的性能结果方差，而箱线图通常用于比较多个学习器并排放置在一起时（请参阅第3.3节）。
+> 要可视化重采样结果，您可以使用 `autoplot.ResampleResult()` 函数绘制跨折叠的分数箱线图或直方图（@fig-resamp-viz）。直方图可以用于直观评估跨重采样迭代的性能结果方差，而箱线图通常用于比较多个学习器并排放置在一起时（请参阅 @sec-benchmarking）。
 
 ```{r}
 #| results: hide
@@ -700,6 +702,235 @@ autoplot(rr, measure = msr("classif.acc"), type = "histogram")
 ```
 
 ### ResampleResult Objects
+
+```{r}
+# list of prediction objects
+rrp = rr$predictions()
+# print first two
+rrp[1:2]
+```
+
+```{r}
+# macro averaged performance
+mean(sapply(rrp, \(x) x$score()))
+```
+
+By default, the intermediate models produced at each resampling iteration are discarded after the prediction step to reduce memory consumption of the `ResampleResult` object (only the predictions are required to calculate most performance measures). However, it can sometimes be useful to inspect, compare, or extract information from these intermediate models. We can configure the `resample()` function to keep the fitted intermediate models by setting `store_models = TRUE`. Each model trained in a specific resampling iteration can then be accessed via `$learners[[i]]$model`, where `i` refers to the `i`-th resampling iteration:
+
+> 默认情况下，在进行预测步骤后，每个重新采样迭代产生的中间模型都会被丢弃，以降低 `ResampleResult` 对象的内存消耗（大多数性能指标仅需要预测）。然而，有时候检查、比较或从这些中间模型中提取信息可能是有用的。我们可以通过设置 `store_models = TRUE` 来配置 `resample()` 函数以保留拟合的中间模型。然后，可以通过 `$learners[[i]]$model` 来访问在特定重新采样迭代中训练的每个模型，其中 `i` 指的是第 `i` 个重新采样迭代：
+
+```{r}
+#| results: hide
+rr = resample(tsk_penguins, lrn_rpart, cv3, store_models = TRUE)
+```
+
+```{r}
+# get the model from the first iteration
+rr$learners[[1]]$model
+```
+
+In this example, we could then inspect the most important variables in each iteration to help us learn more about the respective fitted models:
+
+```{r}
+# print 2nd and 3rd iteration
+lapply(rr$learners[2:3], \(x) x$model$variable.importance)
+```
+
+## Benchmarking {#sec-benchmarking}
+
+### benchmark()
+
+Benchmark experiments in `mlr3` are conducted with `benchmark()`, which simply runs `resample()` on each task and learner separately, then collects the results. The provided resampling strategy is automatically instantiated on each task to ensure that all learners are compared against the same training and test data.
+
+To use the `benchmark()` function we first call `benchmark_grid()`, which constructs an exhaustive *design* to describe all combinations of the learners, tasks and resamplings to be used in a benchmark experiment, and instantiates the resampling strategies.
+
+> `mlr3` 中的基准实验是使用 `benchmark()` 函数进行的，该函数简单地在每个任务和学习器上分别运行 `resample()`，然后收集结果。提供的重新采样策略会自动在每个任务上进行实例化，以确保所有学习器都与相同的训练和测试数据进行比较。
+>
+> 要使用 `benchmark()` 函数，我们首先调用 `benchmark_grid()` 函数，该函数构建一个详尽的设计来描述在基准实验中要使用的所有学习器、任务和重新采样的组合，并实例化重新采样策略。
+
+```{r}
+tasks = tsks(c("german_credit", "sonar"))
+learners = lrns(c("classif.rpart", "classif.ranger", "classif.featureless"),
+                predict_type = "prob")
+rsmp_cv5 = rsmp("cv", folds = 5)
+
+design = benchmark_grid(tasks, learners, rsmp_cv5)
+design
+```
+
+By default, `benchmark_grid()` instantiates the resamplings on the tasks, which means that concrete train-test splits are generated. Since this process is stochastic, it is necessary to set a seed **before** calling `benchmark_grid()` to ensure reproducibility of the data splits.
+
+> 在默认情况下，`benchmark_grid()` 会在任务上实例化重新采样，这意味着会生成具体的训练-测试拆分。由于这个过程是随机的，所以在调用 `benchmark_grid()` 之前需要设置一个种子，以确保数据拆分的可重现性。
+
+```{r}
+#| results: hide
+# pass design to benchmark()
+bmr = benchmark(design)
+```
+
+```{r}
+bmr
+```
+
+As `benchmark()` is just an extension of `resample()`, we can once again use `$score()`, or `$aggregate()` depending on your use-case, though note that in this case `$score()` will return results over each fold of each learner/task/resampling combination.
+
+> 由于 `benchmark()` 只是 `resample()` 的扩展，因此我们可以再次使用 `$score()` 或 `$aggregate()`，具体取决于您的用例，但请注意，在这种情况下，`$score()` 将返回每个学习器/任务/重新采样组合的每个折叠的结果。
+
+```{r}
+bmr$score()[c(1, 7, 13), .(iteration, task_id, learner_id, classif.ce)]
+```
+
+```{r}
+bmr$aggregate()[, .(task_id, learner_id, classif.ce)]
+```
+
+::: {.callout-caution}
+TODO：等待后续添加交叉引用
+:::
+
+This would conclude a basic benchmark experiment where you can draw tentative conclusions about model performance, in this case we would possibly conclude that the random forest is the best of all three models on each task. We draw conclusions cautiously here as we have not run any statistical tests or included standard errors of measures, so we cannot definitively say if one model outperforms the other.
+
+As the results of `$score()` and `$aggregate()` are returned in a `data.table`, you can post-process and analyze the results in any way you want. A common mistake is to average the learner performance across all tasks when the tasks vary significantly. This is a mistake as averaging the performance will miss out important insights into how learners compare on ‘easier’ or more ‘difficult’ predictive problems. A more robust alternative to compare the overall algorithm performance across multiple tasks is to compute the ranks of each learner on each task separately and then calculate the average ranks. This can provide a better comparison as task-specific ‘quirks’ are taken into account by comparing learners within tasks before comparing them across tasks. However, using ranks will lose information about the numerical differences between the calculated performance scores. Analysis of benchmark experiments, including statistical tests, is covered in more detail in Section 11.3.
+
+> 这将总结了一个基本的基准实验，您可以初步得出关于模型性能的结论，在这种情况下，我们可能会得出结论，随机森林在每个任务上都是三个模型中最好的。我们在这里谨慎地得出结论，因为我们没有进行任何统计测试，也没有包括性能度量的标准错误，因此我们不能明确地说一个模型是否优于另一个。
+>
+> 由于 `$score()` 和 `$aggregate()` 的结果以 `data.table` 返回，您可以以任何您想要的方式进行后处理和分析结果。一个常见的错误是在任务差异明显的情况下，对所有任务的学习器性能进行平均。这是一个错误，因为对性能进行平均将错过对学习器在“更容易”或“更困难”的预测问题上的比较重要的洞察。比较多个任务上的整体算法性能的更强大的替代方法是分别计算每个任务上每个学习器的排名，然后计算平均排名。这可以提供更好的比较，因为通过在比较任务之前在任务内部比较学习器，可以考虑到特定于任务的“怪癖”。然而，使用排名会丢失关于计算的性能分数之间的数值差异的信息。关于基准实验的分析，包括统计测试，在第11.3节中将更详细地介绍。
+
+### BenchmarkResult Objects
+
+A `BenchmarkResult` object is a collection of multiple `ResampleResult` objects.
+
+```{r}
+bmrdt = as.data.table(bmr)
+bmrdt[1:2, .(task, learner, resampling, iteration)]
+```
+
+```{r}
+rr1 = bmr$resample_result(1)
+rr2 = bmr$resample_result(2)
+rr1
+```
+
+In addition, `as_benchmark_result()` can be used to convert objects from `ResampleResult` to `BenchmarkResult.` The `c()`-method can be used to combine multiple `BenchmarkResult` objects, which can be useful when conducting experiments across multiple machines:
+
+> 此外，可以使用 `as_benchmark_result()` 将 `ResampleResult` 对象转换为 `BenchmarkResult`。`c()` 方法可用于组合多个 `BenchmarkResult` 对象，这在跨多台计算机进行实验时非常有用：
+
+```{r}
+bmr1 = as_benchmark_result(rr1)
+bmr2 = as_benchmark_result(rr2)
+
+c(bmr1, bmr2)
+```
+
+Boxplots are most commonly used to visualize benchmark experiments as they can intuitively summarize results across tasks and learners simultaneously.
+
+> 箱线图最常用于可视化基准实验，因为它们可以直观地同时总结任务和学习器之间的结果。
+
+```{r}
+#| label: fig-benchmark-box
+#| fig-cap: 'Boxplots of accuracy scores for each learner across resampling iterations and the three tasks. Random forests (`lrn("classif.ranger")`) consistently outperforms the other learners.'
+autoplot(bmr, measure = msr("classif.acc"))
+```
+
+## Evaluation of Binary Classifiers
+
+### Confusion Matrix
+
+It is possible for a classifier to have a good classification accuracy but to overlook the nuances provided by a full confusion matrix, as in the following `tsk("german_credit")` example:
+
+```{r}
+tsk_german = tsk("german_credit")
+lrn_ranger = lrn("classif.ranger", predict_type = "prob")
+splits = partition(tsk_german, ratio = .8)
+
+lrn_ranger$train(tsk_german, splits$train)
+prediction = lrn_ranger$predict(tsk_german, splits$test)
+prediction$score(msr("classif.acc"))
+prediction$confusion
+```
+
+On their own, the absolute numbers in a confusion matrix can be less useful when there is class imbalance. Instead, several normalized measures can be derived (@fig-confusion):
+
+- **True Positive Rate (TPR)**, **Sensitivity** or **Recall**: How many of the true positives did we predict as positive?
+
+- **True Negative Rate (TNR)** or **Specificity**: How many of the true negatives did we predict as negative?
+
+- **False Positive Rate (FPR)**, or $1 -$ **Specificity**: How many of the true negatives did we predict as positive?
+
+- **Positive Predictive Value (PPV)** or **Precision**: If we predict positive how likely is it a true positive?
+
+- **Negative Predictive Value (NPV)**: If we predict negative how likely is it a true negative?
+
+- **Accuracy (ACC)**: The proportion of correctly classified instances out of the total number of instances.
+
+- **F1-score**: The harmonic mean of precision and recall, which balances the trade-off between precision and recall. It is calculated as $2 \times \frac{Precision \times Recall}{Precision + Recall}$.
+
+```{r}
+#| echo: false
+#| label: fig-confusion
+#| fig-cap: "Binary confusion matrix of ground truth class vs. predicted class."
+
+knitr::include_graphics("imgs/confusion_matrix.svg")
+```
+
+The `mlr3measures` package allows you to compute several common confusion matrix-based measures using the `confusion_matrix()` function:
+
+```{r}
+mlr3measures::confusion_matrix(
+  truth = prediction$truth,
+  response = prediction$response,
+  positive = tsk_german$positive
+)
+```
+
+### ROC Analysis
+
+The ROC curve is a line graph with TPR on the y-axis and the FPR on the x-axis. 
+
+Consider classifiers that predict probabilities instead of discrete classes. Using different thresholds to cut off predicted probabilities and assign them to the positive and negative class will lead to different TPRs and FPRs and by plotting these values across different thresholds we can characterize the behavior of a binary classifier – this is the ROC curve.
+
+> 考虑预测概率而不是离散类别的分类器。使用不同的阈值来截断预测的概率并将其分配到正类别和负类别将导致不同的 TPR 和 FPR，并通过在不同的阈值上绘制这些值，我们可以表征二元分类器的行为 - 这就是 ROC 曲线。
+
+```{r}
+#| label: fig-basics-roc-ranger
+#| fig-cap: "ROC-curve based on the `german_credit` dataset and the `classif.ranger` random forest learner. Recall FPR = $1 -$ Specificity and TPR = Sensitivity."
+
+autoplot(prediction, type = "roc")
+```
+
+A natural performance measure that can be derived from the ROC curve is the area under the curve (AUC), implemented in `msr("classif.auc")`. The AUC can be interpreted as the probability that a randomly chosen positive instance has a higher predicted probability of belonging to the positive class than a randomly chosen negative instance. Therefore, higher values (closer to 
+) indicate better performance. Random classifiers (such as the featureless baseline) will always have an AUC of (approximately, when evaluated empirically) 0.5.
+
+> 从 ROC 曲线中可以导出的一个自然性能度量是曲线下面积（AUC），在 `msr("classif.auc")` 中实现。AUC 可以解释为随机选择的正实例具有较高的预测概率，属于正类别，而不是随机选择的负实例的概率。因此，较高的值（越接近 1）表示更好的性能。随机分类器（例如没有特征的基线）的AUC总是为（在经验上评估时约为 0.5）。
+
+```{r}
+prediction$score(msr("classif.auc"))
+```
+
+We can also plot the precision-recall curve (PRC) which visualizes the PPV/precision vs. TPR/recall. The main difference between ROC curves and PR curves is that the number of true-negatives are ignored in the latter. This can be useful in imbalanced populations where the positive class is rare, and where a classifier with high TPR may still not be very informative and have low PPV. See Davis and Goadrich (2006) for a detailed discussion about the relationship between the PRC and ROC curves.
+
+> 我们还可以绘制精确度-召回曲线（PRC），该曲线可视化了 PPV/精确度 与 TPR/召回 之间的关系。ROC曲线和PR曲线之间的主要区别在于后者忽略了真负例的数量。在不平衡的人群中，正类别很少见的情况下，具有高TPR的分类器可能仍然不太具有信息性，并且具有较低的PPV。有关PRC和ROC曲线之间关系的详细讨论，请参阅 Davis 和 Goadrich（2006）。
+
+```{r}
+#| fig-cap: 'Precision-Recall curve based on `tsk("german_credit")` and `lrn("classif.ranger")`.'
+#| label: fig-basics-prc-ranger
+
+autoplot(prediction, type = "prc")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -736,5 +967,5 @@ autoplot(rr, measure = msr("classif.acc"), type = "histogram")
 
 
 ::: {.callout-tip title="To be continued"}
-- <https://mlr3book.mlr-org.com/chapters/chapter3/evaluation_and_benchmarking.html#sec-resampling-inspect>
+- <https://mlr3book.mlr-org.com/chapters/chapter3/evaluation_and_benchmarking.html#sec-roc-space>
 :::
