@@ -1,7 +1,7 @@
 ---
 title: "情报分析心理学"
 date: "2023-09-22"
-date-modified: "2023-09-25"
+date-modified: "2023-09-28"
 image: "cover.jpg"
 categories: 
   - Psychology
@@ -13,7 +13,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(43, 248)`
+`r stfun::progress(43, 248, stop = TRUE)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
