@@ -1,7 +1,7 @@
 ---
 title: "被讨厌的勇气"
 date: "2023-09-28"
-date-modified: "2023-10-06"
+date-modified: "2023-10-07"
 image: "cover.jpg"
 categories: 
   - Psychology
@@ -13,7 +13,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(32, 100)`
+`r stfun::progress(34, 100)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -61,7 +61,7 @@ categories:
 
 - 哲人：我再重复一遍：“人的烦恼皆源于人际关系。”这是阿德勒心理学的一个基本概念。如果这个世界没有人际关系，如果这个宇宙中没有他人只有自己，那么一切烦恼也都将消失。
 
-
+- 哲人：这一点请注意。目前“自卑情结”这个词似乎在使用的时候与自卑感是一样的意思。就像“我为自己的单眼皮感到自卑”或者“他对自己的学历有自卑感”之类的描述中全都用“自卑情结”这个词来表示自卑感。其实，这完全是一种误用。自卑情结一词原本表示的是一种复杂而反常的心理状态，跟自卑感没有关系。例如，即使弗洛伊德提出的“俄狄浦斯情结”原本也是指一种对同性父母亲的反常对抗心理。
 
 
 
@@ -93,6 +93,6 @@ categories:
 
 
 ::: {.callout-tip title="To be continued"}
-- 自卑情结只是一种借口
+- 越自负的人越自卑
 :::
 
