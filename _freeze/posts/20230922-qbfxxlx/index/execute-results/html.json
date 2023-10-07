@@ -1,10 +1,8 @@
 {
-  "hash": "63b861a74c833d2bb7a9165bf75062ec",
+  "hash": "d2002fe58a76fe209a64f6121987422c",
   "result": {
-    "markdown": "---\ntitle: \"情报分析心理学\"\ndate: \"2023-09-22\"\ndate-modified: \"2023-09-25\"\nimage: \"cover.jpg\"\ncategories: \n  - Psychology\n---\n\n\n\n\n::: {.callout-note title='Progress'}\nLearning Progress: 17.34%.\n:::\n\n::: {.callout-tip title=\"Learning Source\"}\n- <https://book.douban.com/subject/26335793/>\n:::\n\n# 我们的思维机制 {-}\n\n# 关于思考的思考\n\n- <p>认知心理学的一个基本发现，就是人们对大部分思维活动都毫无察觉。与认知、记忆和处理信息相关的许多功能并不受意识控制，且先于人们有意控制之前就已完成。出现在意识中的只是思考的结果，而非思考的过程。</p>\n\n# 认知：我们为什么看不到应该看到的东西\n\n- 我们倾向于认知自己期望认知的东西。与意料之中的现象相比，人们需要更多、更清晰的信息去认识那些意料之外的现象。\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n::: {.callout-tip title=\"To be continued\"}\n- 有关认知的规律\n:::\n\n",
-    "supporting": [
-      "index_files"
-    ],
+    "markdown": "---\ntitle: \"情报分析心理学\"\ndate: \"2023-09-22\"\ndate-modified: \"2023-09-28\"\nimage: \"cover.jpg\"\ncategories: \n  - Psychology\n---\n\n\n\n\n::: {.callout-note title='Progress'}\nLearning Progress: Paused. Current progress 17.34%.⏱\n:::\n\n::: {.callout-tip title=\"Learning Source\"}\n- <https://book.douban.com/subject/26335793/>\n:::\n\n# 我们的思维机制 {-}\n\n# 关于思考的思考\n\n- <p>认知心理学的一个基本发现，就是人们对大部分思维活动都毫无察觉。与认知、记忆和处理信息相关的许多功能并不受意识控制，且先于人们有意控制之前就已完成。出现在意识中的只是思考的结果，而非思考的过程。</p>\n\n# 认知：我们为什么看不到应该看到的东西\n\n- <p>我们倾向于认知自己期望认知的东西。与意料之中的现象相比，人们需要更多、更清晰的信息去认识那些意料之外的现象。</p>\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n::: {.callout-tip title=\"To be continued\"}\n- 有关认知的规律\n:::\n\n",
+    "supporting": [],
     "filters": [
       "rmarkdown/pagebreak.lua"
     ],

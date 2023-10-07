@@ -1669,7 +1669,7 @@ lts("classif.rpart.rbv2", maxdepth = to_tune(1, 20))
 - <https://mlr3book.mlr-org.com/chapters/chapter5/advanced_tuning_methods_and_black_box_optimization.html#sec-bayesian-optimization>
 :::
 
-等待交叉饮用：
+等待交叉引用：
 
 - 4.4
 - 5
