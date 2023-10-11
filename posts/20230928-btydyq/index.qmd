@@ -1,7 +1,7 @@
 ---
 title: "被讨厌的勇气"
 date: "2023-09-28"
-date-modified: "2023-10-10"
+date-modified: "2023-10-11"
 image: "cover.jpg"
 categories: 
   - Psychology
@@ -13,7 +13,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(43, 100)`
+`r stfun::progress(47, 100)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -91,8 +91,27 @@ categories:
 
 - 哲人：行为方面的目标有“自立”和“与社会和谐共处”这两点。而且，支撑这种行为的心理方面的目标是“我有能力”以及“人人都是我的伙伴”这两种意识。
 
+- 哲人：很多人认为朋友越多越好，但果真如此吗？朋友或熟人的数量没有任何价值。这是与爱之主题有关的话题，我们应该考虑的是关系的距离和深度。
+
+- 哲人：决定你的生活方式（人生状态）的不是其他任何人，而是你自己。
+
+# 第三夜 让干涉你生活的人见鬼去
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ::: {.callout-tip title="To be continued"}
-- 浪漫的红线和坚固的锁链
+- 自由就是不再寻求认可？
 :::
 

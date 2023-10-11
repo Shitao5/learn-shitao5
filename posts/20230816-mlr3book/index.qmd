@@ -1,7 +1,7 @@
 ---
 title: "Applied Machine Learning Using mlr3 in R"
 date: "2023-08-16"
-date-modified: "2023-10-06"
+date-modified: "2023-10-11"
 image: "logo.png"
 categories: 
   - Machine Learning
@@ -15,7 +15,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(4, 15)`
+`r stfun::progress(5.2, 15)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -672,12 +672,6 @@ By default, the majority of measures will aggregate scores using a macro average
 rr$aggregate(msr("classif.ce", average = "micro"))
 ```
 
-::: {.callout-caution}
-TODO：等待后续添加交叉引用
-
-已加，待检查
-:::
-
 To visualize the resampling results, you can use the `autoplot.ResampleResult()` function to plot scores across folds as boxplots or histograms (@fig-resamp-viz). Histograms can be useful to visually gauge the variance of the performance results across resampling iterations, whereas boxplots are often used when multiple learners are compared side-by-side (see @sec-benchmarking).
 
 > 要可视化重采样结果，您可以使用 `autoplot.ResampleResult()` 函数绘制跨折叠的分数箱线图或直方图（@fig-resamp-viz）。直方图可以用于直观评估跨重采样迭代的性能结果方差，而箱线图通常用于比较多个学习器并排放置在一起时（请参阅 @sec-benchmarking）。
@@ -997,11 +991,13 @@ The most commonly used terminators are those that stop the tuning after a certai
 
 ::: {.callout-caution}
 TODO：等待后续添加交叉引用  5
+
+已加，待验证
 :::
 
-The tuning instance collects the tuner-agnostic information required to optimize a model, i.e., all information about the tuning process, except for the tuning algorithm itself. This includes the task to tune over, the learner to tune, the resampling method and measure used to analytically compare hyperparameter optimization configurations, and the terminator to determine when the measure has been optimized ‘enough’. This implicitly defines a “black box” objective function, mapping hyperparameter configurations to (stochastic) performance values, to be optimized. This concept will be revisited in Chapter 5.
+The tuning instance collects the tuner-agnostic information required to optimize a model, i.e., all information about the tuning process, except for the tuning algorithm itself. This includes the task to tune over, the learner to tune, the resampling method and measure used to analytically compare hyperparameter optimization configurations, and the terminator to determine when the measure has been optimized ‘enough’. This implicitly defines a “black box” objective function, mapping hyperparameter configurations to (stochastic) performance values, to be optimized. This concept will be revisited in @sec-optimization-advanced.
 
-> 调优实例收集了优化模型所需的与调谐器无关的信息，即所有与调优过程有关的信息，除了调谐算法本身。这包括要调优的任务、要调优的学习器、用于分析比较超参数优化配置的重抽样方法和度量，以及确定度量何时已经被优化到足够程度的终止条件。这隐式地定义了一个“黑盒”目标函数，将超参数配置映射到（随机的）性能值，以便进行优化。这个概念将在第5章中重新讨论。
+> 调优实例收集了优化模型所需的与调谐器无关的信息，即所有与调优过程有关的信息，除了调谐算法本身。这包括要调优的任务、要调优的学习器、用于分析比较超参数优化配置的重抽样方法和度量，以及确定度量何时已经被优化到足够程度的终止条件。这隐式地定义了一个“黑盒”目标函数，将超参数配置映射到（随机的）性能值，以便进行优化。这个概念将在 @sec-optimization-advanced 中重新讨论。
 
 ```{r}
 tsk_sonar = tsk("sonar")
@@ -1038,16 +1034,18 @@ With all the pieces of our tuning problem assembled, we can now decide how to tu
 
 ::: {.callout-caution}
 TODO：等待后续添加交叉引用 4.4
+
+已加，待检查
 :::
 
-Grid search and random search (Bergstra and Bengio 2012) are the most basic algorithms and are often selected first in initial experiments. The idea of grid search is to exhaustively evaluate every possible combination of given hyperparameter values. Categorical hyperparameters are usually evaluated over all possible values they can take. Numeric and integer hyperparameter values are then spaced equidistantly in their box constraints (upper and lower bounds) according to a given resolution, which is the number of distinct values to try per hyperparameter. Random search involves randomly selecting values for each hyperparameter independently from a pre-specified distribution, usually uniform. Both methods are non-adaptive, which means each proposed configuration ignores the performance of previous configurations. Due to their simplicity, both grid search and random search can handle mixed search spaces (i.e., hyperparameters can be numeric, integer, or categorical) as well as hierarchical search spaces (Section 4.4).
+Grid search and random search (Bergstra and Bengio 2012) are the most basic algorithms and are often selected first in initial experiments. The idea of grid search is to exhaustively evaluate every possible combination of given hyperparameter values. Categorical hyperparameters are usually evaluated over all possible values they can take. Numeric and integer hyperparameter values are then spaced equidistantly in their box constraints (upper and lower bounds) according to a given resolution, which is the number of distinct values to try per hyperparameter. Random search involves randomly selecting values for each hyperparameter independently from a pre-specified distribution, usually uniform. Both methods are non-adaptive, which means each proposed configuration ignores the performance of previous configurations. Due to their simplicity, both grid search and random search can handle mixed search spaces (i.e., hyperparameters can be numeric, integer, or categorical) as well as hierarchical search spaces (@sec-defining-search-spaces).
 
-> 网格搜索和随机搜索（Bergstra和Bengio 2012）是最基本的算法，通常在初始实验中首选。网格搜索的思想是详尽地评估给定超参数值的每种可能组合。通常会对分类超参数评估它们可以取的所有可能值。然后，数值和整数超参数值将根据给定的分辨率均匀分布在它们的箱约束（上下界）中，分辨率是每个超参数要尝试的不同值的数量。随机搜索涉及从预先指定的分布（通常是均匀分布）中独立地随机选择每个超参数的值。这两种方法都是非自适应的，这意味着每个提出的配置都忽略了先前配置的性能。由于它们的简单性，网格搜索和随机搜索可以处理混合搜索空间（即，超参数可以是数值、整数或分类的）以及分层搜索空间（第4.4节）。
+> 网格搜索和随机搜索（Bergstra和Bengio 2012）是最基本的算法，通常在初始实验中首选。网格搜索的思想是详尽地评估给定超参数值的每种可能组合。通常会对分类超参数评估它们可以取的所有可能值。然后，数值和整数超参数值将根据给定的分辨率均匀分布在它们的箱约束（上下界）中，分辨率是每个超参数要尝试的不同值的数量。随机搜索涉及从预先指定的分布（通常是均匀分布）中独立地随机选择每个超参数的值。这两种方法都是非自适应的，这意味着每个提出的配置都忽略了先前配置的性能。由于它们的简单性，网格搜索和随机搜索可以处理混合搜索空间（即，超参数可以是数值、整数或分类的）以及分层搜索空间（@sec-defining-search-spaces）。
 
 #### Adaptive Algorithms
 
 ::: {.callout-caution}
-TODO：等待后续添加交叉引用 5.3
+TODO：等待后续添加交叉引用 5.3 5.4
 :::
 
 Adaptive algorithms learn from previously evaluated configurations to find good configurations quickly, examples in `mlr3` include Bayesian optimization (also called model-based optimization), Covariance Matrix Adaptation Evolution Strategy (CMA-ES), Iterated Racing, and Hyperband.
@@ -1058,7 +1056,7 @@ CMA-ES (Hansen and Auger 2011) is an evolutionary strategy that maintains a prob
 
 Racing algorithms work by iteratively discarding configurations that show poor performance, as determined by statistical tests. Iterated Racing (López-Ibáñez et al. 2016) starts by ‘racing’ down an initial population of randomly sampled configurations from a parameterized density and then uses the surviving configurations of the race to stochastically update the density of the subsequent race to focus on promising regions of the search space, and so on.
 
-Multi-fidelity HPO is an adaptive method that leverages the predictive power of computationally cheap lower fidelity evaluations (i.e., poorer quality predictions such as those arising from neural networks with a small number of epochs) to improve the overall optimization efficiency. This concept is used in Hyperband (Li et al. 2018), a popular multi-fidelity hyperparameter optimization algorithm that dynamically allocates increasingly more resources to promising configurations and terminates low-performing ones. Hyperband is discussed in full detail in Section 5.3.
+Multi-fidelity HPO is an adaptive method that leverages the predictive power of computationally cheap lower fidelity evaluations (i.e., poorer quality predictions such as those arising from neural networks with a small number of epochs) to improve the overall optimization efficiency. This concept is used in Hyperband (Li et al. 2018), a popular multi-fidelity hyperparameter optimization algorithm that dynamically allocates increasingly more resources to promising configurations and terminates low-performing ones. Hyperband is discussed in full detail in @sec-hyperband.
 
 Other implemented algorithms for numeric search spaces are Generalized Simulated Annealing (Xiang et al. 2013; Tsallis and Stariolo 1996) and various nonlinear optimization algorithms.
 
@@ -1070,7 +1068,7 @@ Other implemented algorithms for numeric search spaces are Generalized Simulated
 >
 > 比赛算法通过迭代地丢弃显示性能较差的配置，这是通过统计测试确定的。迭代比赛（López-Ibáñez等人2016）首先通过从参数化密度中随机抽样生成的一组初始配置进行“比赛”，然后使用比赛的生存配置来随机更新后续比赛的密度，以便集中在搜索空间的有前途的区域，依此类推。
 >
-> 多保真度HPO是一种自适应方法，利用计算成本低的低保真度评估（即质量较差的预测，例如由具有较少周期的神经网络产生的预测）来提高整体优化效率。这个概念在Hyperband（Li等人2018）中得到了应用，这是一种流行的多保真度超参数优化算法，动态分配更多资源给有前途的配置并终止性能较低的配置。Hyperband将在第5.3节中详细讨论。
+> 多保真度HPO是一种自适应方法，利用计算成本低的低保真度评估（即质量较差的预测，例如由具有较少周期的神经网络产生的预测）来提高整体优化效率。这个概念在Hyperband（Li等人2018）中得到了应用，这是一种流行的多保真度超参数优化算法，动态分配更多资源给有前途的配置并终止性能较低的配置。Hyperband将在 @sec-hyperband 中详细讨论。
 >
 > 对于数值搜索空间，其他已实现的算法包括广义模拟退火（Xiang等人2013；Tsallis和Stariolo 1996）和各种非线性优化算法。
 
@@ -1438,7 +1436,7 @@ We find that the performance estimate from unnested tuning optimistically overes
 
 > 我们发现，未经嵌套重抽样的调优性能估计会乐观地高估真实性能（这可能表明对特定内部保留集的‘元过拟合’），而来自嵌套重抽样的外部估计效果要好得多。
 
-## More Advanced Search Spaces
+## More Advanced Search Spaces {#sec-defining-search-spaces}
 
 ### Scalar Parameter Tuning
 
@@ -1651,7 +1649,172 @@ Finally, it is possible to overwrite a predefined tuning space in construction, 
 lts("classif.rpart.rbv2", maxdepth = to_tune(1, 20))
 ```
 
-# Advanced Tuning Methods and Black Box Optimization
+# Advanced Tuning Methods and Black Box Optimization {#sec-optimization-advanced}
+
+## Error Handling and Memory Management
+
+### Encapsulation and Fallback Learner
+
+Even in simple machine learning problems, there is a lot of potential for things to go wrong. For example, when learners do not converge, run out of memory, or terminate with an error due to issues in the underlying data. As a common issue, learners can fail if there are factor levels present in the test data that were not in the training data, models fail in this case as there have been no weights/coefficients trained for these new factor levels:
+
+> 即使在简单的机器学习问题中，出现问题的可能性也很大。例如，当学习器不收敛、耗尽内存或由于底层数据问题而出现错误终止时。作为一个常见问题，如果测试数据中存在训练数据中没有的因子水平，那么学习器可能会失败，因为针对这些新的因子水平没有进行权重/系数的训练：
+
+```{r}
+#| error: true
+tsk_pen = tsk("penguins")
+
+# remove rows with missing values
+tsk_pen$filter(tsk_pen$row_ids[complete.cases(tsk_pen$data())])
+
+rsmp_custom = rsmp("custom")
+rsmp_custom$instantiate(
+  tsk_pen,
+  train_sets = list(tsk_pen$row_ids[tsk_pen$data()$island != "Torgersen"]),
+  test_sets = list(tsk_pen$row_ids[tsk_pen$data()$island == "Torgersen"])
+)
+
+msr_ce = msr("classif.ce")
+tnr_random = tnr("random_search")
+learner = lrn("classif.lda", method = "t", nu = to_tune(3, 10))
+
+tune(tnr_random, tsk_pen, learner, rsmp_custom, msr_ce, 10)
+```
+
+::: {.callout-caution}
+TODO：等待后续添加交叉引用  10.2.1
+:::
+
+In the above example, we can see the tuning process breaks and we lose all information about the hyperparameter optimization process. This is even worse in nested resampling or benchmarking when errors could cause us to lose all progress across multiple configurations or even learners and tasks.
+
+Encapsulation (Section 10.2.1) allows errors to be isolated and handled, without disrupting the tuning process. We can tell a learner to encapsulate an error by setting the `$encapsulate` field as follows:
+
+> 在上述示例中，我们可以看到调优过程中断，我们失去了有关超参数优化过程的所有信息。在嵌套重抽样或基准测试中，当错误可能导致我们失去跨多个配置甚至学习器和任务的所有进展时，情况会变得更糟。
+>
+> 封装（第10.2.1节）允许隔离和处理错误，而不会干扰调优过程。我们可以通过设置`$encapsulate`字段来告诉学习器封装错误，如下所示：
+
+```{r}
+learner$encapsulate = c(train = "evaluate", predict = "evaluate")
+```
+
+Note by passing `"evaluate"` to both `train` and `predict`, we are telling the learner to set up encapsulation in both the training and prediction stages (see Section 10.2 for other encapsulation options).
+
+Another common issue that cannot be easily solved during HPO is learners not converging and the process running indefinitely. We can prevent this from happening by setting the `timeout` field in a learner, which signals the learner to stop if it has been running for that much time (in seconds), again this can be set for training and prediction individually:
+
+> 请注意，通过在`train`和`predict`中都传递`"evaluate"`，我们告诉学习器在训练和预测阶段都设置封装（有关其他封装选项，请参见第10.2节）。
+>
+> 另一个在HPO期间难以轻松解决的常见问题是学习器不收敛，进程无限运行。我们可以通过在学习器中设置`timeout`字段来防止这种情况发生，该字段表示如果学习器运行了这么长时间（以秒为单位），则应停止运行。同样，这可以分别为训练和预测设置：
+
+```{r}
+learner$timeout = c(train = 30, predict = 30)
+```
+
+Now if either an error occurs, or the model timeout threshold is reached, then instead of breaking, the learner will simply not make predictions when errors are found and the result is `NA` for resampling iterations with errors. When this happens, our hyperparameter optimization experiment will fail as we cannot aggregate results across resampling iterations. Therefore it is essential to select a fallback learner (Section 10.2.2), which is a learner that will be fitted if the learner of interest fails.
+
+A common approach is to use a featureless baseline (`lrn("regr.featureless"`) or `lrn("classif.featureless"))`. Below we set `lrn("classif.featureless")`, which always predicts the majority class, by passing this learner to the `$fallback` field.
+
+> 如果出现错误或达到模型超时阈值，那么学习器将不会中断，而是在发现错误时不进行预测，对于出现错误的重抽样迭代，结果将是`NA`。当发生这种情况时，我们的超参数优化实验将失败，因为我们无法在重抽样迭代之间聚合结果。因此，选择一个回退学习器（第10.2.2节）非常重要，这是一种在感兴趣的学习器失败时将要训练的备用学习器。
+>
+> 一个常见的方法是使用一个没有特征的基线学习器（`lrn("regr.featureless"`或`lrn("classif.featureless")`）。下面我们设置了`lrn("classif.featureless")`，它总是预测多数类别，通过将这个学习器传递给`$fallback`字段来实现。
+
+```{r}
+learner$fallback = lrn("classif.featureless")
+```
+
+We can now run our experiment and see errors that occurred during tuning in the archive.
+
+```{r}
+#| results: hide
+instance = tune(tnr_random, tsk_pen, learner, rsmp_custom, msr_ce, 10)
+```
+
+```{r}
+as.data.table(instance$archive)[1:3, .(df, classif.ce, errors)]
+
+# reading the error in the first resample result
+instance$archive$resample_result(1)$errors
+```
+
+The learner was tuned without breaking because the errors were encapsulated and logged before the fallback learners were used for fitting and predicting:
+
+> 由于错误被封装并在使用回退学习器进行拟合和预测之前进行了记录，学习器在没有中断的情况下进行了调优：
+
+```{r}
+instance$result
+```
+
+### Memory Management
+
+Running a large tuning experiment can use a lot of memory, especially when using nested resampling. Most of the memory is consumed by the models since each resampling iteration creates one new model. Storing the models is therefore disabled by default and in most cases is not required. The option `store_models` in the functions `ti()` and `auto_tuner()` allows us to enable the storage of the models.
+
+The archive stores a `ResampleResult` for each evaluated hyperparameter configuration. The contained `Prediction` objects can also take up a lot of memory, especially with large datasets and many resampling iterations. We can disable the storage of the resample results by setting `store_benchmark_result = FALSE` in the functions `ti()` and `auto_tuner()`. Note that without the resample results, it is no longer possible to score the configurations with another measure.
+
+When we run nested resampling with many outer resampling iterations, additional memory can be saved if we set `store_tuning_instance = FALSE` in the `auto_tuner()` function. However, the functions `extract_inner_tuning_results()` and `extract_inner_tuning_archives()` will then no longer work.
+
+The option `store_models = TRUE` sets `store_benchmark_result` and `store_tuning_instance` to `TRUE` because the models are stored in the benchmark results which in turn is part of the instance. This also means that `store_benchmark_result = TRUE` sets `store_tuning_instance` to `TRUE.`
+
+Finally, we can set `store_models = FALSE` in the `resample()` or `benchmark()` functions to disable the storage of the auto tuners when running nested resampling. This way we can still access the aggregated performance (`rr$aggregate()`) but lose information about the inner resampling.
+
+> 运行大型调优实验可能会使用大量内存，特别是在使用嵌套重抽样时。大多数内存被模型消耗，因为每个重抽样迭代都会创建一个新模型。默认情况下禁用存储模型，而在大多数情况下也不需要存储模型。在函数`ti()`和`auto_tuner()`中，选项`store_models`允许我们启用模型的存储。
+>
+> 归档存储了每个评估的超参数配置的`ResampleResult`。包含的`Prediction`对象在大型数据集和许多重抽样迭代时可能占用大量内存。我们可以通过在函数`ti()`和`auto_tuner()`中设置`store_benchmark_result = FALSE`来禁用重抽样结果的存储。请注意，如果没有重抽样结果，就不再可能使用另一个度量来评分配置。
+>
+> 当我们运行具有许多外部重抽样迭代的嵌套重抽样时，如果在`auto_tuner()`函数中设置`store_tuning_instance = FALSE`，还可以节省额外的内存。然而，`extract_inner_tuning_results()`和`extract_inner_tuning_archives()`函数将不再起作用。
+>
+> 选项`store_models = TRUE`会将`store_benchmark_result`和`store_tuning_instance`设置为`TRUE`，因为模型存储在基准结果中，而基准结果又是实例的一部分。这也意味着`store_benchmark_result = TRUE`会将`store_tuning_instance`设置为`TRUE`。
+>
+> 最后，在运行嵌套重抽样时，可以在`resample()`或`benchmark()`函数中设置`store_models = FALSE`以禁用自动调整器的存储。这样我们仍然可以访问聚合性能（`rr$aggregate()`），但会失去有关内部重抽样的信息。
+
+## Multi-Objective Tuning
+
+So far we have considered optimizing a model with respect to one metric, but multi-criteria, or multi-objective optimization, is also possible. A simple example of multi-objective optimization might be optimizing a classifier to simultaneously maximize true positive predictions and minimize false negative predictions. In another example, consider the single-objective problem of tuning a neural network to minimize classification error. The best-performing model is likely to be quite complex, possibly with many layers that will have drawbacks like being harder to deploy on devices with limited resources. In this case, we might want to simultaneously minimize the classification error and model complexity.
+
+By definition, optimization of multiple metrics means these will be in competition (otherwise we would only optimize one of them) and therefore in general no single configuration exists that optimizes all metrics. Therefore, we instead focus on the concept of Pareto optimality. One hyperparameter configuration is said to Pareto-dominate another if the resulting model is equal or better in all metrics and strictly better in at least one metric.
+
+The goal of multi-objective hyperparameter optimization is to find a set of non-dominated solutions so that their corresponding metric values approximate the Pareto front.
+
+> 到目前为止，我们考虑了根据一个度量来优化模型，但多标准或多目标优化也是可能的。多目标优化的一个简单示例可能是优化分类器，同时最大化真正例预测和最小化假负例预测。在另一个示例中，考虑单一目标问题，即调整神经网络以最小化分类错误。性能最佳的模型可能相当复杂，可能具有许多层，具有诸如在资源有限的设备上部署更困难等缺点。在这种情况下，我们可能希望同时最小化分类错误和模型复杂性。
+>
+> 根据定义，多个度量的优化意味着它们将竞争（否则我们只会优化其中一个），因此通常不存在单个配置可以优化所有度量。因此，我们转而关注帕累托最优的概念。如果得到的模型在所有度量上相等或更好，且至少在一个度量上严格更好，则一个超参数配置被认为帕累托优于另一个。
+>
+> 多目标超参数优化的目标是找到一组非支配解，以便它们对应的度量值近似于帕累托前沿。
+
+```{r}
+learner = lrn("classif.rpart", cp = to_tune(1e-04, 1e-1),
+              minsplit = to_tune(2, 64), maxdepth = to_tune(1, 30))
+
+measures = msrs(c("classif.ce", "selected_features"))
+```
+
+As we are tuning with respect to multiple measures, the function `ti()` automatically creates a `TuningInstanceMultiCrit` instead of a `TuningInstanceSingleCrit.` Below we set `store_models = TRUE` as this is required by the selected features measure.
+
+```{r}
+instance = ti(
+  task = tsk("sonar"),
+  learner = learner,
+  resampling = rsmp("cv", folds = 3),
+  measures = measures,
+  terminator = trm("evals", n_evals = 30),
+  store_models = TRUE
+)
+instance
+```
+
+```{r}
+#| results: hide
+tuner = tnr("random_search")
+tuner$optimize(instance)
+```
+
+Finally, we inspect the best-performing configurations, i.e., the Pareto set. Note that the `selected_features` measure is averaged across the folds, so the values in the archive may not always be integers.
+
+> 最后，我们检查性能最佳的配置，即帕累托集。请注意，所选择的特征度量是在交叉验证折叠上进行平均的，因此归档中的值可能不总是整数。
+
+```{r}
+instance$archive$best()[, .(cp, minsplit, maxdepth, classif.ce, selected_features)]
+```
+
+## Multi-Fidelity Tuning via Hyperband {#sec-hyperband}
+
 
 
 
@@ -1666,15 +1829,16 @@ lts("classif.rpart.rbv2", maxdepth = to_tune(1, 20))
 
 
 ::: {.callout-tip title="To be continued"}
-- <https://mlr3book.mlr-org.com/chapters/chapter5/advanced_tuning_methods_and_black_box_optimization.html#sec-bayesian-optimization>
+- <https://mlr3book.mlr-org.com/chapters/chapter5/advanced_tuning_methods_and_black_box_optimization.html#sec-hyperband>
 :::
 
 等待交叉引用：
 
-- 4.4
-- 5
-- 5.3
+- 4.4（待检查）
+- 5（待检查）
+- 5.3 5.4
 - 10.1.3
+- 10.2.1
 - 11.3
 - 13.1
 
