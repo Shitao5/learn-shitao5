@@ -1,7 +1,7 @@
 ---
 title: "Applied Machine Learning Using mlr3 in R"
 date: "2023-08-16"
-date-modified: "2023-10-11"
+date-modified: "2023-10-16"
 image: "logo.png"
 categories: 
   - Machine Learning
@@ -15,7 +15,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(5.2, 15)`
+`r stfun::progress(6, 15)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -30,6 +30,7 @@ categories:
 library(mlr3verse)
 library(mlr3pipelines)
 library(mlr3benchmark)
+library(mlr3hyperband)
 library(ggplot2)
 library(patchwork)
 ```
@@ -936,7 +937,7 @@ autoplot(bmr, type = "roc") +
 
 # Tuning and Feature Selection {.unnumbered}
 
-# Hyperparameter Optimization
+# Hyperparameter Optimization {#sec-optimization}
 
 Hyperparameter optimization (HPO) closely relates to model evaluation (@sec-performance) as the objective is to find a hyperparameter configuration that optimizes the generalization performance. Broadly speaking, we could think of finding the optimal model configuration in the same way as selecting a model from a benchmark experiment, where in this case each model in the experiment is the same algorithm but with different hyperparameter configurations. For example, we could benchmark three support vector machines (SVMs) with three different `cost` values.
 
@@ -989,12 +990,6 @@ The most commonly used terminators are those that stop the tuning after a certai
 
 ### Tuning Instance with `ti`
 
-::: {.callout-caution}
-TODO：等待后续添加交叉引用  5
-
-已加，待验证
-:::
-
 The tuning instance collects the tuner-agnostic information required to optimize a model, i.e., all information about the tuning process, except for the tuning algorithm itself. This includes the task to tune over, the learner to tune, the resampling method and measure used to analytically compare hyperparameter optimization configurations, and the terminator to determine when the measure has been optimized ‘enough’. This implicitly defines a “black box” objective function, mapping hyperparameter configurations to (stochastic) performance values, to be optimized. This concept will be revisited in @sec-optimization-advanced.
 
 > 调优实例收集了优化模型所需的与调谐器无关的信息，即所有与调优过程有关的信息，除了调谐算法本身。这包括要调优的任务、要调优的学习器、用于分析比较超参数优化配置的重抽样方法和度量，以及确定度量何时已经被优化到足够程度的终止条件。这隐式地定义了一个“黑盒”目标函数，将超参数配置映射到（随机的）性能值，以便进行优化。这个概念将在 @sec-optimization-advanced 中重新讨论。
@@ -1032,25 +1027,15 @@ With all the pieces of our tuning problem assembled, we can now decide how to tu
 
 #### Search Strategies
 
-::: {.callout-caution}
-TODO：等待后续添加交叉引用 4.4
-
-已加，待检查
-:::
-
 Grid search and random search (Bergstra and Bengio 2012) are the most basic algorithms and are often selected first in initial experiments. The idea of grid search is to exhaustively evaluate every possible combination of given hyperparameter values. Categorical hyperparameters are usually evaluated over all possible values they can take. Numeric and integer hyperparameter values are then spaced equidistantly in their box constraints (upper and lower bounds) according to a given resolution, which is the number of distinct values to try per hyperparameter. Random search involves randomly selecting values for each hyperparameter independently from a pre-specified distribution, usually uniform. Both methods are non-adaptive, which means each proposed configuration ignores the performance of previous configurations. Due to their simplicity, both grid search and random search can handle mixed search spaces (i.e., hyperparameters can be numeric, integer, or categorical) as well as hierarchical search spaces (@sec-defining-search-spaces).
 
 > 网格搜索和随机搜索（Bergstra和Bengio 2012）是最基本的算法，通常在初始实验中首选。网格搜索的思想是详尽地评估给定超参数值的每种可能组合。通常会对分类超参数评估它们可以取的所有可能值。然后，数值和整数超参数值将根据给定的分辨率均匀分布在它们的箱约束（上下界）中，分辨率是每个超参数要尝试的不同值的数量。随机搜索涉及从预先指定的分布（通常是均匀分布）中独立地随机选择每个超参数的值。这两种方法都是非自适应的，这意味着每个提出的配置都忽略了先前配置的性能。由于它们的简单性，网格搜索和随机搜索可以处理混合搜索空间（即，超参数可以是数值、整数或分类的）以及分层搜索空间（@sec-defining-search-spaces）。
 
 #### Adaptive Algorithms
 
-::: {.callout-caution}
-TODO：等待后续添加交叉引用 5.3 5.4
-:::
-
 Adaptive algorithms learn from previously evaluated configurations to find good configurations quickly, examples in `mlr3` include Bayesian optimization (also called model-based optimization), Covariance Matrix Adaptation Evolution Strategy (CMA-ES), Iterated Racing, and Hyperband.
 
-Bayesian optimization (e.g., Snoek, Larochelle, and Adams 2012) describes a family of iterative optimization algorithms that use a surrogate model to approximate the unknown function that is to be optimized – in HPO this would be the mapping from a hyperparameter configuration to the estimated generalization performance. If a suitable surrogate model is chosen, e.g. a random forest, Bayesian optimization can be quite flexible and even handle mixed and hierarchical search spaces. Bayesian optimization is discussed in full detail in Section 5.4.
+Bayesian optimization (e.g., Snoek, Larochelle, and Adams 2012) describes a family of iterative optimization algorithms that use a surrogate model to approximate the unknown function that is to be optimized – in HPO this would be the mapping from a hyperparameter configuration to the estimated generalization performance. If a suitable surrogate model is chosen, e.g. a random forest, Bayesian optimization can be quite flexible and even handle mixed and hierarchical search spaces. Bayesian optimization is discussed in full detail in @sec-bayesian-optimization.
 
 CMA-ES (Hansen and Auger 2011) is an evolutionary strategy that maintains a probability distribution over candidate points, with the distribution represented by a mean vector and covariance matrix. A new set of candidate points is generated by sampling from this distribution, with the probability of each candidate being proportional to its performance. The covariance matrix is adapted over time to reflect the performance landscape. Further evolutionary strategies are available in `mlr3` via the `miesmuschel` package, however, these will not be covered in this book.
 
@@ -1062,7 +1047,7 @@ Other implemented algorithms for numeric search spaces are Generalized Simulated
 
 > 自适应算法通过学习先前评估的配置来快速找到良好的配置，`mlr3`中的示例包括贝叶斯优化（也称为基于模型的优化）、协方差矩阵自适应进化策略（CMA-ES）、迭代比赛和Hyperband。
 >
-> 贝叶斯优化（例如，Snoek、Larochelle和Adams 2012）描述了一族迭代优化算法，这些算法使用替代模型来近似待优化的未知函数——在HPO中，这将是从超参数配置到估计的泛化性能的映射。如果选择了合适的替代模型，例如随机森林，贝叶斯优化可以非常灵活，甚至可以处理混合和分层搜索空间。贝叶斯优化将在第5.4节中详细讨论。
+> 贝叶斯优化（例如，Snoek、Larochelle和Adams 2012）描述了一族迭代优化算法，这些算法使用替代模型来近似待优化的未知函数——在HPO中，这将是从超参数配置到估计的泛化性能的映射。如果选择了合适的替代模型，例如随机森林，贝叶斯优化可以非常灵活，甚至可以处理混合和分层搜索空间。贝叶斯优化将在 @sec-bayesian-optimization 中详细讨论。
 >
 > CMA-ES（Hansen和Auger 2011）是一种进化策略，它维护了候选点的概率分布，分布由均值向量和协方差矩阵表示。通过从该分布中抽样生成一组新的候选点，每个候选点的选择概率与其性能成正比。协方差矩阵会随着时间的推移而适应反映性能景观。通过`mlr3`中的`miesmuschel`包，还提供了其他进化策略，不过本书不会涵盖这些内容。
 >
@@ -1247,7 +1232,7 @@ at$tuning_instance$result
 
 We could also pass the `AutoTuner` to `resample()` and `benchmark()`, which would result in a nested resampling, discussed next.
 
-## Nested Resampling
+## Nested Resampling {#sec-nested-resampling}
 
 Nested resampling separates model optimization from the process of estimating the performance of the tuned model by adding an additional resampling, i.e., while model performance is estimated using a resampling method in the ‘usual way’, tuning is then performed by resampling the resampled data (@fig-nested-resampling).
 
@@ -1815,6 +1800,575 @@ instance$archive$best()[, .(cp, minsplit, maxdepth, classif.ce, selected_feature
 
 ## Multi-Fidelity Tuning via Hyperband {#sec-hyperband}
 
+Increasingly large datasets and search spaces and increasingly complex models make hyperparameter optimization a time-consuming and computationally expensive task. To tackle this, some HPO methods make use of evaluating a configuration at multiple fidelity levels. Multi-fidelity HPO is motivated by the idea that the performance of a lower-fidelity model is indicative of the full-fidelity model, which can be used to make HPO more efficient (as we will soon see with Hyperband).
+
+To unpack what these terms mean and to motivate multi-fidelity tuning, say that we think a gradient boosting algorithm with up to 1000 rounds will be a very good fit to our training data. However, we are concerned this model will take too long to tune and train. Therefore, we want to gauge the performance of this model using a similar model that is quicker to train by setting a smaller number of rounds. In this example, the hyperparameter controlling the number of rounds is a fidelity parameter, as it controls the tradeoff between model performance and speed. The different configurations of this parameter are known as fidelity levels. We refer to the model with 1000 rounds as the model at full-fidelity and we want to approximate this model’s performance using models at different fidelity levels. Lower fidelity levels result in low-fidelity models that are quicker to train but may poorly predict the full-fidelity model’s performance. On the other hand, higher fidelity levels result in high-fidelity models that are slower to train but may better indicate the full-fidelity model’s performance.
+
+Other common models that have natural fidelity parameters include neural networks (number of epochs) and random forests (number of trees). The proportion of data to subsample before running any algorithm can also be viewed as a model-agnostic fidelity parameter, we will return to this in Section 8.4.4.
+
+> 随着数据集和搜索空间的不断增大，以及模型的日益复杂，超参数优化变成了一项耗时且计算成本高昂的任务。为了解决这个问题，一些超参数优化方法利用多个保真度水平（fidelity levels）对配置进行评估。多保真度（Multi-fidelity）超参数优化的动机在于，较低保真度模型的性能可作为完全保真度模型的指示，从而提高超参数优化的效率（正如我们即将看到的 Hyperband 算法）。
+>
+> 为了解释这些术语的含义并推动多保真度调整的动机，假设我们认为一个带有最多1000轮的梯度提升算法将非常适合我们的训练数据。然而，我们担心这个模型调优和训练的时间会太长。因此，我们希望使用一个训练时间更短的类似模型来评估这个模型的性能，方法是设置较少的轮数。在这个例子中，控制轮数的超参数被称为保真度参数，因为它控制了模型性能和速度之间的权衡。该参数的不同配置被称为保真度水平。我们将拥有1000轮的模型称为全保真度模型，我们希望使用不同保真度水平的模型来近似该模型的性能。较低的保真度水平会产生训练速度更快但可能较差的低保真度模型，而较高的保真度水平则会产生训练速度较慢但可能更好地指示全保真度模型性能的高保真度模型。
+>
+> 其他常见的自然带有保真度参数的模型包括神经网络（轮数）和随机森林（树的数量）。在运行任何算法之前对数据进行子采样的比例也可以看作是一种不依赖于特定模型的保真度参数，我们将在第8.4.4节中详细讨论此点。
+
+The Successive Halving and Hyperband algorithms are implemented in `mlr3hyperband` as `tnr("successive_halving")` and `tnr("hyperband")` respectively; in this section, we will only showcase the Hyperband method.
+
+By example, we will optimize `lrn("classif.xgboost")` on `tsk("sonar")` and use the number of boosting iterations (`nrounds`) as the fidelity parameter, this is a suitable choice as increasing iterations increases model training time but generally also improves performance. Hyperband will allocate increasingly more boosting iterations to well-performing hyperparameter configurations.
+
+We will load the learner and define the search space. We specify a range from 16 ($r_{min}$
+) to 128 ($`r_{max}`$) boosting iterations and tag the parameter with `"budget"` to identify it as a fidelity parameter. For the other hyperparameters, we take the search space for XGBoost from Bischl et al. (2023), which usually works well for a wide range of datasets.
+
+> 在`mlr3hyperband`中，连续加倍算法和Hyperband算法分别被实现为`tuner("successive_halving")`和`tuner("hyperband")`。在本节中，我们将仅展示Hyperband方法的使用。
+>
+> 举例来说，我们将在`tsk("sonar")`上优化`lrn("classif.xgboost")`，并使用提升迭代次数（`nrounds`）作为保真度参数。这是一个合适的选择，因为增加迭代次数会增加模型训练时间，但通常也会提高性能。Hyperband将为性能良好的超参数配置分配越来越多的提升迭代次数。
+>
+> 我们将加载学习器并定义搜索空间。我们指定了从16（最小值）到128（最大值）的提升迭代次数范围，并将该参数标记为`"budget"`，以识别它为保真度参数。对于其他超参数，我们采用了来自Bischl等人（2023年）的XGBoost搜索空间，通常适用于各种数据集。
+
+```{r}
+learner = lrn("classif.xgboost")
+learner$param_set$set_values(
+  nrounds           = to_tune(p_int(16, 128, tags = "budget")),
+  eta               = to_tune(1e-4, 1, logscale = TRUE),
+  max_depth         = to_tune(1, 20),
+  colsample_bytree  = to_tune(1e-1, 1),
+  colsample_bylevel = to_tune(1e-1, 1),
+  lambda            = to_tune(1e-3, 1e3, logscale = TRUE),
+  alpha             = to_tune(1e-3, 1e3, logscale = TRUE),
+  subsample         = to_tune(1e-1, 1)
+)
+```
+
+We now construct the tuning instance and a hyperband tuner with `eta = 2`. We use `trm("none")` and set the `repetitions` control parameter to `1` so that Hyperband can terminate itself after all brackets have been evaluated a single time. Note that setting `repetition = Inf` can be useful if you want a terminator to stop the optimization, for example, based on runtime. The `hyperband_schedule()` function can be used to display the schedule across the given fidelity levels and budget increase factor.
+
+> 现在，我们构建调优实例和一个`eta = 2`的Hyperband调优器。我们使用`tuner("none")`并将`repetitions`控制参数设置为`1`，以便Hyperband在所有档次都被评估一次后自动终止。请注意，如果你希望终止器根据运行时间等因素停止优化，将`repetition = Inf`设置为无穷大可能会更有用。`hyperband_schedule()`函数可以用来显示在给定的保真度水平和预算增加因子下的调度计划。
+
+```{r}
+instance = ti(
+  task = tsk("sonar"),
+  learner = learner,
+  resampling = rsmp("holdout"),
+  measures = msr("classif.ce"),
+  terminator = trm("none")
+)
+
+tuner = tnr("hyperband", eta = 2, repetitions = 1)
+
+hyperband_schedule(r_min = 16, r_max = 128, eta = 2)
+```
+
+Finally, we can tune as normal and print the result and archive. Note that the archive resulting from a Hyperband run contains the additional columns `bracket` and `stage` which break down the results by the corresponding bracket and stage.
+
+```{r}
+#| results: hide
+
+tuner$optimize(instance)
+```
+
+```{r}
+instance$result[, .(classif.ce, nrounds)]
+as.data.table(instance$archive)[,
+      .(bracket, stage, classif.ce, eta, max_depth, colsample_bytree)]
+```
+
+## Bayesian Optimization {#sec-bayesian-optimization}
+
+In hyperparameter optimization (@sec-optimization), learners are passed a hyperparameter configuration and evaluated on a given task via a resampling technique to estimate its generalization performance with the goal to find the optimal hyperparameter configuration. In general, no analytical description for the mapping from hyperparameter configuration to performance exists and gradient information is also not available. HPO is, therefore, a prime example for black box optimization, which considers the optimization of a function whose mathematical structure and analytical description is unknown or unexploitable. As a result, the only observable information is the output value (i.e., generalization performance) of the function given an input value (i.e., hyperparameter configuration). In fact, as evaluating the performance of a learner can take a substantial amount of time, HPO is quite an expensive black box optimization problem. Black box optimization problems occur in the real-world, for example they are encountered quite often in engineering such as in modeling experiments like crash tests or chemical reactions.
+
+Many optimization algorithm classes exist that can be used for black box optimization, which differ in how they tackle this problem; for example we saw in @sec-optimization methods including grid/random search and briefly discussed evolutionary strategies. Bayesian optimization refers to a class of sample-efficient iterative global black box optimization algorithms that rely on a ‘surrogate model’ trained on observed data to model the black box function. This surrogate model is typically a non-linear regression model that tries to capture the unknown function using limited observed data. During each iteration, BO algorithms employ an ‘acquisition function’ to determine the next candidate point for evaluation. This function measures the expected ‘utility’ of each point within the search space based on the prediction of the surrogate model. The algorithm then selects the candidate point with the best acquisition function value and evaluates the black box function at that point to then update the surrogate model. This iterative process continues until a termination criterion is met, such as reaching a pre-specified maximum number of evaluations or achieving a desired level of performance. BO is a powerful method that often results in good optimization performance, especially if the cost of the black box evaluation becomes expensive and the optimization budget is tight.
+
+As a running example throughout this section, we will optimize the sinusoidal function $f: [0, 1] \rightarrow \mathbb{R}, x \mapsto 2x + \sin(14x)$ (@fig-bayesian-optimization-sinusoidal), which is characterized by two local minima and one global minimum.
+
+> 在超参数优化（@sec-optimization）中，学习器会接收一个超参数配置，并通过重新采样技术在给定任务上进行评估，以估算其泛化性能，目标是找到最优的超参数配置。通常情况下，超参数配置到性能的映射没有解析描述，也无法获得梯度信息。因此，HPO是黑盒优化的一个典型例子，它考虑的是一种函数的优化，该函数的数学结构和解析描述是未知的或无法利用的。因此，唯一可观察到的信息是在给定输入值（即，超参数配置）的情况下，函数的输出值（即，泛化性能）。实际上，由于评估学习器的性能可能需要大量时间，HPO是一个非常昂贵的黑盒优化问题。黑盒优化问题在现实世界中经常出现，例如在工程领域，例如在建模实验中，如碰撞测试或化学反应。
+>
+> 存在许多可用于黑盒优化的优化算法类别，它们在解决这个问题时的方式各不相同；例如，在 @sec-optimization 中我们介绍了一些方法，包括网格/随机搜索，并简要讨论了进化策略。贝叶斯优化是指一类基于样本高效迭代的全局黑盒优化算法，它依赖于在观察到的数据上训练的“代理模型”来对黑盒函数进行建模。这个代理模型通常是一个非线性回归模型，它试图使用有限的观察数据来捕捉未知函数。在每次迭代中，BO算法使用一个“采集函数”来确定下一个待评估的候选点。该函数基于代理模型的预测，测量搜索空间内每个点的预期“效用”。然后，算法选择具有最佳采集函数值的候选点，并在该点处评估黑盒函数，然后更新代理模型。这个迭代过程会持续进行，直到满足终止准则，例如达到预先指定的最大评估次数或达到所需的性能水平。BO是一种强大的方法，通常在性能评估的成本昂贵且优化预算有限的情况下表现良好。
+>
+> 在本节的整个过程中，我们将优化正弦函数 $f: [0, 1] \rightarrow \mathbb{R}, x \mapsto 2x + \sin(14x)$ （@fig-bayesian-optimization-sinusoidal），该函数具有两个局部最小值和一个全局最小值，作为一个运行示例。
+
+### Black Box Optimization
+
+To start translating our problem to code we will use the `ObjectiveRFun` class to take a single configuration as input. The `Objective` requires specification of the function to optimize its domain and codomain. By tagging the codomain with `"minimize"` or `"maximize"` we specify the optimization direction. Note how below our optimization function takes a `list` as an input with one element called `x`.
+
+> 为了开始将我们的问题转化为代码，我们将使用`ObjectiveRFun`类以单个配置作为输入。`Objective`函数需要指定优化其定义域和共域的函数。通过将共域标记为`"minimize"`或`"maximize"`，我们可以指定优化的方向。请注意，在下面的例子中，我们的优化函数以一个名为x的元素的列表作为输入。
+
+```{r}
+library(bbotk)
+sinus_1D = \(xs) 2 * xs$x * sin(14 * xs$x)
+
+domain = ps(x = p_dbl(0, 1))
+codomain = ps(y = p_dbl(tags = "minimize"))
+objective = ObjectiveRFun$new(sinus_1D, domain = domain, codomain = codomain)
+```
+
+We can visualize our objective by generating a grid of points on which we evaluate the function (@fig-bayesian-optimization-sinusoidal), this will help us identify its local minima and global minimum.
+
+```{r}
+#| label: fig-bayesian-optimization-sinusoidal
+#| fig-cap: Visualization of the sinusoidal function. Local minima in triangles and global minimum in the circle.
+xydt = generate_design_grid(domain, resolution = 1001)$data
+xydt[, y := objective$eval_dt(xydt)$y]
+optima = data.table(x = c(0, 0.3509406, 0.7918238))
+optima[, y := objective$eval_dt(optima)$y]
+optima[, type := c("local", "local", "global")]
+
+ggplot(xydt, aes(x, y)) +
+  geom_line() +
+  geom_point(data = optima, aes(pch = type),
+             color = "black", size = 4) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+```{r}
+xydt[y == min(y), ]
+```
+
+With the objective function defined, we can proceed to optimize it using `OptimInstanceSingleCrit`. This class allows us to wrap the objective function and explicitly specify a search space. The search space defines the set of input values we want to optimize over, and it is typically a subset or transformation of the domain, though by default the entire domain is taken as the search space. In black box optimization, it is common for the domain, and hence also the search space, to have finite box constraints. Similarly to HPO, transformations can sometimes be used to more efficiently search the space.
+
+In the following, we use a simple random search to optimize the sinusoidal function over the whole domain and inspect the result from the instance in the usual way. Analogously to tuners, Optimizers in bbotk are stored in the mlr_optimizers dictionary and can be constructed with opt().
+
+> 有了目标函数的定义，我们可以使用`OptimInstanceSingleCrit`来进行优化。这个类允许我们封装目标函数并显式地指定一个搜索空间。搜索空间定义了我们想要在其上进行优化的输入值集合，通常它是域的一个子集或变换，尽管默认情况下整个域被视为搜索空间。在黑盒优化中，域，因此也是搜索空间，通常具有有限的区间约束。类似于HPO，有时可以使用变换来更有效地搜索空间。
+>
+> 在接下来的例子中，我们使用简单的随机搜索来在整个域上优化正弦函数，并以通常的方式检查实例的结果。与调优器类似，在`bbotk`中，优化器存储在`mlr_optimizers`字典中，可以使用`opt()`构建。
+
+```{r}
+#| results: hide
+instance = OptimInstanceSingleCrit$new(
+  objective,
+  search_space = domain,
+  terminator = trm("evals", n_evals = 20)
+)
+optimizer = opt("random_search", batch_size = 20)
+optimizer$optimize(instance)
+```
+
+Similarly to how we can use `tune()` to construct a tuning instance, here we can use `bb_optimize()`, which returns a list with elements `"par"` (best found parameters), `"val"` (optimal outcome), and "instance" (the optimization instance); the values given as `"par"` and `"val"` are the same as the values found in `instance$result`:
+
+```{r}
+#| results: hide
+optimal = bb_optimize(objective, method = "random_search", max_evals = 20)
+```
+
+```{r}
+optimal$instance$result
+```
+
+Now we have introduced the basic black box optimization setup, we can introduce the building blocks of any Bayesian optimization algorithm.
+
+::: {.callout-note}
+跳过了贝叶斯优化部分。
+:::
+
+<!-- ### Bayesian Optimization for HPO -->
+
+<!-- `mlr3mbo` can be used for HPO by making use of `TunerMbo`, which is a wrapper around `OptimizerMbo` and works in the exact same way. -->
+
+<!-- ```{r} -->
+<!-- bayesopt_ego = mlr_loop_functions$get("bayesopt_ego") -->
+<!-- surrogate = srlrn(lrn("regr.km", covtype = "matern5_2", -->
+<!--   optim.method = "BFGS", control = list(trace = FALSE))) -->
+<!-- acq_function = acqf("ei") -->
+<!-- acq_optimizer = acqo(opt("nloptr", algorithm = "NLOPT_GN_ORIG_DIRECT"), -->
+<!--   terminator = trm("stagnation", iters = 100, threshold = 1e-5)) -->
+<!-- ``` -->
+
+# Feature Selection
+
+::: {.callout-caution}
+TODO：等待后续添加交叉引用  6.2.5
+:::
+
+Feature selection, also known as variable or descriptor selection, is the process of finding a subset of features to use with a given task and learner. Using an optimal set of features can have several benefits:
+
+- improved predictive performance, since we reduce overfitting on irrelevant features,
+
+- robust models that do not rely on noisy features,
+
+- simpler models that are easier to interpret,
+
+- faster model fitting, e.g. for model updates,
+
+- faster prediction, and
+
+- no need to collect potentially expensive features.
+
+However, these objectives will not necessarily be optimized by the same set of features and thus feature selection can be seen as a multi-objective optimization problem. In this chapter, we mostly focus on feature selection as a means of improving predictive performance, but also briefly cover the optimization of multiple criteria (Section 6.2.5).
+
+Reducing the number of features can improve models across many scenarios, but it can be especially helpful in datasets that have a high number of features in comparison to the number of data points. Many learners perform implicit, also called embedded, feature selection, e.g. via the choice of variables used for splitting in a decision tree. Most other feature selection methods are model agnostic, i.e. they can be used together with any learner.
+
+> 特征选择，也称为变量或描述符选择，是找到适用于给定任务和学习器的特征子集的过程。使用最优特征集合可以带来几个好处：
+>
+> 1. 提高预测性能，因为我们减少了对无关特征的过拟合。
+>
+> 2. 构建不依赖噪声特征的稳健模型。
+>
+> 3. 创建更容易解释的简单模型。
+>
+> 4. 更快的模型拟合，例如用于模型更新。
+>
+> 5. 更快的预测速度。
+>
+> 6. 无需收集可能昂贵的特征。
+>
+> 然而，这些目标不一定会被相同的特征集合最优化，因此特征选择可以被看作是一个多目标优化问题。在本章中，我们主要关注特征选择作为提高预测性能的手段，但也简要介绍了多标准优化的方法（请参见第6.2.5节）。
+>
+> 在许多情况下，减少特征数量可以提高模型性能，但在与数据点数量相比特征数量较多的数据集中，特别有帮助。许多学习器通过隐式的、也称为嵌入式的特征选择方法，例如在决策树中用于分割的变量选择中执行特征选择。大多数其他特征选择方法是与模型无关的，即它们可以与任何学习器一起使用。在识别相关特征的许多不同方法中，我们将重点放在两个通用概念上，它们在下面详细描述：过滤方法和包装方法。
+
+## Filters
+
+Filter algorithms select features by assigning numeric scores to each feature, e.g. correlation between features and target variable, use these to rank the features and select a feature subset based on the ranking. Features that are assigned lower scores are then omitted in subsequent modeling steps.
+
+The learner used in a feature importance or embedded filter is independent of learners used in subsequent modeling steps. For example, one might use feature importance of a random forest for feature selection and train a neural network on the reduced feature set.
+
+Most of the filter methods have some limitations, for example, the correlation filter can only be calculated for regression tasks with numeric features. For a full list of all implemented filter methods, we refer the reader to <https://mlr3filters.mlr-org.com>, which also shows the supported task and features types. A benchmark of filter methods was performed by Bommert et al. (2020), who recommend not to rely on a single filter method but to try several ones if the available computational resources allow. If only a single filter method is to be used, the authors recommend to use a feature importance filter using random forest permutation importance (see @sec-fs-var-imp-filters), similar to the permutation method described above, but also the JMIM and AUC filters performed well in their comparison.
+
+> 过滤算法通过为每个特征分配数值分数（例如，特征与目标变量之间的相关性）来选择特征，然后使用这些分数对特征进行排序，并基于排名选择一个特征子集。分配较低分数的特征将在后续建模步骤中被省略。
+>
+> 在特征重要性或嵌入式过滤器中使用的学习器与后续建模步骤中使用的学习器是相互独立的。例如，可以使用随机森林的特征重要性进行特征选择，然后在减少后的特征集上训练神经网络。
+>
+> 大多数过滤方法都有一些限制，例如，相关性过滤只能用于具有数值特征的回归任务。有关所有已实现的过滤方法的完整列表，我们建议读者访问<https://mlr3filters.mlr-org.com>，该网站还显示了支持的任务和特征类型。Bommert等人（2020年）进行了一项过滤方法的基准测试，他们建议不要仅依赖于单个过滤方法，而是在计算资源允许的情况下尝试多种方法。如果只想使用单个过滤方法，作者建议使用基于随机森林排列重要性的特征重要性过滤器（参见 @sec-fs-var-imp-filters ），类似于上述描述的排列方法，但JMIM和AUC过滤器在他们的比较中也表现良好。
+
+### Calculating Filter Value
+
+```{r}
+flt_gain = flt("information_gain")
+tsk_pen = tsk("penguins")
+flt_gain$calculate(tsk_pen)
+
+as.data.table(flt_gain)
+```
+
+This shows that the flipper and bill measurements are the most informative features for predicting the species of a penguin in this dataset, whereas sex and year are the least informative. Some filters have hyperparameters that can be changed in the same way as `Learner` hyperparameters. For example, to calculate `"spearman"` instead of `"pearson"` correlation with the correlation filter:
+
+> 这显示了在这个数据集中，翅膀和嘴巴的测量是预测企鹅物种最具信息量的特征，而性别和年份则是最不具信息量的特征。一些过滤器具有可以像`Learner`超参数一样更改的超参数。例如，要使用相关性过滤器计算`"Spearman"`相关性而不是`"Pearson"`相关性：
+
+```{r}
+flt_cor = flt("correlation", method = "spearman")
+flt_cor$param_set
+```
+
+### Feature Importance Filters {#sec-fs-var-imp-filters}
+
+To use feature importance filters, we can use a learner with with an `$importance()` method that reports feature importance. All learners with the property “importance” have this functionality. A list of all learners with this property can be found with
+
+```{r}
+#| eval: false
+as.data.table(mlr_learners)[sapply(properties, \(x) "importance" %in% x)]
+```
+
+For some learners, the desired filter method needs to be set as a hyperparameter. For example, `lrn("classif.ranger")` comes with multiple integrated methods, which can be selected during construction: To use the feature importance method `"impurity"`, select it during learner construction:
+
+```{r}
+lrn("classif.ranger")$param_set$levels$importance
+```
+
+```{r}
+lrn_ranger = lrn("classif.ranger", importance = "impurity")
+```
+
+We first have to remove missing data because the learner cannot handle missing data, i.e. it does not have the property “missing”. Note we use the `$filter()` method to remove rows; the “filter” name is unrelated to feature filtering, however.
+
+```{r}
+tsk_pen = tsk("penguins")
+tsk_pen$filter(tsk_pen$row_ids[complete.cases(tsk_pen$data())])
+```
+
+Now we can use `flt("importance")` to calculate importance values:
+
+```{r}
+flt_importance = flt("importance", learner = lrn_ranger)
+flt_importance$calculate(tsk_pen)
+as.data.table(flt_importance)
+```
+
+### Embedded Methods
+
+Many learners internally select a subset of the features which they find helpful for prediction, but ignore other features. For example, a decision tree might never select some features for splitting. These subsets can be used for feature selection, which we call embedded methods because the feature selection is embedded in the learner. The selected features (and those not selected) can be queried if the learner has the `"selected_features"` property. As above, we can find those learners with
+
+> 许多学习器在内部选择对预测有帮助的特征子集，但忽略其他特征。例如，决策树可能永远不会选择某些特征进行分割。这些子集可以用于特征选择，我们称之为嵌入方法，因为特征选择嵌入在学习器中。如果学习器具有`"selected_features"`属性，那么可以查询所选特征（以及未被选择的特征）。与上述类似，我们可以找到那些带有该属性的学习器：
+
+```{r}
+#| eval: false
+as.data.table(mlr_learners)[sapply(properties, \(x) "selected_features" %in% x)]
+```
+
+```{r}
+tsk_pen = tsk("penguins")
+lrn_rpart = lrn("classif.rpart")
+lrn_rpart$train(tsk_pen)
+lrn_rpart$selected_features()
+```
+
+The features selected by the model can be extracted by a `Filter` object, where `$calculate()` corresponds to training the learner on the given task:
+
+```{r}
+flt_selected = flt("selected_features", learner = lrn_rpart)
+flt_selected$calculate(tsk_pen)
+as.data.table(flt_selected)
+```
+
+Contrary to other filter methods, embedded methods just return values of `1` (selected features) and `0` (dropped feature).
+
+### Filter-Based Feature Selection
+
+::: {.callout-caution}
+TODO：等待后续添加交叉引用 8.4.5
+:::
+
+After calculating a score for each feature, one has to select the features to be kept or those to be dropped from further modeling steps. For the `"selected_features"` filter described in embedded methods, this step is straight-forward since the methods assign either a value of 1 for a feature to be kept or 0 for a feature to be dropped. Below, we find the names of features with a value of 1 and select those features with `task$select()`. At first glance it may appear a bit convoluted to have a filter assign scores based on the feature names returned by `$selected_features()`, only to turn these scores back into the names of the features to be kept. However, this approach allows us to use the same interface for all filter methods, which is especially useful when we want to automate the feature selection process in pipelines, as we will see in Section 8.4.5.
+
+> 在为每个特征计算分数之后，需要选择要保留的特征或要在进一步建模步骤中舍弃的特征。对于嵌入方法中描述的`"selected_features"`筛选器来说，这一步骤非常直接，因为该方法为要保留的特征分配值1，为要舍弃的特征分配值0。在下面的代码中，我们查找值为1的特征的名称，并使用`task$select()`选择这些特征。乍一看，这似乎有点繁琐，因为我们让一个筛选器基于`$selected_features()`返回的特征名称分配分数，然后再将这些分数转换回要保留的特征的名称。然而，这种方法使我们能够为所有筛选方法使用相同的接口，尤其在我们想要在管道中自动化特征选择过程时特别有用，正如我们将在第8.4.5节中看到的那样。
+
+```{r}
+flt_selected$calculate(tsk_pen)
+
+# select all features used by rpart
+keep = names(which(flt_selected$scores == 1))
+tsk_pen$select(keep)
+tsk_pen$feature_names
+```
+
+```{r}
+# select the top k(= 3) features
+tsk_pen = tsk("penguins")
+flt_gain = flt("information_gain")
+flt_gain$calculate(tsk_pen)
+
+keep = names(head(flt_gain$scores, 3))
+tsk_pen$select(keep)
+tsk_pen$feature_names
+```
+
+```{r}
+# Select all features with a score (> 0.5)
+tsk_pen = tsk("penguins")
+flt_gain = flt("information_gain")
+flt_gain$calculate(tsk_pen)
+
+keep = names(which(flt_gain$scores > 0.5))
+tsk_pen$select(keep)
+tsk_pen$feature_names
+```
+
+## Wrapper Methods
+
+Wrapper methods work by fitting models on selected feature subsets and evaluating their performance (Kohavi and John 1997). This can be done in a sequential fashion, e.g. by iteratively adding features to the model in sequential forward selection, or in a parallel fashion, e.g. by evaluating random feature subsets in a random search. Below, we describe these simple approaches in a common framework along with more advanced methods such as genetic search. We further show how to select features by optimizing multiple performance measures and how to wrap a learner with feature selection to use it in pipelines or benchmarks.
+
+In more detail, wrapper methods iteratively evaluate subsets of features by resampling a learner restricted to this feature subset and with a chosen performance metric (with holdout or a more expensive CV), and using the resulting performance to guide the search. The specific search strategy iteration is defined by a `FSelector` object. A simple example is the sequential forward selection that starts with computing each single-feature model, selects the best one, and then iteratively always adds the feature that leads to the largest performance improvement.
+
+Wrapper methods can be used with any learner, but need to train or even resample the learner potentially many times, leading to a computationally intensive method. All wrapper methods are implemented via the package `mlr3fselect`.
+
+> 包装方法通过在选择的特征子集上拟合模型并评估其性能来工作（Kohavi和John，1997年）。这可以以顺序方式进行，例如通过在顺序前向选择中迭代地将特征添加到模型中，也可以以并行方式进行，例如通过在随机搜索中评估随机特征子集。在下面，我们描述了这些简单方法，以及更高级的方法，比如遗传搜索，都在一个共同的框架下。我们还展示了如何通过优化多个性能指标来选择特征，以及如何用特征选择包装一个学习器，使其可以在管道或基准测试中使用。
+>
+> 更详细地说，包装方法通过对特征子集进行迭代评估，方法是通过对一个受限于该特征子集的学习器进行重抽样，选择一个选定的性能指标（使用留出法或更昂贵的交叉验证），并使用得到的性能来引导搜索。具体的搜索策略迭代是由一个`FSelector`对象定义的。一个简单的例子是顺序前向选择，它从计算每个单特征模型开始，选择最好的模型，然后迭代地添加导致性能提升最大的特征。
+>
+> 包装方法可以与任何学习器一起使用，但可能需要多次训练甚至重抽样学习器，因此是一种计算密集型的方法。所有的包装方法都是通过`mlr3fselect`包实现的。
+
+### Simple Forward Selection Example
+
+```{r}
+#| results: hide
+tsk_pen = tsk("penguins")
+tsk_pen$select(c("bill_depth", "bill_length", "body_mass", "flipper_length"))
+
+instance = fselect(
+  fselector = fs("sequential"),
+  task = tsk_pen,
+  learner = lrn_rpart,
+  resampling = rsmp("cv", folds = 3),
+  measures = msr("classif.acc")
+)
+```
+
+```{r}
+dt = as.data.table(instance$archive)
+dt[batch_nr == 1, 1:5]
+```
+
+We see that the feature `flipper_length` achieved the highest prediction performance in the first iteration and is thus selected. We plot the performance over the iterations:
+
+```{r}
+autoplot(instance, type = "performance")
+```
+
+In the plot, we can see that adding a second feature further improves the performance to over 90%. To see which feature was added, we can go back to the archive and look at the second iteration:
+
+```{r}
+dt[batch_nr == 2, 1:5]
+```
+
+The improvement in batch three is small so we may even prefer to select a marginally worse model with two features to reduce data size.
+
+To directly show the best feature set, we can use `$result_feature_set` which returns the features in alphabetical order (not order selected):
+
+> 在第三次迭代中的改进很小，因此我们甚至可能更愿意选择一个带有两个特征的性能稍差一点的模型，以减小数据集的大小。
+>
+> 要直接显示最佳特征集，我们可以使用`$result_feature_set`，该属性返回按字母顺序排列的特征（而不是选择的顺序）：
+
+```{r}
+instance$result_feature_set
+```
+
+### The FSelectInstance Class
+
+To create an `FSelectInstanceSingleCrit` object, we use the sugar function `fsi()`:
+
+```{r}
+instance = fsi(
+  task = tsk_pen,
+  learner = lrn_rpart,
+  resampling = rsmp("cv", folds = 3),
+  measures = msr("classif.acc"),
+  terminator = trm("evals", n_evals = 20)
+)
+```
+
+### The FSelector Class
+
+The `FSelector` class is the base class for different feature selection algorithms. The following algorithms are currently implemented in `mlr3fselect`:
+
+- Random search, trying random feature subsets until termination (`fs("random_search")`)
+
+- Exhaustive search, trying all possible feature subsets (`fs("exhaustive_search")`)
+
+- Sequential search, i.e. sequential forward or backward selection (`fs("sequential")`)
+
+- Recursive feature elimination, which uses a learner’s importance scores to iteratively remove features with low feature importance (`fs("rfe")`)
+
+- Design points, trying all user-supplied feature sets (`fs("design_points")`)
+
+- Genetic search, implementing a genetic algorithm which treats the features as a binary sequence and tries to find the best subset with mutations (`fs("genetic_search")`)
+
+- Shadow variable search, which adds permuted copies of all features (shadow variables), performs forward selection, and stops when a shadow variable is selected (`fs("shadow_variable_search")`)
+
+Note that all these methods can be stopped (early) with a terminator, e.g. an exhaustive search can be stopped after a given number of evaluations. In this example, we will use a simple random search and retrieve it from the `mlr_fselectors` dictionary with `fs()`.
+
+> `FSelector`类是不同特征选择算法的基类。目前在`mlr3fselect`中实现了以下算法：
+>
+> - 随机搜索，直到满足终止条件为止尝试随机特征子集 (`fs("random_search")`)
+>
+> - 穷举搜索，尝试所有可能的特征子集 (`fs("exhaustive_search")`)
+>
+> - 顺序搜索，即顺序前向或顺序后向选择 (`fs("sequential")`)
+>
+> - 递归特征消除，它使用学习器的重要性分数，迭代地删除具有较低重要性的特征 (`fs("rfe")`)
+>
+> - 设计点，尝试所有用户提供的特征集 (`fs("design_points")`)
+>
+> - 遗传搜索，实现将特征视为二进制序列的遗传算法，并尝试通过突变找到最佳子集 (`fs("genetic_search")`)
+>
+> - 影子变量搜索，它将所有特征的排列副本（影子变量）添加到特征集中，执行前向选择，并在选择了影子变量时停止 (`fs("shadow_variable_search")`)
+>
+> 请注意，所有这些方法都可以（提前）通过终止条件停止，例如，穷举搜索可以在给定数量的评估后停止。在本例中，我们将使用简单的随机搜索，并使用`fs()`函数从`mlr_fselectors`字典中检索它。
+
+```{r}
+fselector = fs("random_search")
+```
+
+### Starting the Feature Selection
+
+```{r}
+#| results: hide
+
+fselector$optimize(instance)
+```
+
+```{r}
+# access the best feature subset and the corresponding measured performance
+as.data.table(instance$result)[, .(features, classif.acc)]
+```
+
+Now the optimized feature subset can be used to subset the task and fit the model on all observations:
+
+```{r}
+tsk_pen = tsk("penguins")
+
+tsk_pen$select(instance$result_feature_set)
+lrn_rpart$train(tsk_pen)
+```
+
+### Optimizing Multiple Performance Measures
+
+```{r}
+instance = fsi(
+  task = tsk("sonar"),
+  learner = lrn_rpart,
+  resampling = rsmp("holdout"),
+  measures = msrs(c("classif.tpr", "classif.tnr")),
+  terminator = trm("evals", n_evals = 20)
+)
+```
+
+```{r}
+#| results: hide
+fselector = fs("random_search")
+fselector$optimize(instance)
+```
+
+Note that these two measures cannot both be optimal at the same time (except for the perfect classifier) and we expect several Pareto-optimal solutions.
+
+> 请注意，这两个指标在同一时间不能都达到最优（除了完美的分类器），我们期望会有多个帕累托最优解。
+
+```{r}
+# access the best feature subsets
+as.data.table(instance$result)[, .(features, classif.tpr, classif.tnr)]
+```
+
+We see different tradeoffs of sensitivity and specificity but no feature subset is dominated by another, i.e. has worse sensitivity and specificity than any other subset.
+
+> 我们看到了不同灵敏度和特异性的权衡，但没有任何特征子集被另一个支配，即没有任何子集的灵敏度和特异性都比其他子集差。
+
+### Nested Resampling
+
+As in tuning, the performance estimate of the finally selected feature subset is usually optimistically biased. To obtain unbiased performance estimates, nested resampling is required and can be set up analogously to HPO (see @sec-nested-resampling). We now show this as an example on the `sonar` task. The `AutoFSelector` class wraps a learner and augments it with automatic feature selection. Because the `AutoFSelector` itself inherits from the `Learner` base class, it can be used like any other learner. In the example below, a logistic regression learner is created. This learner is then wrapped in a random search feature selector that uses holdout (inner) resampling for performance evaluation. The sugar function `auto_fselector` can be used to create an instance of `AutoFSelector`:
+
+> 与调优中一样，最终选择的特征子集的性能估计通常是乐观偏倚的。为了获得无偏的性能估计，需要进行嵌套重抽样，并且可以类似于HPO进行设置（请参见 @sec-nested-resampling）。下面的例子中，我们展示了在声纳任务上使用嵌套重抽样的示例。`AutoFSelector`类将学习器封装，并增加了自动特征选择功能。因为`AutoFSelector`本身继承自`Learner`基类，所以它可以像其他学习器一样使用。在下面的例子中，我们创建了一个逻辑回归学习器。然后，将该学习器包装在一个使用留出法（内部）重抽样进行性能评估的随机搜索特征选择器中。`auto_fselector`函数可以用来创建`AutoFSelector`的实例：
+
+```{r}
+afs = auto_fselector(
+  fselector = fs("random_search"),
+  learner = lrn("classif.log_reg"),
+  resampling = rsmp("holdout"),
+  measure = msr("classif.acc"),
+  terminator = trm("evals", n_evals = 10)
+)
+afs
+```
+
+The `AutoFSelector` can then be passed to `benchmark()` or `resample()` for nested resampling (@sec-nested-resampling). Below we compare our wrapped learner `afs` with a normal logistic regression `lrn("classif.log_reg")`.
+
+```{r}
+#| results: hide
+#| warning: false
+grid = benchmark_grid(tsk("sonar"), list(afs, lrn("classif.log_reg")),
+                      rsmp("cv", folds = 3))
+
+bmr = benchmark(grid)$aggregate(msr("classif.acc"))
+```
+
+```{r}
+as.data.table(bmr)[, .(learner_id, classif.acc)]
+```
+
+We can see that, in this example, the feature selection improves prediction performance.
+
+# Pipelines and Preprocessing {-}
+
+# Sequential Pipelines
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1829,14 +2383,18 @@ instance$archive$best()[, .(cp, minsplit, maxdepth, classif.ce, selected_feature
 
 
 ::: {.callout-tip title="To be continued"}
-- <https://mlr3book.mlr-org.com/chapters/chapter5/advanced_tuning_methods_and_black_box_optimization.html#sec-hyperband>
+- <https://mlr3book.mlr-org.com/chapters/chapter7/sequential_pipelines.html>
+:::
+
+::: {.callout-caution}
+TODO：等待后续添加交叉引用
 :::
 
 等待交叉引用：
 
-- 4.4（待检查）
-- 5（待检查）
-- 5.3 5.4
+- 6.2.5
+- 8.4.4
+- 8.4.5
 - 10.1.3
 - 10.2.1
 - 11.3
