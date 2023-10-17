@@ -1,7 +1,7 @@
 ---
 title: "Applied Machine Learning Using mlr3 in R"
 date: "2023-08-16"
-date-modified: "2023-10-16"
+date-modified: "2023-10-17"
 image: "logo.png"
 categories: 
   - Machine Learning
@@ -9,13 +9,8 @@ categories:
   - mlr3
 ---
 
-```{r}
-#| include: false
-1 + 1
-```
-
 ::: {.callout-note title='Progress'}
-`r stfun::progress(6, 15)`
+`r stfun::progress(7.1, 15)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -1974,10 +1969,6 @@ Now we have introduced the basic black box optimization setup, we can introduce 
 
 # Feature Selection
 
-::: {.callout-caution}
-TODO：等待后续添加交叉引用  6.2.5
-:::
-
 Feature selection, also known as variable or descriptor selection, is the process of finding a subset of features to use with a given task and learner. Using an optimal set of features can have several benefits:
 
 - improved predictive performance, since we reduce overfitting on irrelevant features,
@@ -1992,7 +1983,7 @@ Feature selection, also known as variable or descriptor selection, is the proces
 
 - no need to collect potentially expensive features.
 
-However, these objectives will not necessarily be optimized by the same set of features and thus feature selection can be seen as a multi-objective optimization problem. In this chapter, we mostly focus on feature selection as a means of improving predictive performance, but also briefly cover the optimization of multiple criteria (Section 6.2.5).
+However, these objectives will not necessarily be optimized by the same set of features and thus feature selection can be seen as a multi-objective optimization problem. In this chapter, we mostly focus on feature selection as a means of improving predictive performance, but also briefly cover the optimization of multiple criteria (@sec-multicrit-featsel).
 
 Reducing the number of features can improve models across many scenarios, but it can be especially helpful in datasets that have a high number of features in comparison to the number of data points. Many learners perform implicit, also called embedded, feature selection, e.g. via the choice of variables used for splitting in a decision tree. Most other feature selection methods are model agnostic, i.e. they can be used together with any learner.
 
@@ -2010,7 +2001,7 @@ Reducing the number of features can improve models across many scenarios, but it
 >
 > 6. 无需收集可能昂贵的特征。
 >
-> 然而，这些目标不一定会被相同的特征集合最优化，因此特征选择可以被看作是一个多目标优化问题。在本章中，我们主要关注特征选择作为提高预测性能的手段，但也简要介绍了多标准优化的方法（请参见第6.2.5节）。
+> 然而，这些目标不一定会被相同的特征集合最优化，因此特征选择可以被看作是一个多目标优化问题。在本章中，我们主要关注特征选择作为提高预测性能的手段，但也简要介绍了多标准优化的方法（请参见 @sec-multicrit-featsel）。
 >
 > 在许多情况下，减少特征数量可以提高模型性能，但在与数据点数量相比特征数量较多的数据集中，特别有帮助。许多学习器通过隐式的、也称为嵌入式的特征选择方法，例如在决策树中用于分割的变量选择中执行特征选择。大多数其他特征选择方法是与模型无关的，即它们可以与任何学习器一起使用。在识别相关特征的许多不同方法中，我们将重点放在两个通用概念上，它们在下面详细描述：过滤方法和包装方法。
 
@@ -2287,7 +2278,7 @@ tsk_pen$select(instance$result_feature_set)
 lrn_rpart$train(tsk_pen)
 ```
 
-### Optimizing Multiple Performance Measures
+### Optimizing Multiple Performance Measures {#sec-multicrit-featsel}
 
 ```{r}
 instance = fsi(
@@ -2356,6 +2347,259 @@ We can see that, in this example, the feature selection improves prediction perf
 
 # Sequential Pipelines
 
+`mlr3` aims to provide a layer of abstraction for ML practitioners, allowing users to quickly swap one algorithm for another without needing expert knowledge of the underlying implementation. A unified interface for `Task`, `Learner`, and `Measure` objects means that complex benchmark and tuning experiments can be run in just a few lines of code for any off-the-shelf model, i.e., if you just want to run an experiment using the basic implementation from the underlying algorithm, we hope we have made this easy for you to do.
+
+`mlr3pipelines` (Binder et al. 2021) takes this modularity one step further, extending it to workflows that may also include data preprocessing (Chapter 9), building ensemble-models, or even more complicated meta-models. mlr3pipelines makes it possible to build individual steps within a `Learner` out of building blocks, which inherit from the `PipeOp` class. `PipeOps` can be connected using directed edges to form a `Graph` or ‘pipeline’, which represent the flow of data between operations. During model training, the `PipeOps` in a `Graph` transform a given Task and subsequent `PipeOps` receive the transformed `Task` as input. As well as transforming data, `PipeOps` generate a state, which is used to inform the `PipeOps` operation during prediction, similar to how learners learn and store model parameters/weights during training that go on to inform model prediction.
+
+> `mlr3`旨在为机器学习从业者提供一个抽象层，使用户能够快速替换一个算法为另一个算法，而无需了解底层实现的专业知识。统一的`Task`（任务）、`Learner`（学习器）和`Measure`（度量）对象接口意味着，可以使用极少的代码行数运行任何现成模型的复杂基准和调优实验，即，如果你只想使用底层算法的基本实现来运行一个实验，我们希望我们已经让这变得容易了。
+>
+> `mlr3pipelines`（Binder等人，2021年）将这种模块化推进了一步，将其扩展到可能还包括数据预处理（第9章）、构建集成模型，甚至更复杂的元模型的工作流中。`mlr3pipelines`使得可以用继承自`PipeOp`类的构建块构建`Learner`内部的各个步骤。`PipeOps`可以使用有向边连接，形成一个`Graph`（图）或“管道”，它表示操作之间的数据流。在模型训练期间，`Graph`中的`PipeOps`会转换给定的`Task`，随后的`PipeOps`以转换后的`Task`作为输入。除了转换数据外，`PipeOps`还生成一个状态，用于在预测期间通知`PipeOps`的操作，类似于学习器在训练期间学习和存储模型参数/权重，然后用于模型预测。
+
+## PipeOp: Pipeline Operators
+
+```{r}
+as.data.table(po())[1:6, 1:2]
+```
+
+Let us now take a look at a `PipeOp` in practice using principal component analysis (PCA) as an example, which is implemented in `PipeOpPCA`. Below we construct the `PipeOp` using its ID `"pca"` and inspect it.
+
+```{r}
+po_pca = po("pca", center = TRUE)
+po_pca
+```
+
+A `PipeOp` can be trained using `$train()`, which can have multiple inputs and outputs. Both inputs and outputs are passed as elements in a single `list`. The `"pca"` `PipeOp` takes as input the original task and after training returns the task with features replaced by their principal components.
+
+```{r}
+tsk_small = tsk("penguins_simple")$select(c("bill_depth", "bill_length"))
+poin = list(tsk_small$clone()$filter(1:5))
+poout = po_pca$train(poin)  # poin: Task in a list
+poout  # list with a single element 'output'
+```
+
+```{r}
+poout[[1]]$head()
+```
+
+```{r}
+po_pca$state
+```
+
+Once trained, the `$predict()` function can then access the saved state to operate on the test data, which again is passed as a `list`:
+
+```{r}
+tsk_onepenguin = tsk_small$clone()$filter(42)
+poin = list(tsk_onepenguin)
+poout = po_pca$predict(poin)
+poout[[1]]$data()
+```
+
+## Graph: Networks of PopeOps
+
+`PipeOps` represent individual computational steps in machine learning pipelines. These pipelines themselves are defined by `Graph` objects. A `Graph` is a collection of `PipeOps` with “edges” that guide the flow of data.
+
+The most convenient way of building a `Graph` is to connect a sequence of `PipeOps` using the `%>>%`-operator (read “double-arrow”) operator. When given two `PipeOp`s, this operator creates a `Graph` that first executes the left-hand `PipeOp`, followed by the right-hand one. It can also be used to connect a `Graph` with a `PipeOp`, or with another Graph. The following example uses `po("mutate")` to add a new feature to the task, and `po("scale")` to then scale and center all numeric features.
+
+> `PipeOps`代表机器学习管道中的单个计算步骤。这些管道本身由`Graph`对象定义。`Graph`是一个包含`PipeOps`的集合，其“边”指导着数据的流动。
+>
+> 构建`Graph`的最方便的方法是使用`%>>%`（读作“双箭头”）操作符连接一系列`PipeOps`。当给定两个`PipeOp`时，此操作符创建一个`Graph`，首先执行左侧的`PipeOp`，然后执行右侧的。它也可以用于将`Graph`与`PipeOp`或另一个`Graph`连接。以下示例使用`po("mutate")`将一个新特征添加到任务，然后使用`po("scale")`对所有数值特征进行缩放和居中处理。
+
+```{r}
+po_mutate = po(
+  "mutate",
+  mutation = list(bill_ratio = ~ bill_length / bill_depth)
+)
+po_scale = po("scale")
+graph = po_mutate %>>% po_scale
+graph
+```
+
+```{r}
+graph$plot(horizontal = TRUE)
+```
+
+```{r}
+graph$pipeops
+```
+
+```{r}
+graph$edges
+```
+
+Instead of using `%>>%`, you can also create a `Graph` explicitly using the `$add_pipeop()` and `$add_edge()` methods to create `PipeOps` and the edges connecting them:
+
+```{r}
+graph = Graph$new()$
+  add_pipeop(po_mutate)$
+  add_pipeop(po_scale)$
+  add_edge("mutate", "scale")
+```
+
+Once built, a `Graph` can be used by calling `$train()` and `$predict()` as if it were a `Learner` (though it still outputs a `list` during training and prediction):
+
+```{r}
+result = graph$train(tsk_small)
+result
+```
+
+```{r}
+result[[1]]$data()[1:3]
+```
+
+```{r}
+result = graph$predict(tsk_onepenguin)
+result[[1]]$head()
+```
+
+## Sequential Learner-Pipelines
+
+Possibly the most common application for `mlr3pipelines` is to use it to perform preprocessing tasks, such as missing value imputation or factor encoding, and to then feed the resulting data into a `Learner` – we will see more of this in practice in Chapter 9. A `Graph` representing this workflow manipulates data and fits a `Learner`-model during training, ensuring that the data is processed the same way during the prediction stage. Conceptually, the process may look as shown in Figure 7.3.
+
+> `mlr3pipelines`可能最常见的应用之一是用它来执行预处理任务，比如缺失值填充或因子编码，然后将处理后的数据输入到一个学习器中 - 我们将在第9章的实践中更多地了解到这方面的内容。代表这种工作流程的图形在训练期间操作数据并拟合学习器模型，确保数据在预测阶段以相同的方式被处理。
+
+### Learners as PipeOps and Graphs as Learners
+
+`Learner` objects can be converted to `PipeOps` with `as_pipeop()`, however, this is only necessary if you choose to manually create a graph instead of using `%>>%`. With either method, internally Learners are passed to `po("learner")`. The following code creates a `Graph` that uses `po("imputesample")` to impute missing values by sampling from observed values (Section 9.3) then fits a logistic regression on the transformed task.
+
+```{r}
+lrn_logreg = lrn("classif.log_reg")
+graph = po("imputesample") %>>% lrn_logreg
+graph$plot(horizontal = TRUE)
+```
+
+We have seen how training and predicting `Graphs` is possible but has a slightly different design to `Learner` objects, i.e., inputs and outputs during both training and predicting are `list` objects. To use a `Graph` as a `Learner` with an identical interface, it can be wrapped in a `GraphLearner` object with `as_learner()`. The `Graph` can then be used like any other `Learner`, so now we can benchmark our pipeline to decide if we should impute by sampling or with the mode of observed values (`po("imputemode")`):
+
+> 我们已经看到，训练和预测`图（Graphs）`是可能的，但与`学习器（Learner）`对象相比，设计略有不同，即在训练和预测过程中，输入和输出都是`列表（list）`对象。要将`图（Graph）`作为具有相同接口的`学习器（Learner）`使用，可以使用`as_learner()`将其封装为`图学习器（GraphLearner）`对象。然后，该`图（Graph）`就可以像任何其他`学习器（Learner）`一样使用，因此现在我们可以对我们的管道进行基准测试，以决定是使用从观察到的值中抽样填补还是使用观察到的值的模式进行填补（`po("imputemode")`）：
+
+```{r}
+#| results: hide
+glrn_sample = as_learner(graph)
+glrn_mode = as_learner(po("imputemode") %>>% lrn_logreg)
+
+design = benchmark_grid(tsk("pima"), list(glrn_sample, glrn_mode),
+                        rsmp("cv", folds = 3))
+bmr = benchmark(design)
+```
+
+```{r}
+bmr$aggregate()[, .(learner_id, classif.ce)]
+```
+
+### Inspecting Graphs
+
+You may want to inspect pipelines and the flow of data to learn more about your pipeline or to debug them. We first need to set the `$keep_results` flag to be `TRUE` so that intermediate results are retained, which is turned off by default to save memory.
+
+```{r}
+glrn_sample$graph_model$keep_results = TRUE
+glrn_sample$train(tsk("pima"))
+
+imputesample_output = glrn_sample$graph_model$pipeops$imputesample$.result
+imputesample_output[[1]]$missings()
+```
+
+### Configuring Pipeline Hyperparameters
+
+`PipeOp` hyperparameters are collected together in the `$param_set` of a graph and prefixed with the ID of the `PipeOp` to avoid parameter name clashes. Below we use the same `PipeOp` twice but set the `id` to ensure their IDs are unique.
+
+> 管道操作（PipeOp）的超参数被集中存储在图的`$param_set`中，并且在名称前加上管道操作的ID，以避免参数名称冲突。在下面的例子中，我们使用相同的管道操作两次，但设置了ID以确保它们的ID是唯一的。
+
+```{r}
+graph = po("scale", center = FALSE, scale = TRUE, id = "scale") %>>%
+  po("scale", center = TRUE, scale = FALSE, id = "center") %>>%
+  lrn("classif.rpart", cp = 1)
+unlist(graph$param_set$values)
+```
+
+Whether a pipeline is treated as a `Graph` or `GraphLearner`, hyperparameters are updated and accessed in the same way.
+
+```{r}
+graph$param_set$values$classif.rpart.maxdepth = 5
+graph_learner = as_learner(graph)
+graph_learner$param_set$values$classif.rpart.minsplit = 2
+unlist(graph_learner$param_set$values)
+```
+
+# Non-sequential Pipelines and Tuning
+
+By using the `gunion()` function, we can instead combine multiple `PipeOps`, `Graphs`, or a mixture of both, into a parallel `Graph`.
+
+In the following example, we create a `Graph` that centers its inputs (`po("scale")`) and then copies the centered data to two parallel streams: one replaces the data with columns that indicate whether data is missing (`po("missind")`), and the other imputes missing data using the median (`po("imputemedian")`), which we will return to in Section 9.3. The outputs of both streams are then combined into a single dataset using `po("featureunion")`.
+
+```{r}
+graph = po("scale", center = TRUE, scale = FALSE) %>>%
+  gunion(list(
+    po("missind"),
+    po("imputemedian")
+  )) %>>%
+  po("featureunion")
+1
+graph$plot(horizontal = TRUE)
+```
+
+When applied to the first three rows of the `"pima"` task we can see how this imputes missing data and adds a column indicating where values were missing.
+
+```{r}
+tsk_pima_head = tsk("pima")$filter(1:3)
+tsk_pima_head$data(cols = c("diabetes", "insulin", "triceps"))
+result = graph$train(tsk_pima_head)[[1]]
+result$data(cols = c("diabetes", "insulin", "missing_insulin", "triceps", "missing_triceps"))
+```
+
+## Selectors and Parallel Pipelines
+
+It is common in `Graphs` for an operation to be applied to a subset of features. In `mlr3pipelines` this can be achieved in two ways: either by passing the column subset to the `affect_columns` hyperparameter of a `PipeOp` (assuming it has that hyperparameter), which controls which columns should be affected by the `PipeOp`; or, one can use the `PipeOpSelect` operator to create operations in parallel on specified feature subsets, and then unite the result using `PipeOpFeatureUnion`.
+
+> 在`图（Graphs）`中，常常会对特征的子集应用操作。在`mlr3pipelines`中，可以通过两种方式实现这一点：一种方式是将列子集传递给`PipeOp`的`affect_columns`超参数（假设该超参数存在），它控制哪些列应该受到`PipeOp`的影响；另一种方式是使用`PipeOpSelect`运算符，针对指定的特征子集并行创建操作，然后使用`PipeOpFeatureUnion`将结果合并。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2383,7 +2627,7 @@ We can see that, in this example, the feature selection improves prediction perf
 
 
 ::: {.callout-tip title="To be continued"}
-- <https://mlr3book.mlr-org.com/chapters/chapter7/sequential_pipelines.html>
+- <https://mlr3book.mlr-org.com/chapters/chapter8/non-sequential_pipelines_and_tuning.html#selectors-and-parallel-pipelines>
 :::
 
 ::: {.callout-caution}
@@ -2392,9 +2636,10 @@ TODO：等待后续添加交叉引用
 
 等待交叉引用：
 
-- 6.2.5
 - 8.4.4
 - 8.4.5
+- Chapter 9
+- Section 9.3
 - 10.1.3
 - 10.2.1
 - 11.3
