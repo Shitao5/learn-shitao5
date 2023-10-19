@@ -1,7 +1,7 @@
 ---
 title: "Applied Machine Learning Using mlr3 in R"
 date: "2023-08-16"
-date-modified: "2023-10-17"
+date-modified: "2023-10-19"
 image: "logo.png"
 categories: 
   - Machine Learning
@@ -10,7 +10,7 @@ categories:
 ---
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(7.1, 15)`
+`r stfun::progress(7.4, 15)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -2551,38 +2551,244 @@ It is common in `Graphs` for an operation to be applied to a subset of features.
 
 > 在`图（Graphs）`中，常常会对特征的子集应用操作。在`mlr3pipelines`中，可以通过两种方式实现这一点：一种方式是将列子集传递给`PipeOp`的`affect_columns`超参数（假设该超参数存在），它控制哪些列应该受到`PipeOp`的影响；另一种方式是使用`PipeOpSelect`运算符，针对指定的特征子集并行创建操作，然后使用`PipeOpFeatureUnion`将结果合并。
 
+```{r}
+sel_bill = selector_grep("^bill")
+sel_not_bill = selector_invert(sel_bill)
+
+graph = po("scale", affect_columns = sel_not_bill) %>>%
+  po("pca", affect_columns = sel_bill)
+
+result = graph$train(tsk("penguins_simple"))
+result[[1]]$data()[1:3, 1:5]
+```
+
+The biggest advantage of this method is that it creates a very simple, sequential `Graph`. However, one disadvantage of the `affect_columns` method is that it is relatively easy to have unexpected results if the ordering of `PipeOps` is mixed up. For example, if we had reversed the order of `po("pca")` and `po("scale")` above then we would have first created columns `"PC1"` and `"PC2"` and then erroneously scaled these, since their names do not start with “bill” and they are therefore matched by `sel_not_bill`. Creating parallel paths with `po("select")` can help mitigate such errors by selecting features given by the Selector and creating independent data processing streams with the given feature subset. Below we pass the parallel pipelines to `gunion()` as a list to ensure they receive the same input, and then combine the outputs with `po("featureunion")`.
+
+> 这种方法的最大优势在于它创建了一个非常简单、顺序的图形结构。然而，`affect_columns` 方法的一个缺点是，如果 PipeOps 的顺序混乱，很容易产生意外的结果。例如，如果我们在上述例子中颠倒了 `po("pca")` 和 `po("scale")` 的顺序，那么我们首先会创建 `"PC1"` 和 `"PC2"` 这两列，然后错误地对它们进行了缩放，因为它们的列名不以 "bill" 开头，所以被 `sel_not_bill` 匹配到了。使用 `po("select")` 创建并行路径可以帮助减轻此类错误，它根据选择器给定的特征选择功能，并使用给定的特征子集创建独立的数据处理流。在下面的例子中，我们将并行流程以列表形式传递给 `gunion()` 以确保它们接收相同的输入，然后使用 `po("featureunion")` 组合它们的输出结果。
+
+```{r}
+po_select_bill = po("select", id = "s_bill", selector = sel_bill)
+po_select_not_bill = po("select", id = "s_notbill", selector = sel_not_bill)
+
+path_pca = po_selcet_bill %>>% po("pca")
+path_scale = po_select_not_bill %>>% po("scale")
+
+graph = gunion(list(path_pca, path_scale)) %>>% po("featureunion")
+graph$plot(horizontal = TRUE)
+```
+
+The `po("select")` method also has the significant advantage that it allows the same set of features to be used in multiple operations simultaneously, or to both transform features and keep their untransformed versions (by using `po("nop")` in one path). `PipeOpNOP` performs no operation on its inputs and is thus useful when you only want to perform a transformation on a subset of features and leave the others untouched:
+
+> `po("select")` 方法的另一个重要优势是，它允许同时在多个操作中使用相同的特征集，或者在进行特征转换的同时保留它们的未转换版本（通过在其中一个路径中使用 `po("nop")`）。`PipeOpNOP` 在其输入上不执行任何操作，因此当你只想对某些特征子集进行转换而保持其他特征不变时，它非常有用：
+
+```{r}
+graph = gunion(list(
+  po_select_bill %>>% po("scale"),
+  po_select_not_bill %>>% po("nop")
+)) %>>% po("featureunion")
+graph$plot(horizontal = TRUE)
+```
+
+```{r}
+graph$train(tsk("penguins_simple"))[[1]]$data()[1:3, 1:5]
+```
+
+## Practical Pipelines by Example
+
+### Bagging with “greplicate” and “subsample”
+
+The basic idea of bagging (from **b**ootstrapp **agg**regat**ing**), introduced by Breiman (1996), is to aggregate multiple predictors into a single, more powerful predictor. Predictions are usually aggregated by the arithmetic mean for regression tasks or majority vote for classification. The underlying intuition behind bagging is that averaging a set of unstable and diverse (i.e., only weakly correlated) predictors can reduce the variance of the overall prediction. Each learner is trained on a different random sample of the original data.
+
+Although we have already seen that a pre-constructed bagging pipeline is available with `ppl("bagging")`, in this section we will build our own pipeline from scratch to showcase how to construct a complex Graph, which will look something like @fig-pipelines-bagging.
+
+> 装袋（bagging）的基本思想（来自**b**ootstrapp **agg**regat**ing**，由Breiman（1996）引入）是将多个预测器聚合成一个更强大的预测器。在回归任务中，通常通过算术平均值来聚合预测结果，而在分类任务中则采用多数投票法。装袋背后的基本直觉是，将一组不稳定且多样化的（即仅弱相关的）预测器进行平均，可以减小整体预测的方差。每个学习器都是在原始数据的不同随机样本上训练得到的。
+>
+> 尽管我们已经看到在`ppl("bagging")`中提供了一个预先构建的装袋管道，但在本节中，我们将从零开始构建我们自己的管道，以展示如何构建一个复杂的图形，类似于 @fig-pipelines-bagging 所示。
+
+```{r}
+#| echo:false
+#| label: fig-pipelines-bagging
+#| fig-cap: "Graph that performs Bagging by independently subsampling data and fitting individual decision tree learners. The resulting predictions are aggregated by a majority vote `PipeOp`."
+#| fig-alt: 'Graph shows "Dtrain" with arrows to four separate po("subsample") boxes that each have a separate arrow to four more po("classif.rpart") boxes that each have an arrow to the same one po("classif.avg") box.'
+knitr::include_graphics("imgs/mlr3book_figures-26.svg")
+```
+
+```{r}
+gr_single_pred = po("subsample", frac = .7) %>>% lrn("classif.rpart")
+gr_pred_set = ppl("greplicate", graph = gr_single_pred, n = 10)
+gr_bagging = gr_pred_set %>>% po("classifavg", innum = 10)
+gr_bagging$plot()
+```
+
+Now let us see how well our bagging pipeline compares to the single decision tree and a random forest when benchmarked against `tsk("sonar")`.
+
+```{r}
+#| results: hide
+glrn_bagging = as_learner(gr_bagging)
+glrn_bagging$id = "bagging"
+
+learners = c(glrn_bagging, lrn("classif.rpart"), lrn("classif.ranger"))
+
+bmr = benchmark(benchmark_grid(tsk("sonar"), learners,
+                               rsmp("cv", folds = 3)))
+```
+
+```{r}
+bmr$aggregate()[, .(learner_id, classif.ce)]
+```
+
+To automatically recreate this pipeline, you can construct `ppl("bagging")` by specifying the learner to ‘bag’, the number of iterations, the fraction of data to sample, and the `PipeOp` to average the predictions, as shown in the code below. Note we set `collect_multiplicity = TRUE` which collects the predictions across paths, that technically use the `Multiplicity` method, which we will not discuss here but refer the reader to the documentation.
+
+> 要自动重新创建这个管道，您可以通过在代码中指定学习器为‘bag’、迭代次数、采样的数据比例以及用于平均预测的`PipeOp`来构建`ppl("bagging")`，如下所示。请注意，我们设置了`collect_multiplicity = TRUE`，这样可以在路径间收集预测结果，这实际上使用了`Multiplicity`方法，但我们在这里不会讨论详细内容，读者可以参考文档了解更多信息。
+
+```{r}
+#| eval: false
+ppl("bagging", lrn("classif.rpart"), iterations = 10, frac = 0.7,
+    averager = po("classifavg", collect_multiplicity = TRUE))
+```
 
 
+The main difference between our pipeline and a random forest is that the latter also performs feature subsampling, where only a random subset of available features is considered at each split point. While we cannot implement this directly with `mlr3pipelines`, we can use a custom `Selector` method to approximate this method. We will create this `Selector` by passing a function that takes as input the task and returns a sample of the features, we sample the square root of the number of features to mimic the implementation in `ranger`. For efficiency, we will now use `ppl("bagging")` to recreate the steps above:
+
+> 我们的管道与随机森林之间的主要区别在于，后者还执行特征子抽样，即在每个分裂点只考虑可用特征的一个随机子集。虽然我们无法直接在`mlr3pipelines`中实现这一点，但我们可以使用自定义的选择器方法来近似这个方法。我们将通过传递一个接受任务作为输入并返回特征样本的函数来创建这个选择器。我们将对特征进行采样，采样数量为特征数量的平方根，以模仿`ranger`中的实现。为了提高效率，我们现在将使用`ppl("bagging")`来重新创建上述步骤：
+
+```{r}
+#| results: hide
+# custom selector
+selector_subsample = function(task) {
+  sample(task$feature_names, sqrt(length(task$feature_names)))
+}
+
+# bagging pipeline with out selector
+gr_bagging_quasi_rf = ppl(
+  "bagging",
+  graph = po("select", selector = selector_subsample) %>>%
+    lrn("classif.rpart", minsplit = 1),
+  iterations = 100,
+  averager = po("classifavg", collect_multiplicity = TRUE)
+)
+
+# bootstrap resampling
+gr_bagging_quasi_rf$param_set$values$subsample.replace = TRUE
+
+# convert to learner
+glrn_quasi_rf = as_learner(gr_bagging_quasi_rf)
+glrn_quasi_rf$id = "quasi.rf"
+
+# benchmark
+design = benchmark_grid(
+  tsks("sonar"),
+  learners = list(glrn_quasi_rf, lrn("classif.ranger", num.trees = 100)),
+  rsmp("cv", folds = 5)
+)
+bmr = benchmark(design)
+```
+
+```{r}
+bmr$aggregate()[, .(learner_id, classif.ce)]
+```
+
+In only a few lines of code, we took a weaker learner and turned it into a powerful model that we can see is comparable to the implementation in `ranger::ranger`.
+
+### Stacking with `po(“learner_cv”)`
+
+Stacking (Wolpert 1992) is another very popular ensembling technique that can significantly improve predictive performance.
+The basic idea behind stacking is to use predictions from multiple models (usually referred to as level 0 models) as features for a subsequent model (the level 1 model) which in turn combines these predictions (@fig-pipelines-stacking).
+A simple combination can be a linear model (possibly regularized if you have many level 0 models), since a weighted sum of level 0 models is often plausible and good enough.
+Though, non-linear level 1 models can also be used, and it is also possible for the level 1 model to access the input features as well as the level 0 predictions.
+Stacking can be built with more than two levels (both conceptually, and in `mlr3`) but we limit ourselves to this simpler setup here, which often also performs well in practice.
+
+As with bagging, we will demonstrate how to create a stacking pipeline manually, although a pre-constructed pipeline is available with `ppl("stacking")`.
+
+> 堆叠（Stacking）（Wolpert 1992）是另一种非常流行的集成技术，可以显著提高预测性能。堆叠背后的基本思想是使用来自多个模型的预测（通常称为第0级模型）作为后续模型（第1级模型）的特征，后者再结合这些预测（ @fig-pipelines-stacking ）。简单的组合可以是一个线性模型（如果你有很多第0级模型，可能需要正则化），因为第0级模型的加权和通常是合理且足够好的。当然，也可以使用非线性的第1级模型，并且第1级模型还可以访问输入特征以及第0级的预测。堆叠可以建立多个级别（在概念上和在`mlr`3中都可以），但在这里我们限制自己使用这种较简单的设置，因为在实践中它通常也表现得很好。
+>
+> 与装袋类似，我们将演示如何手动创建一个堆叠管道，尽管`ppl("stacking")`中也提供了一个预先构建的管道。
+
+```{r}
+#| echo: false
+#| label: fig-pipelines-stacking
+#| fig-cap: "Graph that performs Stacking by fitting three models and using their outputs as features for another model after combining with `PipeOpFeatureUnion`."
+#| fig-alt: 'Graph shows "Dtrain" with arrows to three boxes: "Decision Tree", "KNN", and "Lasso Regression". Each of these points to the same "Feature Union -> Logistic Regression".'
+knitr::include_graphics("imgs/mlr3book_figures-27.svg")
+```
+
+```{r}
+lrn_rpart = lrn("classif.rpart", predict_type = "prob")
+po_rparv_cv = po("learner_cv", learner = lrn_rpart,
+                 resampling.folds = 2, id = "rpart_cv")
+
+lrn_knn = lrn("classif.kknn", predict_type = "prob")
+po_knn_cv = po("learner_cv", learner = lrn_knn,
+               resampling.folds = 2, id = "knn_cv")
+
+lrn_glmnet = lrn("classif.glmnet", predict_type = "prob")
+po_glmnet_cv = po("learner_cv", learner = lrn_glmnet,
+                  resampling.folds = 2, id = "glmnet_cv")
+
+gr_level_0 = gunion(list(po_rparv_cv, po_knn_cv, po_glmnet_cv))
+gr_combined = gr_level_0 %>>% po("featureunion")
+```
+
+The resulting task contains the predicted probabilities for both classes made from each of the level 0 learners. However, as the probabilities always add up to 
+, we only need the predictions for one of the classes (as this is a binary classification task), so we can use `po("select")` to only keep predictions for one class (we choose `"M"` in this example).
+
+> 生成的任务包含了从第0级学习器中得到的两个类别的预测概率。然而，由于这些概率总是加起来等于1，我们只需要其中一个类别的预测结果（因为这是一个二元分类任务），所以我们可以使用`po("select")`来仅保留其中一个类别的预测（在这个示例中我们选择了`"M"`类别）。
+
+```{r}
+gr_stack = gr_combined %>>%
+  po("select", selector = selector_grep("\\.M$"))
+```
+
+Finally, we can combine our pipeline with the final model that will take these predictions as its input. Below we use logistic regression, which combines the level 0 predictions in a weighted linear sum.
+
+```{r}
+gr_stack = gr_stack %>>% po("learner", lrn("classif.log_reg"))
+gr_stack$plot(horizontal = TRUE)
+```
 
 
+As our final model was an interpretable logistic regression, we can inspect the weights of the level 0 learners by looking at the final trained model:
 
+> 由于我们的最终模型是一个可解释的逻辑回归模型，我们可以通过查看最终训练好的模型来检查第0级学习器的权重。
 
+```{r}
+#| results: hide
+glrn_stack = as_learner(gr_stack)
+glrn_stack$train(tsk("sonar"))
+```
 
+```{r}
+glrn_stack$base_learner()$model
+```
 
+The model weights suggest that knn influences the predictions the most with the largest coefficient. To confirm this we can benchmark the individual models alongside the stacking pipeline.
 
+> 模型的权重表明，knn的影响最大，其系数最大。为了确认这一点，我们可以将单独的模型与堆叠管道进行基准测试。
 
+```{r}
+#| results: hide
+#| eval: false
+glrn_stack$id = "stacking"
+design = benchmark_grid(
+  tsk("sonar"),
+  list(lrn_rpart, lrn_knn, lrn_glmnet, glrn_stack),
+  rsmp("repeated_cv")
+)
+bmr = benchmark(design)
+bmr$aggregate()[, .(learner_id, classif.ce)]
+```
 
+This experiment confirms that of the individual models, the KNN learner performs the best, however, our stacking pipeline outperforms them all. Now that we have seen the inner workings of this pipeline, next time you might want to more efficiently create it using `ppl("stacking")`, to copy the example above you would run:
 
+> 这个实验证实了在单独的模型中，KNN学习器表现最好，但我们的堆叠管道的性能超过了它们所有。现在我们已经了解了这个管道的内部工作原理，下次您可能希望更高效地使用`ppl("stacking")`来创建它。如果要复制上述示例，您可以运行：
 
+```{r}
+ppl("stacking",
+    base_learners = lrns(c("classif.rpart", "classif.kknn", "classif.glmnet")),
+    super_learner = lrn("classif.log_reg"))
+```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+## Tuning Graphs
 
 
 
@@ -2627,7 +2833,7 @@ It is common in `Graphs` for an operation to be applied to a subset of features.
 
 
 ::: {.callout-tip title="To be continued"}
-- <https://mlr3book.mlr-org.com/chapters/chapter8/non-sequential_pipelines_and_tuning.html#selectors-and-parallel-pipelines>
+- <https://mlr3book.mlr-org.com/chapters/chapter8/non-sequential_pipelines_and_tuning.html#sec-pipelines-tuning>
 :::
 
 ::: {.callout-caution}
