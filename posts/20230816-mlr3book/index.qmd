@@ -1,7 +1,7 @@
 ---
 title: "Applied Machine Learning Using mlr3 in R"
 date: "2023-08-16"
-date-modified: "2023-10-19"
+date-modified: "2023-10-20"
 image: "logo.png"
 categories: 
   - Machine Learning
@@ -10,7 +10,7 @@ categories:
 ---
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(7.4, 15)`
+`r stfun::progress(7.6, 15)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -2790,11 +2790,142 @@ ppl("stacking",
 
 ## Tuning Graphs
 
+By wrapping a pipeline inside a `GraphLearner`, we can tune it at two levels of complexity using `mlr3tuning`:
 
+1. Tuning of a fixed, usually sequential pipeline, where preprocessing is combined with a given learner. This simply means the joint tuning of any subset of selected hyperparameters of operations in the pipeline. Conceptually and also technically in `mlr3`, this is not much different from tuning a learner that is not part of a pipeline.
 
+1. Tuning not only the hyperparameters of a pipeline, whose structure is not completely fixed in terms of its included operations, but also which concrete `PipeOps` should be applied to data. This allows us to select these operations (e.g. which learner to use, which preprocessing to perform) in a data-driven manner known as “Combined Algorithm Selection and Hyperparameter optimization” (Thornton et al. 2013). As we will soon see, we can do this in `mlr3pipelines` by using the powerful branching and proxy meta operators. Through this, we can conveniently create our own “mini AutoML systems” (Hutter, Kotthoff, and Vanschoren 2019) in `mlr3`, which can even be geared for specific tasks.
 
+> 通过将一个管道包装在`GraphLearner`内部，我们可以使用`mlr3tuning`在两个复杂度级别上进行调整：
+>
+> 1. 对于一个固定的、通常是顺序执行的管道进行调整，其中预处理与指定的学习器结合在一起。这意味着对管道中操作的任意子集的超参数进行联合调整。从概念上讲，在`mlr3`中，这与调整不是管道一部分的学习器没有太大区别，技术上也是如此。
+>
+> 2. 不仅调整管道的超参数，而且调整管道的结构在其包含的操作方面并不完全固定，还可以确定应该将哪些具体的PipeOps应用于数据。这使我们能够以一种数据驱动的方式选择这些操作（例如使用哪个学习器，进行哪种预处理），这被称为“联合算法选择和超参数优化”（Thornton等人，2013）。正如我们将很快看到的，我们可以通过使用强大的分支和代理元操作符在`mlr3pipelines`中实现这一点。通过这种方式，我们可以方便地在`mlr`3中创建我们自己的“小型AutoML系统”（Hutter、Kotthoff和Vanschoren，2019），甚至可以针对特定任务进行调整。
 
+### Tuning Graph Hyperparameters
 
+The optimal setting of the `rank.` hyperparameter of our PCA `PipeOp` may realistically depend on the value of the `k` hyperparameter of the KNN model so jointly tuning them is reasonable.
+
+> 我们PCA `PipeOp`的`rank.`超参数的最佳设置可能实际上依赖于KNN模型的`k`超参数的值，因此联合调整它们是合理的。
+
+```{r}
+lrn_knn = lrn("classif.kknn", k = to_tune(1, 32))
+po_pca = po("pca", rank. = to_tune(2, 20))
+graph_learner = as_learner(po_pca %>>% lrn_knn)
+graph_learner$param_set$values
+```
+
+```{r}
+#| results: hide
+glrn_tuned = auto_tuner(tnr("random_search"), graph_learner,
+                        rsmp("holdout"), term_evals = 10)
+glrn_untuned = po("pca") %>>% lrn("classif.kknn")
+design = benchmark_grid(tsk("sonar"), list(glrn_tuned, glrn_untuned),
+                        rsmp("cv", folds = 3))
+bmr = benchmark(design)
+```
+
+```{r}
+bmr$aggregate()[, .(learner_id, classif.ce)]
+```
+
+Tuning pipelines will usually take longer than tuning individual learners as training steps are often more complex and the search space will be larger. Therefore, parallelization is often appropriate (Section 10.1) and/or more efficient tuning methods for searching large tuning spaces such as Bayesian optimization.
+
+> 通常，调整整个管道的时间通常比调整单个学习器的时间长，因为训练步骤通常更加复杂，搜索空间也更大。因此，通常情况下，可以考虑使用并行化（第10.1节）或者更高效的调优方法，比如搜索大型调优空间的贝叶斯优化。
+
+### Tuning Alternative Paths with po(“branch”)
+
+We will answer that question by making use of `PipeOpBranch` and `PipeOpUnbranch`, which make it possible to specify multiple alternative paths in a pipeline. `po("branch")` creates multiple paths such that data can only flow through one of these as determined by the `selection` hyperparameter (@fig-pipelines-branching). This concept makes it possible to use tuning to decide which `PipeOps` and `Learners` to include in the pipeline, while also allowing all options in every path to be tuned.
+
+> 我们将利用`PipeOpBranch`和`PipeOpUnbranch`来回答这个问题，它们使得在管道中指定多个备选路径成为可能。`po("branch")`创建多个路径，数据只能流经其中一个，由选择超参数决定（@fig-pipelines-branching）。这个概念使得我们能够使用调优来决定在管道中包括哪些`PipeOps`和学习器，同时也允许在每个路径中调整所有选项。
+
+```{r}
+#| echo: FALSE
+#| label: fig-pipelines-branching
+#| fig-cap: 'Figure demonstrates the `po("branch")` and `po("unbranch")` operators where three separate branches are created and data only flows through the PCA, which is specified with the argument to `selection`.'
+#| fig-alt: 'Graph with "Dtrain" on the left with an arrow to `po("branch", selection = "pca")` which then has a dark shaded arrow to a box that says "PCA". Above this box is a transparent box that says "PipeOpNOP" and below the "PCA" box is another transparent box that says "YeoJohnson", the implication is that only the "PCA" box is active. The "PCA" box then has an arrow to `po("unbranch")` -> po("branch", selection = "XGBoost")` which has three arrows to another three boxes with "XGBoost" highlighted and "Random Forest" and "Decision Tree" transparent again. These finally have arrows to the same `po("unbranch")`.'
+knitr::include_graphics("imgs/mlr3book_figures-24.svg")
+```
+
+```{r}
+#| results: hide
+library(mlr3oml)
+otsk_mnist = otsk(id = 3573)
+set.seed(123)
+tsk_mnist = as_task(otsk_mnist)$
+  filter(sample(70000, 1000))$
+  select(otsk_mnist$feature_names[sample(700, 100)])
+```
+
+`po("branch")` is initialized either with the number of branches or with a `character`-vector indicating the names of the branches, the latter makes the `selection` hyperparameter (discussed below) more readable.
+Below we create three branches: do nothing (`po("nop")`), apply PCA (`po("pca")`), remove constant features (`po("removeconstants")`) then apply the Yeo-Johnson transform (`po("yeojohnson")`). It is important to use `po("unbranch")` (with the same arguments as `"branch"`) to ensure that the outputs are merged into one result object.
+
+```{r}
+paths = c("nop", "pca", "yeojohnson")
+
+graph = po("branch", paths, id = "branchP0") %>>%
+  gunion(list(
+    po("nop"),
+    po("pca"),
+    po("removeconstants", id = "rm_const") %>>%
+      po("yeojohnson", id = "YJ")
+  )) %>>%
+  po("unbranch", paths, id = "unbranchP0")
+
+graph$plot(horizontal = TRUE)
+```
+
+We can see how the output of this `Graph` depends on the setting of the `branch.selection` hyperparameter:
+
+```{r}
+# use the "PCA" path
+graph$param_set$values$branchP0.selection = "pca"
+# new PCA columns
+head(graph$train(tsk_mnist)[[1]]$feature_names)
+```
+
+```{r}
+# use the "Np-Op" path
+graph$param_set$values$branchP0.selection = "nop"
+# same features
+head(graph$train(tsk_mnist)[[1]]$feature_names)
+```
+
+Branching can even be used to tune which of several learners is most appropriate for a given dataset. We extend our example further and add the choice between a decision tree and KKNN:
+
+```{r}
+graph_learner = graph %>>%
+  ppl("branch", lrns(c("classif.rpart", "classif.kknn")))
+graph_learner$plot(horizontal = TRUE)
+```
+
+Tuning the selection hyperparameters can help determine which of the possible options work best in combination. We additionally tune the k hyperparameter of the KNN learner, as it may depend on the type of preprocessing performed. As this hyperparameter is only active when the "classif.kknn" path is chosen we will set a dependency:
+
+```{r}
+#| results: hide
+graph_learner = as_learner(graph_learner)
+
+graph_learner$param_set$set_values(
+  branchP0.selection = to_tune(paths),
+  branch.selection = to_tune(c("classif.rpart", "classif.kknn")),
+  classif.kknn.k = to_tune(p_int(1, 32, 
+                                 depends = branch.selection == "classif.kknn"))
+)
+
+# 实际应使用网格搜索
+instance = tune(tnr("random_search"), tsk_mnist, graph_learner,
+                rsmp("repeated_cv", folds = 3, repeats = 3),
+                msr("classif.ce"), term_evals = 20)  
+```
+
+```{r}
+instance$archive$data[order(classif.ce)[1:5],
+          .(branchP0.selection, classif.kknn.k, branch.selection, classif.ce)]
+```
+
+```{r}
+autoplot(instance)
+```
 
 
 
@@ -2833,7 +2964,7 @@ ppl("stacking",
 
 
 ::: {.callout-tip title="To be continued"}
-- <https://mlr3book.mlr-org.com/chapters/chapter8/non-sequential_pipelines_and_tuning.html#sec-pipelines-tuning>
+- <https://mlr3book.mlr-org.com/chapters/chapter8/non-sequential_pipelines_and_tuning.html#sec-pipelines-proxy>
 :::
 
 ::: {.callout-caution}
@@ -2846,6 +2977,7 @@ TODO：等待后续添加交叉引用
 - 8.4.5
 - Chapter 9
 - Section 9.3
+- Section 10.1
 - 10.1.3
 - 10.2.1
 - 11.3
