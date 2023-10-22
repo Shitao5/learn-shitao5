@@ -3,6 +3,8 @@ title: "mlr3verse 技术手册"
 date: "2023-09-07"
 date-modified: "2023-09-12"
 image: "cover.jpg"
+execute: 
+  freeze: true
 categories: 
   - Machine Learning
   - R

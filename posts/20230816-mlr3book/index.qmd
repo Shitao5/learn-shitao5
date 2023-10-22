@@ -1,7 +1,7 @@
 ---
 title: "Applied Machine Learning Using mlr3 in R"
 date: "2023-08-16"
-date-modified: "2023-10-20"
+date-modified: "2023-10-22"
 image: "logo.png"
 categories: 
   - Machine Learning
@@ -10,7 +10,7 @@ categories:
 ---
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(7.6, 15)`
+`r stfun::progress(8.6, 15)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -1799,13 +1799,13 @@ Increasingly large datasets and search spaces and increasingly complex models ma
 
 To unpack what these terms mean and to motivate multi-fidelity tuning, say that we think a gradient boosting algorithm with up to 1000 rounds will be a very good fit to our training data. However, we are concerned this model will take too long to tune and train. Therefore, we want to gauge the performance of this model using a similar model that is quicker to train by setting a smaller number of rounds. In this example, the hyperparameter controlling the number of rounds is a fidelity parameter, as it controls the tradeoff between model performance and speed. The different configurations of this parameter are known as fidelity levels. We refer to the model with 1000 rounds as the model at full-fidelity and we want to approximate this model’s performance using models at different fidelity levels. Lower fidelity levels result in low-fidelity models that are quicker to train but may poorly predict the full-fidelity model’s performance. On the other hand, higher fidelity levels result in high-fidelity models that are slower to train but may better indicate the full-fidelity model’s performance.
 
-Other common models that have natural fidelity parameters include neural networks (number of epochs) and random forests (number of trees). The proportion of data to subsample before running any algorithm can also be viewed as a model-agnostic fidelity parameter, we will return to this in Section 8.4.4.
+Other common models that have natural fidelity parameters include neural networks (number of epochs) and random forests (number of trees). The proportion of data to subsample before running any algorithm can also be viewed as a model-agnostic fidelity parameter, we will return to this in @sec-hyperband-example-svm.
 
 > 随着数据集和搜索空间的不断增大，以及模型的日益复杂，超参数优化变成了一项耗时且计算成本高昂的任务。为了解决这个问题，一些超参数优化方法利用多个保真度水平（fidelity levels）对配置进行评估。多保真度（Multi-fidelity）超参数优化的动机在于，较低保真度模型的性能可作为完全保真度模型的指示，从而提高超参数优化的效率（正如我们即将看到的 Hyperband 算法）。
 >
 > 为了解释这些术语的含义并推动多保真度调整的动机，假设我们认为一个带有最多1000轮的梯度提升算法将非常适合我们的训练数据。然而，我们担心这个模型调优和训练的时间会太长。因此，我们希望使用一个训练时间更短的类似模型来评估这个模型的性能，方法是设置较少的轮数。在这个例子中，控制轮数的超参数被称为保真度参数，因为它控制了模型性能和速度之间的权衡。该参数的不同配置被称为保真度水平。我们将拥有1000轮的模型称为全保真度模型，我们希望使用不同保真度水平的模型来近似该模型的性能。较低的保真度水平会产生训练速度更快但可能较差的低保真度模型，而较高的保真度水平则会产生训练速度较慢但可能更好地指示全保真度模型性能的高保真度模型。
 >
-> 其他常见的自然带有保真度参数的模型包括神经网络（轮数）和随机森林（树的数量）。在运行任何算法之前对数据进行子采样的比例也可以看作是一种不依赖于特定模型的保真度参数，我们将在第8.4.4节中详细讨论此点。
+> 其他常见的自然带有保真度参数的模型包括神经网络（轮数）和随机森林（树的数量）。在运行任何算法之前对数据进行子采样的比例也可以看作是一种不依赖于特定模型的保真度参数，我们将在第 @sec-hyperband-example-svm 中详细讨论此点。
 
 The Successive Halving and Hyperband algorithms are implemented in `mlr3hyperband` as `tnr("successive_halving")` and `tnr("hyperband")` respectively; in this section, we will only showcase the Hyperband method.
 
@@ -2102,13 +2102,9 @@ Contrary to other filter methods, embedded methods just return values of `1` (se
 
 ### Filter-Based Feature Selection
 
-::: {.callout-caution}
-TODO：等待后续添加交叉引用 8.4.5
-:::
+After calculating a score for each feature, one has to select the features to be kept or those to be dropped from further modeling steps. For the `"selected_features"` filter described in embedded methods, this step is straight-forward since the methods assign either a value of 1 for a feature to be kept or 0 for a feature to be dropped. Below, we find the names of features with a value of 1 and select those features with `task$select()`. At first glance it may appear a bit convoluted to have a filter assign scores based on the feature names returned by `$selected_features()`, only to turn these scores back into the names of the features to be kept. However, this approach allows us to use the same interface for all filter methods, which is especially useful when we want to automate the feature selection process in pipelines, as we will see in @sec-pipelines-featsel.
 
-After calculating a score for each feature, one has to select the features to be kept or those to be dropped from further modeling steps. For the `"selected_features"` filter described in embedded methods, this step is straight-forward since the methods assign either a value of 1 for a feature to be kept or 0 for a feature to be dropped. Below, we find the names of features with a value of 1 and select those features with `task$select()`. At first glance it may appear a bit convoluted to have a filter assign scores based on the feature names returned by `$selected_features()`, only to turn these scores back into the names of the features to be kept. However, this approach allows us to use the same interface for all filter methods, which is especially useful when we want to automate the feature selection process in pipelines, as we will see in Section 8.4.5.
-
-> 在为每个特征计算分数之后，需要选择要保留的特征或要在进一步建模步骤中舍弃的特征。对于嵌入方法中描述的`"selected_features"`筛选器来说，这一步骤非常直接，因为该方法为要保留的特征分配值1，为要舍弃的特征分配值0。在下面的代码中，我们查找值为1的特征的名称，并使用`task$select()`选择这些特征。乍一看，这似乎有点繁琐，因为我们让一个筛选器基于`$selected_features()`返回的特征名称分配分数，然后再将这些分数转换回要保留的特征的名称。然而，这种方法使我们能够为所有筛选方法使用相同的接口，尤其在我们想要在管道中自动化特征选择过程时特别有用，正如我们将在第8.4.5节中看到的那样。
+> 在为每个特征计算分数之后，需要选择要保留的特征或要在进一步建模步骤中舍弃的特征。对于嵌入方法中描述的`"selected_features"`筛选器来说，这一步骤非常直接，因为该方法为要保留的特征分配值1，为要舍弃的特征分配值0。在下面的代码中，我们查找值为1的特征的名称，并使用`task$select()`选择这些特征。乍一看，这似乎有点繁琐，因为我们让一个筛选器基于`$selected_features()`返回的特征名称分配分数，然后再将这些分数转换回要保留的特征的名称。然而，这种方法使我们能够为所有筛选方法使用相同的接口，尤其在我们想要在管道中自动化特征选择过程时特别有用，正如我们将在 @sec-pipelines-featsel 中看到的那样。
 
 ```{r}
 flt_selected$calculate(tsk_pen)
@@ -2349,11 +2345,11 @@ We can see that, in this example, the feature selection improves prediction perf
 
 `mlr3` aims to provide a layer of abstraction for ML practitioners, allowing users to quickly swap one algorithm for another without needing expert knowledge of the underlying implementation. A unified interface for `Task`, `Learner`, and `Measure` objects means that complex benchmark and tuning experiments can be run in just a few lines of code for any off-the-shelf model, i.e., if you just want to run an experiment using the basic implementation from the underlying algorithm, we hope we have made this easy for you to do.
 
-`mlr3pipelines` (Binder et al. 2021) takes this modularity one step further, extending it to workflows that may also include data preprocessing (Chapter 9), building ensemble-models, or even more complicated meta-models. mlr3pipelines makes it possible to build individual steps within a `Learner` out of building blocks, which inherit from the `PipeOp` class. `PipeOps` can be connected using directed edges to form a `Graph` or ‘pipeline’, which represent the flow of data between operations. During model training, the `PipeOps` in a `Graph` transform a given Task and subsequent `PipeOps` receive the transformed `Task` as input. As well as transforming data, `PipeOps` generate a state, which is used to inform the `PipeOps` operation during prediction, similar to how learners learn and store model parameters/weights during training that go on to inform model prediction.
+`mlr3pipelines` (Binder et al. 2021) takes this modularity one step further, extending it to workflows that may also include data preprocessing (@sec-preprocessing), building ensemble-models, or even more complicated meta-models. mlr3pipelines makes it possible to build individual steps within a `Learner` out of building blocks, which inherit from the `PipeOp` class. `PipeOps` can be connected using directed edges to form a `Graph` or ‘pipeline’, which represent the flow of data between operations. During model training, the `PipeOps` in a `Graph` transform a given Task and subsequent `PipeOps` receive the transformed `Task` as input. As well as transforming data, `PipeOps` generate a state, which is used to inform the `PipeOps` operation during prediction, similar to how learners learn and store model parameters/weights during training that go on to inform model prediction.
 
 > `mlr3`旨在为机器学习从业者提供一个抽象层，使用户能够快速替换一个算法为另一个算法，而无需了解底层实现的专业知识。统一的`Task`（任务）、`Learner`（学习器）和`Measure`（度量）对象接口意味着，可以使用极少的代码行数运行任何现成模型的复杂基准和调优实验，即，如果你只想使用底层算法的基本实现来运行一个实验，我们希望我们已经让这变得容易了。
 >
-> `mlr3pipelines`（Binder等人，2021年）将这种模块化推进了一步，将其扩展到可能还包括数据预处理（第9章）、构建集成模型，甚至更复杂的元模型的工作流中。`mlr3pipelines`使得可以用继承自`PipeOp`类的构建块构建`Learner`内部的各个步骤。`PipeOps`可以使用有向边连接，形成一个`Graph`（图）或“管道”，它表示操作之间的数据流。在模型训练期间，`Graph`中的`PipeOps`会转换给定的`Task`，随后的`PipeOps`以转换后的`Task`作为输入。除了转换数据外，`PipeOps`还生成一个状态，用于在预测期间通知`PipeOps`的操作，类似于学习器在训练期间学习和存储模型参数/权重，然后用于模型预测。
+> `mlr3pipelines`（Binder等人，2021年）将这种模块化推进了一步，将其扩展到可能还包括数据预处理（@sec-preprocessing）、构建集成模型，甚至更复杂的元模型的工作流中。`mlr3pipelines`使得可以用继承自`PipeOp`类的构建块构建`Learner`内部的各个步骤。`PipeOps`可以使用有向边连接，形成一个`Graph`（图）或“管道”，它表示操作之间的数据流。在模型训练期间，`Graph`中的`PipeOps`会转换给定的`Task`，随后的`PipeOps`以转换后的`Task`作为输入。除了转换数据外，`PipeOps`还生成一个状态，用于在预测期间通知`PipeOps`的操作，类似于学习器在训练期间学习和存储模型参数/权重，然后用于模型预测。
 
 ## PipeOp: Pipeline Operators
 
@@ -2453,13 +2449,13 @@ result[[1]]$head()
 
 ## Sequential Learner-Pipelines
 
-Possibly the most common application for `mlr3pipelines` is to use it to perform preprocessing tasks, such as missing value imputation or factor encoding, and to then feed the resulting data into a `Learner` – we will see more of this in practice in Chapter 9. A `Graph` representing this workflow manipulates data and fits a `Learner`-model during training, ensuring that the data is processed the same way during the prediction stage. Conceptually, the process may look as shown in Figure 7.3.
+Possibly the most common application for `mlr3pipelines` is to use it to perform preprocessing tasks, such as missing value imputation or factor encoding, and to then feed the resulting data into a `Learner` – we will see more of this in practice in @sec-preprocessing. A `Graph` representing this workflow manipulates data and fits a `Learner`-model during training, ensuring that the data is processed the same way during the prediction stage. Conceptually, the process may look as shown in Figure 7.3.
 
-> `mlr3pipelines`可能最常见的应用之一是用它来执行预处理任务，比如缺失值填充或因子编码，然后将处理后的数据输入到一个学习器中 - 我们将在第9章的实践中更多地了解到这方面的内容。代表这种工作流程的图形在训练期间操作数据并拟合学习器模型，确保数据在预测阶段以相同的方式被处理。
+> `mlr3pipelines`可能最常见的应用之一是用它来执行预处理任务，比如缺失值填充或因子编码，然后将处理后的数据输入到一个学习器中 - 我们将在 @sec-preprocessing 的实践中更多地了解到这方面的内容。代表这种工作流程的图形在训练期间操作数据并拟合学习器模型，确保数据在预测阶段以相同的方式被处理。
 
 ### Learners as PipeOps and Graphs as Learners
 
-`Learner` objects can be converted to `PipeOps` with `as_pipeop()`, however, this is only necessary if you choose to manually create a graph instead of using `%>>%`. With either method, internally Learners are passed to `po("learner")`. The following code creates a `Graph` that uses `po("imputesample")` to impute missing values by sampling from observed values (Section 9.3) then fits a logistic regression on the transformed task.
+`Learner` objects can be converted to `PipeOps` with `as_pipeop()`, however, this is only necessary if you choose to manually create a graph instead of using `%>>%`. With either method, internally Learners are passed to `po("learner")`. The following code creates a `Graph` that uses `po("imputesample")` to impute missing values by sampling from observed values (@sec-preprocessing-missing) then fits a logistic regression on the transformed task.
 
 ```{r}
 lrn_logreg = lrn("classif.log_reg")
@@ -2523,7 +2519,7 @@ unlist(graph_learner$param_set$values)
 
 By using the `gunion()` function, we can instead combine multiple `PipeOps`, `Graphs`, or a mixture of both, into a parallel `Graph`.
 
-In the following example, we create a `Graph` that centers its inputs (`po("scale")`) and then copies the centered data to two parallel streams: one replaces the data with columns that indicate whether data is missing (`po("missind")`), and the other imputes missing data using the median (`po("imputemedian")`), which we will return to in Section 9.3. The outputs of both streams are then combined into a single dataset using `po("featureunion")`.
+In the following example, we create a `Graph` that centers its inputs (`po("scale")`) and then copies the centered data to two parallel streams: one replaces the data with columns that indicate whether data is missing (`po("missind")`), and the other imputes missing data using the median (`po("imputemedian")`), which we will return to in @sec-preprocessing-missing. The outputs of both streams are then combined into a single dataset using `po("featureunion")`.
 
 ```{r}
 graph = po("scale", center = TRUE, scale = FALSE) %>>%
@@ -2570,7 +2566,7 @@ The biggest advantage of this method is that it creates a very simple, sequentia
 po_select_bill = po("select", id = "s_bill", selector = sel_bill)
 po_select_not_bill = po("select", id = "s_notbill", selector = sel_not_bill)
 
-path_pca = po_selcet_bill %>>% po("pca")
+path_pca = po_select_bill %>>% po("pca")
 path_scale = po_select_not_bill %>>% po("scale")
 
 graph = gunion(list(path_pca, path_scale)) %>>% po("featureunion")
@@ -2606,7 +2602,7 @@ Although we have already seen that a pre-constructed bagging pipeline is availab
 > 尽管我们已经看到在`ppl("bagging")`中提供了一个预先构建的装袋管道，但在本节中，我们将从零开始构建我们自己的管道，以展示如何构建一个复杂的图形，类似于 @fig-pipelines-bagging 所示。
 
 ```{r}
-#| echo:false
+#| echo: false
 #| label: fig-pipelines-bagging
 #| fig-cap: "Graph that performs Bagging by independently subsampling data and fitting individual decision tree learners. The resulting predictions are aggregated by a majority vote `PipeOp`."
 #| fig-alt: 'Graph shows "Dtrain" with arrows to four separate po("subsample") boxes that each have a separate arrow to four more po("classif.rpart") boxes that each have an arrow to the same one po("classif.avg") box.'
@@ -2927,21 +2923,385 @@ instance$archive$data[order(classif.ce)[1:5],
 autoplot(instance)
 ```
 
+### Hyperband with Subsampling {#sec-hyperband-example-svm}
 
+We previously saw how some learners have hyperparameters that can act naturally as fidelity parameters, such as the number of trees in a random forest. However, using pipelines, we can now create a fidelity parameter for any model using `po("subsample")`. The `frac` parameter of `po("subsample")` controls the amount of data fed into the subsequent `Learner`. In general, feeding less data to a `Learner` results in quicker model training but poorer quality predictions compared to when more training data is supplied. Resampling with less data will still give us some information about the relative performance of different model configurations, thus making the fraction of data to subsample the perfect candidate for a fidelity parameter.
 
+> 我们之前看到，一些学习器具有可以自然充当保真度参数的超参数，例如随机森林中的树的数量。然而，使用管道，我们现在可以使用`po("subsample")`为任何模型创建一个保真度参数。`po("subsample")`的`frac`参数控制了传递到后续学习器的数据量。通常情况下，向学习器提供更少的数据会导致模型训练更快，但与提供更多训练数据相比，预测质量较差。使用较少的数据重新采样仍然可以为我们提供有关不同模型配置相对性能的一些信息，因此将数据子采样的比例作为保真度参数是一个完美的选择。
 
+```{r}
+learner = lrn("classif.svm", id = "svm", type = "C-classification",
+              kernel = "radial", cost = to_tune(1e-5, 1e5, logscale = TRUE),
+              gamma = to_tune(1e-5, 1e5, logscale = TRUE))
 
+graph_learner = as_learner(
+  po("subsample", frac = to_tune(p_dbl(3^-3, 1, tags = "budget"))) %>>%
+    learner
+)
 
+graph_learner$encapsulate = c(train = "evaluate", predict = "evaluate")
+graph_learner$timeout = c(train = 30, predict = 30)
+graph_learner$fallback = lrn("classif.featureless")
+```
 
+Now we can tune our SVM by tuning our `GraphLearner` as normal, below we set `eta = 3` for Hyperband.
 
+```{r}
+#| results: hide
+instance = tune(tnr("hyperband", eta = 3), tsk("sonar"), graph_learner,
+                rsmp("cv", folds = 3), msr("classif.ce"))
+```
 
+```{r}
+instance$result_x_domain
+```
 
+### Feature Selection with Filter Pipelines {#sec-pipelines-featsel}
 
+```{r}
+task_pen = tsk("penguins")
 
+# combine filter (keep top 3 features) with learner
+po_flt = po("filter", filter = flt("information_gain"), filter.nfeat = 3)
+graph = po_flt %>>% po("learner", lrn("classif.rpart"))
 
+po("filter", filter = flt("information_gain"), filter.nfeat = 3)$
+  train(list(task_pen))[[1]]$feature_names
+```
 
+Choosing `3` as the cutoff was fairly arbitrary but by tuning a graph we can optimize this cutoff:
 
+> 选择`3`作为截止值是相当任意的，但通过调整一个图表，我们可以优化这个截止值：
 
+```{r}
+#| results: hide
+
+set.seed(1234)
+# tune between 1 and total number of features
+po_filter = po("filter", filter = flt("information_gain"),
+               filter.nfeat = to_tune(1, task_pen$ncol))
+
+graph = as_learner(po_filter %>>% po("learner", lrn("classif.rpart")))
+
+instance = tune(tnr("random_search"), task_pen, graph,
+                rsmp("cv", folds = 3), term_evals = 10)
+```
+
+```{r}
+instance$result
+```
+
+```{r}
+autoplot(instance)
+```
+
+In this example, `6` is the optimal number of features. It can be especially useful in feature selection to visualize the tuning results as there may be cases where the optimal result is only marginally better than a result with less features (which would lead to a model that is quicker to train and possibly easier to interpret).
+
+Now we can see that four variables may be equally as good in this case so we could consider going forward by selecting four features and not six as suggested by `instance$result`.
+
+> 在这个示例中，`6`是最佳的特征数量。在特征选择中，将调整结果可视化呈现可能特别有用，因为有些情况下，最佳结果可能仅略优于具有较少特征的结果（这将导致模型训练更快，可能更容易解释）。
+>
+> 现在我们可以看到，在这种情况下，四个变量可能同样有效，因此我们可以考虑选择四个特征，而不是像`instance$result`建议的六个。
+
+# Preprocessing {#sec-preprocessing}
+
+In this book, preprocessing refers to everything that happens with data before it is used to fit a model, while postprocessing encompasses everything that occurs with predictions after the model is fitted.
+
+Data cleaning is an important part of preprocessing that involves the removal of errors, noise, and redundancy in the data; we only consider data cleaning very briefly as it is usually performed outside of `mlr3` on the raw dataset.
+
+Another aspect of preprocessing is feature engineering, which covers all other transformations of data before it is fed to the machine learning model, including the creation of features from possibly unstructured data, such as written text, sequences or images. The goal of feature engineering is to enable the data to be handled by a given learner, and/or to further improve predictive performance. It is important to note that feature engineering helps mostly for simpler algorithms, while highly complex models usually gain less from it and require little data preparation to be trained. Common difficulties in data that can be solved with feature engineering include features with skewed distributions, high cardinality categorical features, missing observations, high dimensionality and imbalanced classes in classification tasks. Deep learning has shown promising results in automating feature engineering, however, its effectiveness depends on the complexity and nature of the data being processed, as well as the specific problem being addressed. Typically it can work well with natural language processing and computer vision problems, while for standard tabular data, tree-based ensembles such as a random forest or gradient boosting are often still superior (and easier to handle). However, tabular deep learning approaches are currently catching up quickly. Hence, manual feature engineering is still often required but with `mlr3pipelines`, which can simplify the process as much as possible.
+
+> 在本书中，预处理指的是在数据用于拟合模型之前发生的一切，而后处理则包括在模型拟合后对预测进行的一切操作。
+>
+> 数据清理是预处理的重要部分，涉及到消除数据中的错误、噪音和冗余；我们只会简要地考虑数据清理，因为它通常是在原始数据集上进行的，而不是在`mlr3`上执行。
+>
+> 预处理的另一个方面是特征工程，它涵盖了在将数据提供给机器学习模型之前对数据进行的所有其他转换，包括从可能是非结构化数据（如书面文本、序列或图像）中创建特征。特征工程的目标是使数据能够被给定的学习器处理，和/或进一步提高预测性能。需要注意的是，特征工程主要有助于较简单的算法，而高度复杂的模型通常受益较少，并且需要较少的数据准备来进行训练。可以通过特征工程解决的数据常见问题包括具有倾斜分布的特征、高基数分类特征、缺失观测、高维度以及分类任务中的不平衡类。深度学习在自动化特征工程方面表现出有希望的结果，然而，其有效性取决于正在处理的数据的复杂性和性质，以及所解决的具体问题。通常情况下，它在自然语言处理和计算机视觉问题上表现良好，而对于标准表格数据，如随机森林或梯度提升等基于树的集成方法通常仍然更占优势（并且更易处理）。但是，表格型深度学习方法目前正在迅速赶超。因此，手动特征工程仍然经常需要，但使用`mlr3pipelines`可以尽可能简化这个过程。
+
+```{r}
+ames = mlr3data::ames_housing
+```
+
+## Data Cleaning
+
+As a first step, we explore the data and look for simple problems such as constant or duplicated features. This can be done quite efficiently with a package like `DataExplorer` or `skimr` which can be used to create a large number of informative plots.
+
+<!--
+```{r}
+skimr::skim(ames)
+```
+-->
+
+```{r}
+# 1. `Misc_Feature_2` is a factor with only a single level `Othr`.
+summary(ames$Misc_Feature_2)
+```
+
+```{r}
+# 2. `Condition_2` and `Condition_3` are identical.
+identical(ames$Condition_2, ames$Condition_3)
+```
+
+```{r}
+# 3. `Lot_Area` and `Lot_Area_m2` are same data on different scales
+cor(ames$Lot_Area, ames$Lot_Area_m2)
+```
+
+For all three problems, simply removing the problematic features (or feature in a pair) might be the best course of action.
+
+```{r}
+to_remove = c("Lot_Area_m2", "Condition_3", "Misc_Feature_2")
+```
+
+Other typical problems that should be checked are:
+
+1. ID columns, i.e., columns that are unique for every observation should be removed or tagged.
+
+1. `NA`s not correctly encoded, e.g. as `"NA"` or `""`
+
+1. Semantic errors in the data, e.g., negative `Lot_Area`
+
+1. Numeric features encoded as categorical for learners that can not handle such features.
+
+```{r}
+tsk_ames = as_task_regr(ames, target = "Sale_Price", id = "ames")
+# remove problematic features
+tsk_ames$select(setdiff(tsk_ames$feature_names, to_remove))
+
+msr_mae = msr("regr.mae")
+rsmp_cv3 = rsmp("cv", folds = 3)
+rsmp_cv3$instantiate(tsk_ames)
+```
+
+Lastly, we run a very simple experiment to verify our setup works as expected with a simple featureless baseline, note below we set `robust = TRUE` to always predict the *median* sale price as opposed to the *mean*.
+
+```{r}
+#| results: hide
+lrn_baseline = lrn("regr.featureless", robust = TRUE)
+lrn_baseline$id = "Baseline"
+rr_baseline = resample(tsk_ames, lrn_baseline, rsmp_cv3)
+```
+
+```{r}
+rr_baseline$aggregate(msr_mae)
+```
+
+## Factor Encoding
+
+```{r}
+#| error: true
+lrn_xgb = lrn("regr.xgboost", nrounds = 100)
+lrn_xgb$train(tsk_ames)
+```
+
+Categorical features can be grouped by their cardinality, which refers to the number of levels they contain: binary features (two levels), low-cardinality features, and high-cardinality features; there is no universal threshold for when a feature should be considered high-cardinality and this threshold can even be tuned. For now, we will consider high-cardinality to be features with more than 10 levels:
+
+> 分类特征可以按其基数进行分组，基数指的是它们包含的级别数量：二元特征（两个级别）、低基数特征和高基数特征；对于何时将特征视为高基数特征，没有通用的阈值，这个阈值甚至可以进行调整。目前，我们将认为高基数特征是具有超过10个级别的特征：
+
+```{r}
+names(which(lengths(tsk_ames$levels()) > 10))
+```
+
+Low-cardinality features can be handled by one-hot encoding. One-hot encoding is a process of converting categorical features into a binary representation, where each possible category is represented as a separate binary feature. Theoretically, it is sufficient to create one less binary feature than levels, as setting all binary features to zero is also a valid representation. This is typically called dummy or treatment encoding and is required if the learner is a generalized linear model (GLM) or additive model (GAM).
+
+Some learners support handling categorical features but may still crash for high-cardinality features if they internally apply encodings that are only suitable for low-cardinality features, such as one-hot encoding. Impact encoding (Micci-Barreca 2001) is a good approach for handling high-cardinality features. Impact encoding converts categorical features into numeric values. The idea behind impact encoding is to use the target feature to create a mapping between the categorical feature and a numerical value that reflects its importance in predicting the target feature. Impact encoding involves the following steps:
+
+1. Group the target variable by the categorical feature.
+
+1. Compute the mean of the target variable for each group.
+
+1. Compute the global mean of the target variable.
+
+1. Compute the impact score for each group as the difference between the mean of the target variable for the group and the global mean of the target variable.
+
+1. Replace the categorical feature with the impact scores.
+
+Impact encoding preserves the information of the categorical feature while also creating a numerical representation that reflects its importance in predicting the target. Compared to one-hot encoding, the main advantage is that only a single numeric feature is created regardless of the number of levels of the categorical features, hence it is especially useful for high-cardinality features. As information from the target is used to compute the impact scores, the encoding process must be embedded in cross-validation to avoid leakage between training and testing data.
+
+As well as encoding features, other basic preprocessing steps for categorical features include removing constant features (which only have one level and may have been removed as part of data cleaning), and collapsing levels that occur very rarely. These types of problems can occur as artifacts of resampling as the dataset size is further reduced. Stratification on such features would be an alternative way to mitigate this.
+
+In the code below we use `po("removeconstants")` to remove features with only one level, `po("collapsefactors")` to collapse levels that occur less than 1% of the time in the data, `po("encodeimpact")` to impact-encode high-cardinality features, `po("encode", method = "one-hot")` to one-hot encode low-cardinality features, and finally `po("encode", method = "treatment")` to treatment encode binary features.
+
+> 低基数特征可以通过独热编码进行处理。独热编码是一种将分类特征转换为二进制表示的过程，其中每个可能的类别都被表示为一个单独的二进制特征。从理论上讲，只需创建比级别少一个二进制特征就足够了，因为将所有二进制特征都设置为零也是有效的表示。这通常被称为虚拟编码或处理编码，如果学习器是广义线性模型（GLM）或加性模型（GAM），则需要这样的编码。
+>
+> 有些学习器支持处理分类特征，但如果它们在内部应用的编码仅适用于低基数特征（例如独热编码），则对于高基数特征仍可能出现问题。影响编码（Micci-Barreca 2001）是处理高基数特征的良好方法。影响编码将分类特征转换为数值值。影响编码的背后思想是使用目标特征来创建分类特征与预测目标特征中的重要性之间的映射。影响编码包括以下步骤：
+>
+> 1. 通过分类特征对目标变量进行分组。
+>
+> 2. 计算每个组的目标变量的平均值。
+>
+> 3. 计算目标变量的全局平均值。
+>
+> 4. 计算每个组的影响分数，作为该组目标变量平均值与目标变量的全局平均值之间的差异。
+>
+> 5. 用影响分数替换分类特征。
+>
+> 影响编码在保留分类特征信息的同时，还创建了一个反映其在预测目标中的重要性的数值表示。与独热编码相比，主要优点是无论分类特征的级别数如何多，都只创建一个数值特征，因此特别适用于高基数特征。由于使用了目标变量的信息来计算影响分数，编码过程必须嵌入交叉验证中，以避免训练数据和测试数据之间的信息泄漏。
+>
+> 除了编码特征，对于分类特征的其他基本预处理步骤包括删除常量特征（只有一个级别的特征，可能已被作为数据清理的一部分删除）和合并很少出现的级别。这些问题可能会出现在通过重采样减小数据集大小时。在这种情况下，对这些特征进行分层抽样可能是缓解的替代方法。
+>
+> 在下面的代码中，我们使用`po("removeconstants")`来删除只有一个级别的特征，`po("collapsefactors")`来合并数据中出现不到1%的级别，`po("encodeimpact")`来对高基数特征进行影响编码，`po("encode", method = "one-hot")`来独热编码低基数特征，最后使用`po("encode", method = "treatment")`来处理二元特征。
+
+```{r}
+factor_pipeline = 
+  po("removeconstants") %>>%
+  po("collapsefactors", no_collapse_above_prevalence = 0.01) %>>%
+  po("encodeimpact",
+     affect_columns = selector_cardinality_greater_than(10),
+     id = "high_card_enc") %>>%
+  po("encode", method = "one-hot",
+     affect_columns = selector_cardinality_greater_than(2),
+     id = "low_card_enc") %>>%
+  po("encode", method = "treatment",
+     affect_columns = selector_type("factor"), id = "binary_enc")
+```
+
+```{r}
+#| results: hide
+glrn_xgb_impact = as_learner(factor_pipeline %>>% lrn_xgb)
+glrn_xgb_impact$id = "XGB_enc_impact"
+
+glrn_xgb_one_hot = as_learner(po("encode") %>>% lrn_xgb)
+glrn_xgb_one_hot$id = "XGB_enc_onehot"
+
+bmr = benchmark(
+  benchmark_grid(tsk_ames,
+                 list(lrn_baseline, glrn_xgb_impact, glrn_xgb_one_hot),
+                 rsmp_cv3)
+)
+```
+
+```{r}
+bmr$aggregate(msr_mae)[, .(learner_id, regr.mae)]
+```
+
+## Missing Values {#sec-preprocessing-missing}
+
+```{r}
+# print first five with missing data
+names(which(tsk_ames$missings() > 0))[1:5]
+```
+
+The simplest data imputation method is to replace missing values by the feature’s mean `(po("imputemean")`), median (`po("imputemedian")`), or mode (`po("imputemode")`). Alternatively, one can impute by sampling from the empirical distribution of the feature, for example a histogram (`po("imputehist")`). Instead of guessing at what a missing feature might be, missing values could instead be replaced by a new level, for example, called `.MISSING` (`po("imputeoor")`). For numeric features, Ding and Simonoff (2010) show that for binary classification and tree-based models, encoding missing values out-of-range (OOR), e.g. a constant value above the largest observed value, is a reasonable approach.
+
+> 最简单的数据插补方法是用特征的均值（`po("imputemean")`），中位数（`po("imputemedian")`）或众数（`po("imputemode")`）来替代缺失值。另外，也可以通过从特征的经验分布中进行采样，例如使用直方图（`po("imputehist")`）。与猜测缺失特征可能是什么不同，缺失值可以被替换为一个新级别，例如称为`.MISSING`~（`po("imputeoor")`）。对于数值特征，Ding和Simonoff（2010）表明，对于二元分类和基于树的模型，编码超出范围（OOR）的缺失值，例如，一个大于观察到的最大值的常数值，是一个合理的方法。
+
+It is often important for predictive tasks that you keep track of missing data as it is common for missing data to be informative in itself. To preserve the information about which data was missing, imputation should be tracked by adding binary indicator features (one for each imputed feature) that are `1` if the feature was missing for an observation and `0` if it was present (`po("missind")`). It is important to note that recording this information will not prevent problems in model interpretation on its own. As a real-world example, medical data are typically collected more extensively for White communities than for racially minoritized communities. Imputing data from minoritized communities would at best mask this data bias, and at worst would make the data bias even worse by making vastly inaccurate assumptions (see Chapter 14 for data bias and algorithmic fairness).
+
+> 对于预测任务来说，跟踪缺失数据通常很重要，因为缺失数据本身常常包含有信息。为了保留有关哪些数据缺失的信息，插补应该通过添加二进制指示特征来进行跟踪（每个插补特征都有一个），如果观察中的特征缺失，则该特征为`1`，如果存在则为`0`（`po("missind")`）。需要注意的是，仅记录这些信息本身不会防止模型解释方面的问题。以现实世界的例子来说，医疗数据通常对白人社区进行的收集要比对少数民族社区进行的收集要详尽。从少数民族社区插补数据最多会掩盖数据偏差，最坏的情况下会通过进行极其不准确的假设而使数据偏差变得更严重（请参见第14章关于数据偏差和算法公平性的内容）。
+
+```{r}
+impute_hist = list(
+  po("missind", type = "integer",
+     affect_columns = selector_type("integer")),
+  po("imputehist", affect_columns = selector_type("integer"))
+) %>>%
+  po("featureunion") %>>%
+  po("imputeoor", affect_columns = selector_type("factor"))
+
+impute_hist$plot(horizontal = TRUE)
+```
+
+Using this pipeline we can now run experiments with `lrn("regr.ranger")`, which cannot handle missing data; we also compare a simpler pipeline that only uses OOR imputation to demonstrate performance differences resulting from different strategies.
+
+```{r}
+#| results: hide
+glrn_rf_impute_hist = as_learner(impute_hist %>>% lrn("regr.ranger"))
+glrn_rf_impute_hist$id = "RF_imp_Hist"
+
+glrn_rf_impute_oor = as_learner(po("imputeoor") %>>% lrn("regr.ranger"))
+glrn_rf_impute_oor$id = "RF_imp_OOR"
+
+design = benchmark_grid(tsk_ames,
+                        list(glrn_rf_impute_hist, glrn_rf_impute_oor),
+                             rsmp_cv3)
+bmr_new = benchmark(design)
+```
+
+```{r}
+bmr$combine(bmr_new)
+bmr$aggregate(msr_mae)[, .(learner_id, regr.mae)]
+```
+
+Similarly to encoding, we see limited differences in performance between the different imputation strategies. This is expected here and confirms the findings of Ding and Simonoff (2010) – out-of-range imputation is a simple yet effective imputation for tree-based methods.
+
+Many more advanced imputation strategies exist, including model-based imputation where machine learning models are used to predict missing values, and multiple imputation where data is repeatedly resampled and imputed in each sample (e.g., by mean imputation) to attain more robust estimates. However, these more advanced techniques rarely improve the models predictive performance substantially and the simple imputation techniques introduced above are usually sufficient (Poulos and Valle 2018). Nevertheless, these methods are still important, as finding imputations that fit well to the distribution of the observed values allows a model to be fitted that can be interpreted and analyzed in a second step.
+
+> 与编码类似，我们在不同的插补策略之间看到了有限的性能差异。这在这里是预期的，并证实了Ding和Simonoff（2010）的研究结果 - 超出范围插补是树模型方法的一种简单而有效的插补方法。
+>
+> 还存在许多更高级的插补策略，包括基于模型的插补，其中使用机器学习模型来预测缺失值，以及多重插补，其中数据被重复重采样并在每个样本中进行插补（例如，通过均值插补），以获得更稳健的估计。然而，这些更高级的技术很少会显着改善模型的预测性能，上面介绍的简单插补技术通常已经足够了（Poulos和Valle 2018）。尽管如此，这些方法仍然很重要，因为找到与观测值的分布很好匹配的插补允许拟合一个可以在第二步中进行解释和分析的模型。
+
+## Pipeline Robustify
+
+`mlr3pipelines` offers a simple and reusable pipeline for (among other things) imputation and factor encoding called `ppl("robustify")`, which includes sensible defaults that can be used most of the time when encoding or imputing data. The pipeline includes the following `PipeOp`s (some are applied multiple times and most use selectors):
+
+1. `po("removeconstants")` – Constant features are removed.
+
+1. `po("colapply")` – Character and ordinal features are encoded as categorical, and date/time features are encoded as numeric.
+
+1. `po("imputehist")` – Numeric features are imputed by histogram sampling.
+
+1. `po("imputesample")` – Logical features are imputed by sampling from the empirical distribution – this only affects the `$predict()`-step.
+
+1. `po("missind")` – Missing data indicators are added for imputed numeric and logical variables.
+
+1. `po("imputeoor")` – Missing values of categorical features are encoded with a new level.
+
+1. `po("fixfactors")` – Fixes levels of categorical features such that the same levels are present during prediction and training (which may involve dropping empty factor levels).
+
+1. `po("imputesample")` – Missing values in categorical features introduced from dropping levels in the previous step are imputed by sampling from the empirical distributions.
+
+1. `po("collapsefactors")` – Categorical features levels are collapsed (starting from the rarest factors in the training data) until there are less than a certan number of levels, controlled by the `max_cardinality` argument (with a conservative default of `1000`).
+
+1. `po("encode")` – Categorical features are one-hot encoded.
+
+1. `po("removeconstants")` – Constant features that might have been created in the previous steps are removed.
+
+`ppl("robustify")` has optional arguments `task` and `learner`. If these are provided, then the resulting pipeline will be set up to handle the given task and learner specifically, for example, it will not impute missing values if the learner has the `"missings"` property, or if there are no missing values in the task to begin with. By default, when `task` and `learner` are not provided, the graph is set up to be defensive: it imputes all missing values and converts all feature types to numerics.
+
+Linear regression is a simple model that cannot handle most problems that we may face when processing data, but with the `ppl("robustify")` we can now include it in our experiment:
+
+> `mlr3pipelines`提供了一个用于插补和因子编码（以及其他任务）的简单且可重复使用的管道，称为`ppl("robustify")`，其中包括了通常在对数据进行编码或插补时可使用的明智默认设置。该管道包括以下`PipeOp`（一些被多次应用，大多数使用选择器）：
+>
+> 1. `po("removeconstants")` - 删除常量特征。
+>
+> 2. `po("colapply")` - 字符和序数特征被编码为分类特征，日期/时间特征被编码为数值特征。
+>
+> 3. `po("imputehist")` - 通过直方图采样对数值特征进行插补。
+>
+> 4. `po("imputesample")` - 通过从经验分布中进行采样对逻辑特征进行插补 - 这仅影响`$predict()`步骤。
+>
+> 5. `po("missind")` - 为被插补的数值和逻辑变量添加缺失数据指示。
+>
+> 6. `po("imputeoor")` - 使用新级别编码分类特征的缺失值。
+>
+> 7. `po("fixfactors")` - 修复分类特征的级别，以便在预测和训练期间存在相同的级别（这可能涉及删除空的因子级别）。
+>
+> 8. `po("imputesample")` - 通过从经验分布中进行采样来插补在前一步中删除级别引入的分类特征的缺失值。
+>
+> 9. `po("collapsefactors")` - 折叠分类特征级别（从训练数据中最稀有的因子开始），直到级别少于由`max_cardinality`参数控制的某个数量（默认值为`1000`，具有保守性）。
+>
+> 10. `po("encode")` - 对分类特征进行独热编码。
+>
+> 11. `po("removeconstants")` - 删除可能在前一步中创建的常量特征。
+>
+> `ppl("robustify")`具有可选参数`task`和`learner`。如果提供了这些参数，那么生成的管道将被设置为专门处理给定的任务和学习器，例如，如果学习器具有`"missings"`属性，或者任务一开始就没有缺失值，那么它将不会插补缺失值。默认情况下，当未提供`task`和`learner`时，图形被设置为具有防御性：它会对所有缺失值进行插补并将所有特征类型转换为数值型。
+>
+> 线性回归是一个简单的模型，无法处理我们在处理数据时可能面临的大多数问题，但使用`ppl("robustify")`，我们现在可以将它包括在我们的实验中。
+
+```{r}
+#| results: hide
+glrn_lm_robust = as_learner(ppl("robustify") %>>% lrn("regr.lm"))
+glrn_lm_robust$id = "lm_roubst"
+
+bmr_new = benchmark(benchmark_grid(tsk_ames, glrn_lm_robust, rsmp_cv3))
+```
+
+```{r}
+bmr$combine(bmr_new)
+bmr$aggregate(msr_mae)[, .(learner_id, regr.mae)]
+```
+
+## Transforming Features and Targets
 
 
 
@@ -2964,22 +3324,15 @@ autoplot(instance)
 
 
 ::: {.callout-tip title="To be continued"}
-- <https://mlr3book.mlr-org.com/chapters/chapter8/non-sequential_pipelines_and_tuning.html#sec-pipelines-proxy>
-:::
-
-::: {.callout-caution}
-TODO：等待后续添加交叉引用
+- <https://mlr3book.mlr-org.com/chapters/chapter9/preprocessing.html#sec-prepro-scale>
 :::
 
 等待交叉引用：
 
-- 8.4.4
-- 8.4.5
-- Chapter 9
-- Section 9.3
 - Section 10.1
 - 10.1.3
 - 10.2.1
 - 11.3
 - 13.1
+- Chapter 14
 
