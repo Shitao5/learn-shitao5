@@ -1,7 +1,7 @@
 ---
 title: "Applied Machine Learning Using mlr3 in R"
 date: "2023-08-16"
-date-modified: "2023-10-22"
+date-modified: "2023-10-23"
 image: "logo.png"
 categories: 
   - Machine Learning
@@ -10,7 +10,7 @@ categories:
 ---
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(8.6, 15)`
+`r stfun::progress(9, 15)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -3303,6 +3303,149 @@ bmr$aggregate(msr_mae)[, .(learner_id, regr.mae)]
 
 ## Transforming Features and Targets
 
+Simple transformations of features and the target can be beneficial (and sometimes essential) for certain learners. In particular, log transformation of the target can help in making the distribution more symmetrical and can help reduce the impact of outliers. Similarly, log transformation of skewed features can help to reduce the influence of outliers. 
+
+> 对于某些学习算法，对特征和目标进行简单的转换可能是有益的（有时甚至是必不可少的）。特别是，对目标进行对数转换有助于使分布更对称，可以帮助减小异常值的影响。同样，对偏斜特征进行对数转换可以帮助减少异常值的影响。
+
+```{r}
+# copy ames data
+log_ames = copy(ames)
+
+# log transform target
+log_ames[, logSalePrice := log(Sale_Price)]
+
+autoplot(as_task_regr(log_ames, target = "Sale_Price")) +
+  autoplot(as_task_regr(log_ames, target = "logSalePrice"))
+```
+
+Normalization of features may also be necessary to ensure features with a larger scale do not have a higher impact, which is especially important for distance-based methods such as k-nearest neighbors models or regularized parametric models such as Lasso or Elastic net. Many models internally scale the data if required by the algorithm so most of the time we do not need to manually do this in preprocessing, though if this is required then `po("scale")` can be used to center and scale numeric features.
+
+Any transformations applied to the target during training must be inverted during model prediction to ensure predictions are made on the correct scale.
+
+> 对特征进行归一化可能也是必要的，以确保具有较大尺度的特征不会产生较大影响，这对于基于距离的方法（例如k最近邻模型）或正则化参数模型（例如Lasso或弹性网络）尤为重要。许多模型在算法需要时会自动对数据进行内部缩放，因此在预处理过程中通常不需要手动进行此操作，但如果需要的话，可以使用`po("scale")`来对数值特征进行居中和缩放。
+>
+> 在训练期间应用于目标的任何转换在模型预测期间必须被反转，以确保在正确的尺度上进行预测。
+
+We could manually transform and invert the target, however, this is much more complex when dealing with resampling and benchmarking experiments and so the pipeline `ppl("targettrafo")` will do this heavy lifting for you. The pipeline includes a parameter `targetmutate.trafo` for the transformation to be applied during training to the target, as well as `targetmutate.inverter` for the transformation to be applied to invert the original transformation during prediction. So now let us consider the log transformation by adding this pipeline to our robust linear regression model:
+
+> ]我们可以手动转换和反转目标变量，但是在处理重新采样和基准实验时，这会变得更加复杂。因此，管道`ppl("targettrafo")`将为您完成这项繁重的工作。该管道包括一个名为`targetmutate.trafo`的参数，用于在训练期间对目标变量应用的转换，以及一个名为`targetmutate.inverter`的参数，用于在预测时反转原始转换。现在让我们考虑通过将这个管道添加到我们的鲁棒线性回归模型中来进行对数变换：
+
+```{r}
+#| results: hide
+glrn_log_lm_robust = as_learner(
+  ppl("targettrafo",
+  graph = glrn_lm_robust,
+  targetmutate.trafo = \(x) log(x),
+  targetmutate.inverter = \(x) list(response = exp(x$response))
+))
+glrn_log_lm_robust$id = "lm_robust_logtrafo"
+
+bmr_new = benchmark(benchmark_grid(tsk_ames, glrn_log_lm_robust, rsmp_cv3))
+```
+
+```{r}
+bmr$combine(bmr_new)
+bmr$aggregate(msr_mae)[, .(learner_id, regr.mae)]
+```
+
+With the target transformation and the `ppl("robustify")`, the simple linear regression now appears to be the best-performing model.
+
+## Functional Feature Extraction
+
+As a final step of data preprocessing, we will look at feature extraction from functional features. In Chapter 6 we look at automated feature selection and how automated approaches with filters and wrappers can be used to reduce a dataset to an optimized set of features. Functional feature extraction differs from this process as we are now interested in features that are dependent on one another and together may provide useful information but not individually. Figure 9.4 visualizes the difference between regular and functional features.
+
+> 作为数据预处理的最后一步，我们将看一下从功能性特征中提取特征。我们探讨了自动特征选择以及如何使用过滤器和包装器的自动方法来将数据集减少到一组优化的特征。功能性特征提取与此过程不同，因为我们现在关注的是彼此依赖的特征，它们共同可能提供有用的信息，但单独来看则不具备这种信息。
+
+```{r}
+energy_data = mlr3data::energy_usage
+```
+
+```{r}
+ggplot(data.frame(y = as.numeric(energy_data[1, ])),
+       aes(y = y, x = 1:720)) +
+  geom_line() +
+  labs(x = "2-Minute Interval", y = "Power Consumption")
+```
+
+Adding these 720 features to our full dataset is a bad idea as each individual feature does not provide meaningful information, similarly, we cannot automate selection of the best feature subset for the same reason. Instead, we can extract information about the curves to gain insights into the kitchen’s overall energy usage. For example, we could extract the maximum used wattage, overall used wattage, number of peaks, and other similar features.
+
+To extract features we will write our own `PipeOp` that inherits from `PipeOpTaskPreprocSimple`. To do this we add a private method called `.transform_dt` that hardcodes the operations in our task. In this example, we select the functional features (which all start with “att”), extract the mean, minimum, maximum, and variance of the power consumption, and then remove the functional features. To read more about building custom PipeOps, open the corresponding vignette by running vignette("extending", package = "mlr3pipelines") in R.
+
+> 将这720个特征添加到我们的完整数据集中是一个不好的主意，因为每个单独的特征并不提供有意义的信息，同样，由于同样的原因，我们也不能自动选择最佳的特征子集。相反，我们可以提取有关曲线的信息，以了解厨房整体能源使用情况。例如，我们可以提取最大功率使用量、总体功率使用量、峰值数量等类似的特征。
+>
+> 为了提取特征，我们将编写一个继承自`PipeOpTaskPreprocSimple`的自定义`PipeOp`。为此，我们添加一个名为`.transform_dt`的私有方法，其中包含我们任务中硬编码的操作。在这个例子中，我们选择功能性特征（它们都以“att”开头），提取功耗的均值、最小值、最大值和方差，然后删除功能性特征。要了解更多关于构建自定义`PipeOps`的信息，请在R中运行`vignette("extending", package = "mlr3pipelines")`以打开相应的文档。
+
+```{r}
+PipeOpFuncExtract = R6::R6Class(
+  "PipeOpFuncExtract",
+  inherit = mlr3pipelines::PipeOpTaskPreprocSimple,
+  private = list(
+    .transform_dt = function(dt, levels) {
+      ffeat_names = paste0("att", 1:720)
+      ffeats = dt[, ..ffeat_names]
+      dt[, energy_means := apply(ffeats, 1, mean)]
+      dt[, energy_mins := apply(ffeats, 1, min)]
+      dt[, energy_maxs := apply(ffeats, 1, max)]
+      dt[, energy_vars := apply(ffeats, 1, var)]
+      dt[, (ffeat_names) := NULL]
+    }
+  )
+)
+```
+
+```{r}
+# test PipeOp
+tsk_ames_ext = cbind(ames, energy_data)
+tsk_ames_ext = as_task_regr(tsk_ames_ext, "Sale_Price", "ames_ext")
+# remove the redundant variables identified at the start of this chapter
+tsk_ames_ext$select(setdiff(tsk_ames_ext$feature_names, to_remove))
+
+func_extractor = PipeOpFuncExtract$new("energy_extract")
+tsk_ames_ext = func_extractor$train(list(tsk_ames_ext))[[1]]
+tsk_ames_ext$data(1,
+                  c("energy_means", "energy_mins", "energy_maxs", "energy_vars"))
+```
+
+```{r}
+#| results: hide
+learners = list(lrn_baseline, lrn("regr.rpart"), glrn_xgb_impact,
+                glrn_rf_impute_oor, glrn_lm_robust, glrn_log_lm_robust)
+
+bmr_final = benchmark(benchmark_grid(c(tsk_ames_ext, tsk_ames), learners, rsmp_cv3))
+```
+
+```{r}
+perf = bmr_final$aggregate(msr_mae)
+perf[order(learner_id, task_id), .(task_id, learner_id, regr.mae)]
+```
+
+The final results indicate that adding these extracted features improved the performance of all models (except the featureless baseline).
+
+In this example, we could have just applied the transformations to the dataset directly and not used a `PipeOp`. However, the advantage of using the `PipeOp` is that we could have chained it to a subset of learners to prevent a blow-up of experiments in the benchmark experiment.
+
+> 最终结果显示，添加这些提取的特征提高了所有模型的性能（除了没有特征的基线模型）。
+>
+> 在这个例子中，我们本可以直接将这些变换应用于数据集，而不使用`PipeOp`。然而，使用`PipeOp`的优势在于我们可以将它链接到一部分学习器上，以防止在基准实验中引发大规模的实验。
+
+# Advanced Topics {-}
+
+# Advanced Technical Aspects of mlr3
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3324,7 +3467,7 @@ bmr$aggregate(msr_mae)[, .(learner_id, regr.mae)]
 
 
 ::: {.callout-tip title="To be continued"}
-- <https://mlr3book.mlr-org.com/chapters/chapter9/preprocessing.html#sec-prepro-scale>
+- <https://mlr3book.mlr-org.com/chapters/chapter10/advanced_technical_aspects_of_mlr3.html>
 :::
 
 等待交叉引用：
