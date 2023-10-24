@@ -1,0 +1,16 @@
+{
+  "hash": "ff6960f820b6b87d9925b5afc43549c6",
+  "result": {
+    "markdown": "---\ntitle: \"Docker Docs\"\ndate: \"2023-10-23\"\n# date-modified: \"2023-10-11\"\nimage: \"cover.png\"\ncategories: \n  - Docker\n---\n\n\n\n\n::: {.callout-note title='Progress'}\nLearning Progress: 0%.\n:::\n\n::: {.callout-tip title=\"Learning Source\"}\n- <https://docs.docker.com/get-started/overview/>\n- - 中文翻译由 ChatGPT 3.5 提供\n:::\n\n<!-- 加油学 Docker！ -->\n\n# Docker overview\n\nDocker is an open platform for developing, shipping, and running applications. Docker enables you to separate your applications from your infrastructure so you can deliver software quickly. With Docker, you can manage your infrastructure in the same ways you manage your applications. By taking advantage of Docker's methodologies for shipping, testing, and deploying code, you can significantly reduce the delay between writing code and running it in production.\n\n> Docker是一个用于开发、交付和运行应用程序的开放平台。Docker允许您将应用程序与基础架构分离，以便能够快速交付软件。使用Docker，您可以以与管理应用程序相同的方式来管理基础架构。通过利用Docker用于交付、测试和部署代码的方法，您可以显著缩短编写代码和在生产环境中运行代码之间的延迟。\n\n\n\n\n\n\n\n\n\n::: {.callout-tip title=\"To be continued\"}\n- Docker overview\n:::\n\n",
+    "supporting": [
+      "index_files"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

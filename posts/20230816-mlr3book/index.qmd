@@ -28,6 +28,7 @@ library(mlr3benchmark)
 library(mlr3hyperband)
 library(ggplot2)
 library(patchwork)
+library(data.table)
 ```
 
 ```{r}
