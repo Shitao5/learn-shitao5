@@ -2826,9 +2826,9 @@ bmr = benchmark(design)
 bmr$aggregate()[, .(learner_id, classif.ce)]
 ```
 
-Tuning pipelines will usually take longer than tuning individual learners as training steps are often more complex and the search space will be larger. Therefore, parallelization is often appropriate (Section 10.1) and/or more efficient tuning methods for searching large tuning spaces such as Bayesian optimization.
+Tuning pipelines will usually take longer than tuning individual learners as training steps are often more complex and the search space will be larger. Therefore, parallelization is often appropriate (@sec-technical) and/or more efficient tuning methods for searching large tuning spaces such as Bayesian optimization.
 
-> 通常，调整整个管道的时间通常比调整单个学习器的时间长，因为训练步骤通常更加复杂，搜索空间也更大。因此，通常情况下，可以考虑使用并行化（第10.1节）或者更高效的调优方法，比如搜索大型调优空间的贝叶斯优化。
+> 通常，调整整个管道的时间通常比调整单个学习器的时间长，因为训练步骤通常更加复杂，搜索空间也更大。因此，通常情况下，可以考虑使用并行化（@sec-technical）或者更高效的调优方法，比如搜索大型调优空间的贝叶斯优化。
 
 ### Tuning Alternative Paths with po(“branch”)
 
@@ -3430,7 +3430,96 @@ In this example, we could have just applied the transformations to the dataset d
 
 # Advanced Topics {-}
 
-# Advanced Technical Aspects of mlr3
+# Advanced Technical Aspects of mlr3 {#sec-technical}
+
+## Parallelization
+
+The term parallelization refers to running multiple algorithms in parallel, i.e., executing them simultaneously on multiple CPU cores, CPUs, or computational nodes. Not all algorithms can be parallelized, but when they can, parallelization allows significant savings in computation time.
+
+In general, there are many possibilities to parallelize, depending on the hardware to run the computations. If you only have a single CPU with multiple cores, then threads or processes are ways to utilize all cores on a local machine. If you have multiple machines on the other hand, they can communicate and exchange information via protocols such as network sockets or the Message Passing Interface. Larger computational sites rely on scheduling systems to orchestrate the computation for multiple users and usually offer a shared network file system all machines can access. Interacting with scheduling systems on compute clusters is covered in Section 11.2 using the R package `batchtools`.
+
+There are a few pieces of terminology associated with parallelization that we will use in this section:
+
+- The parallelization backend is the hardware to parallelize with a respective interface provided by an R package. Many parallelization backends have different APIs, so we use the future package as a unified, abstraction layer for many parallelization backends. From a user perspective, mlr3 interfaces with future directly so all you will need to do is configure the backend before starting any computations.
+
+- The Main process is the R session or process that orchestrates the computational work, called jobs.
+
+- Workers are the R sessions, processes, or machines that receive the jobs, perform calculations, and then send the results back to Main.
+
+An important step in parallel programming involves the identification of sections of the program flow that are both time-consuming (‘bottlenecks’) and can run independently of a different section, i.e., section A’s operations are not dependent on the results of section B’s operations, and vice versa. Fortunately, these sections are usually relatively easy to spot for machine learning experiments:
+
+1. Training of a learning algorithm (or other computationally intensive parts of a machine learning pipeline) may contain independent sections which can run in parallel, e.g.
+
+- A single decision tree iterates over all features to find the best split point, for each feature independently.
+
+- A random forest usually fits hundreds of trees independently.
+
+The key principle that makes parallelization possible for these examples (and in general in many fields of statistics and ML) is called data parallelism, which means the same operation is performed concurrently on different elements of the input data.
+
+1. Resampling consists of independent repetitions of train-test-splits and benchmarking consists of multiple independent resamplings.
+
+1. Tuning often is iterated benchmarking, embedded in a sequential procedure that determines the hyperparameter configurations to try next. While many tuning algorithms are inherently sequential to some degree, there are some (e.g., random search) that can propose multiple configurations in parallel to be evaluated independently, providing another level for parallelization.
+
+1. Predictions of a single learner for multiple observations can be computed independently.
+
+These examples are referred to as “embarrassingly parallel” as they are so easy to parallelize. If we can formulate the problem as a function that can be passed to map-like functions such as `lapply()`, then you have an embarrassingly parallel problem. However, just because a problem can be parallelized, it does not follow that every operation in a problem should be parallelized. Starting and terminating workers as well as possible communication between workers comes at a price in the form of additionally required runtime which is called parallelization overhead. This overhead strongly varies between parallelization backends and must be carefully weighed against the runtime of the sequential execution to determine if parallelization is worth the effort. If the sequential execution is comparably fast, enabling parallelization may introduce additional complexity with little runtime savings, or could even slow down the execution. It is possible to control the granularity of the parallelization to reduce the parallelization overhead. For example, we could reduce the overhead of parallelizing a `for`-loop with 1000 iterations on four CPU cores by chunking the work of the 1000 jobs into four computational jobs performing 250 iterations each, resulting in four big jobs and not 1000 small ones.
+
+This effect is illustrated in the following code chunk using a socket cluster with the `parallel` package, which has a `chunk.size` option so we do not need to manually create chunks:
+
+> 并行化这个术语指的是在多个CPU核心、CPU或计算节点上同时运行多个算法，即在这些设备上同时执行这些算法。并不是所有的算法都可以并行化，但是当它们可以时，并行化可以显著节省计算时间。
+>
+> 一般来说，可以根据用于运行计算的硬件选择多种并行化可能性。如果你只有一个带有多个核心的CPU，那么线程或进程是在本地机器上利用所有核心的方法。另一方面，如果你有多台机器，它们可以通过网络套接字或消息传递接口等协议进行通信和信息交换。较大的计算站点依赖于调度系统来为多个用户协调计算，并通常提供所有机器都可以访问的共享网络文件系统。与计算集群上的调度系统的交互在第11.2节中使用R包 `batchtools` 进行介绍。
+>
+> 在并行化中涉及到一些与术语相关的概念，在本节中我们将使用这些概念：
+>
+> - **并行化后端** 是与R包提供的相应接口一起使用的并行化硬件。许多并行化后端具有不同的API，因此我们使用 `future` 包作为许多并行化后端的统一抽象层。从用户的角度看，mlr3 直接与 future 进行交互，所以在开始任何计算之前，你只需要配置后端。
+>
+> - **主进程** 是编排计算工作（称为作业）的R会话或进程。
+>
+> - **工作进程** 是接收作业、执行计算然后将结果发送回主进程的R会话、进程或机器。
+>
+> 并行编程中的一个重要步骤涉及到识别程序流中那些既耗时（‘瓶颈’）又可以独立于不同部分运行的部分，即，部分A的操作不依赖于部分B的操作的结果，反之亦然。幸运的是，对于机器学习实验，这些部分通常相对容易发现：
+>
+> 1. 学习算法的训练（或机器学习流水线的其他需要大量计算的部分）可能包含可以并行运行的独立部分，例如：  
+>
+>    - 单棵决策树迭代所有特征以找到最佳的分割点，对每个特征独立进行。 
+>
+>    - 随机森林通常独立地适应数百棵树。
+>
+> 使这些示例（以及一般情况下统计和机器学习的许多领域）能够进行并行化的关键原则被称为**数据并行性**，它意味着相同的操作在输入数据的不同元素上同时执行。
+>
+> 1. **重新采样** 包括独立重复的训练-测试分割，而**基准测试** 包括多个独立的重新采样。
+>
+> 1. **调参** 通常是嵌套在确定要尝试的超参数配置的顺序过程中的基准测试。虽然许多调参算法在某种程度上本质上是顺序的，但也有一些（例如，随机搜索）可以并行提出多个配置，这些配置将被独立评估，提供了另一层并行化。
+>
+> 1. 对于多个观察结果的单个学习器的预测可以独立计算。
+>
+> 这些示例被称为“尴尬并行”，因为它们非常容易并行化。如果我们能够将问题公式化为可以传递给 `lapply()` 等函数的函数，那么你就有了一个尴尬并行问题。然而，仅仅因为一个问题可以并行化，并不意味着问题中的每个操作都应该被并行化。启动和终止工作进程以及工作进程之间的可能通信会以额外所需的运行时间的形式产生代价，这被称为**并行化开销**。这个开销在不同的并行化后端之间有很大的变化，必须仔细权衡顺序执行的运行时间，以确定并行化是否值得。如果顺序执行非常快，启用并行化可能会引入额外的复杂性，但几乎没有节省运行时间，甚至可能会减慢执行速度。可以控制并行化的粒度以减少并行化开销。例如，我们可以通过将1000个迭代的 `for`-循环在四个CPU核心上的并行化分块为四个计算任务，每个任务执行250次迭代，从而减少了并行化开销，得到四个大任务而不是1000个小任务。
+>
+> 这个效果在下面的代码块中使用 `parallel` 包的套接字集群进行了说明，该包具有 `chunk.size` 选项，因此我们不需要手动创建块：
+
+```{r}
+library(parallel)
+cores = 2
+cl = makeCluster(cores)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3473,10 +3562,10 @@ In this example, we could have just applied the transformations to the dataset d
 
 等待交叉引用：
 
-- Section 10.1
-- 10.1.3
-- 10.2.1
-- 11.3
-- 13.1
+- Section 10.1.3
+- Section 10.2.1
+- Section 11.2
+- Section 11.3
+- Section 13.1
 - Chapter 14
 
