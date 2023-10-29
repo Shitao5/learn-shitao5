@@ -2846,6 +2846,7 @@ knitr::include_graphics("imgs/mlr3book_figures-24.svg")
 
 ```{r}
 #| results: hide
+#| eval: false
 library(mlr3oml)
 otsk_mnist = otsk(id = 3573)
 set.seed(123)
@@ -2853,6 +2854,16 @@ tsk_mnist = as_task(otsk_mnist)$
   filter(sample(70000, 1000))$
   select(otsk_mnist$feature_names[sample(700, 100)])
 ```
+
+```{r}
+#| include: false
+otsk_mnist = readRDS("result/otsk_mnist.rds")
+set.seed(123)
+tsk_mnist = as_task(otsk_mnist)$
+  filter(sample(70000, 1000))$
+  select(otsk_mnist$feature_names[sample(700, 100)])
+```
+
 
 `po("branch")` is initialized either with the number of branches or with a `character`-vector indicating the names of the branches, the latter makes the `selection` hyperparameter (discussed below) more readable.
 Below we create three branches: do nothing (`po("nop")`), apply PCA (`po("pca")`), remove constant features (`po("removeconstants")`) then apply the Yeo-Johnson transform (`po("yeojohnson")`). It is important to use `po("unbranch")` (with the same arguments as `"branch"`) to ensure that the outputs are merged into one result object.
