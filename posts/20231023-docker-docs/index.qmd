@@ -13,12 +13,12 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(2.2, 9)`
+`r stfun::progress(2.2, 9, stop = TRUE)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
 - <https://docs.docker.com/get-started/overview/>
-- - 中文翻译由 ChatGPT 3.5 提供
+- 中文翻译由 ChatGPT 3.5 提供
 :::
 
 <!-- 🚀🚀加油学 Docker！🚀🚀 -->

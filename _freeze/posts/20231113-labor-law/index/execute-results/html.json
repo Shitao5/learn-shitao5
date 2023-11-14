@@ -1,0 +1,14 @@
+{
+  "hash": "0df08e1821d7f51946eee152956d98a2",
+  "result": {
+    "markdown": "---\ntitle: \"劳动法\"\ndate: \"2023-11-13\"\n# date-modified: \"2023-10-25\"\nimage: \"cover.png\"\ncategories: \n  - Law\n---\n\n\n\n\n::: {.callout-note title='Progress'}\nLearning Progress: 23.81%.\n:::\n\n::: {.callout-tip title=\"Learning Source\"}\n- [《中华人民共和国劳动法》](https://flk.npc.gov.cn/detail2.html?ZmY4MDgwODE2ZjEzNWY0NjAxNmYyMGYxNmVlMTE3Mzc%3D)\n:::\n\n# 第一章　总则\n\n- 第三条　劳动者享有平等就业和选择职业的权利、取得劳动报酬的权利、休息休假的权利、获得劳动安全卫生保护的权利、接受职业技能培训的权利、享受社会保险和福利的权利、提请劳动争议处理的权利以及法律规定的其他劳动权利。劳动者应当完成劳动任务，提高职业技能，执行劳动安全卫生规程，遵守劳动纪律和职业道德。\n\n- 第九条　国务院劳动行政部门主管全国劳动工作。县级以上地方人民政府劳动行政部门主管本行政区域内的劳动工作。\n\n# 第二章 促进就业\n\n- <p>第十五条　禁止用人单位招用未满十六周岁的未成年人。文艺、体育和特种工艺单位招用未满十六周岁的未成年人，必须遵守国家有关规定，并保障其接受义务教育的权利。</p>\n\n# 第三章　劳动合同和集体合同\n\n- 第十六条　劳动合同是劳动者与用人单位确立劳动关系、明确双方权利和义务的协议。建立劳动关系应当订立劳动合同。\n\n- 第十八条　下列劳动合同无效：（一）违反法律、行政法规的劳动合同；（二）采取欺诈、威胁等手段订立的劳动合同。无效的劳动合同，从订立的时候起，就没有法律约束力。确认劳动合同部分无效的，如果不影响其余部分的效力，其余部分仍然有效。劳动合同的无效，由劳动争议仲裁委员会或者人民法院确认。\n\n\n\n\n::: {.callout-tip title=\"To be continued\"}\n- 第十九条\n:::\n\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
