@@ -1,0 +1,14 @@
+{
+  "hash": "dfe370df304352c4ce8e596e1b377a81",
+  "result": {
+    "markdown": "---\ntitle: \"学习 Web 开发\"\ndate: \"2023-12-17\"\n# date-modified: \"2023-12-7\"\nimage: \"cover.png\"\ncategories: \n  - HTML\n  - CSS\n  - JavaScript\n---\n\n\n\n\n::: {.callout-note title='Progress'}\nLearning Progress: 10.91%.\n:::\n\n::: {.callout-tip title=\"Learning Source\"}\n- <https://developer.mozilla.org/zh-CN/docs/Learn>\n:::\n\n# 新手请从这里开始！\n\n## JavaScript 基础\n\n- <p>我们将 `<script>` 放在 HTML 文件的底部附近的原因是浏览器会按照代码在文件中的顺序加载 HTML。如果先加载的 JavaScript 期望修改其下方的 HTML，那么它可能由于 HTML 尚未被加载而失效。因此，将 JavaScript 代码放在 HTML 页面的底部附近通常是最好的策略。</p>\n\n# HTML——构建 Web\n\n## HTML 介绍\n\n- 无论你在 HTML 元素的内容中使用多少空格（包括一个或多个空白字符或换行），当渲染这些代码的时候，HTML 解释器会将连续出现的空白字符减少为一个单独的空格符。\n\n- 实体引用：在 HTML 中包含特殊字符：\n\n    <table class=\"table\">\n        <thead>\n            <tr>\n            <th>原义字符</th>\n            <th>等价字符引用</th>\n            </tr>\n        </thead>\n        <tbody>\n            <tr>\n            <td>&lt;</td>\n            <td><code>&amp;lt;</code></td>\n            </tr>\n            <tr>\n            <td>&gt;</td>\n            <td><code>&amp;gt;</code></td>\n            </tr>\n            <tr>\n            <td>\"</td>\n            <td><code>&amp;quot;</code></td>\n            </tr>\n            <tr>\n            <td>'</td>\n            <td><code>&amp;apos;</code></td>\n            </tr>\n            <tr>\n            <td>&amp;</td>\n            <td><code>&amp;amp;</code></td>\n            </tr>\n        </tbody>\n    </table>\n\n\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

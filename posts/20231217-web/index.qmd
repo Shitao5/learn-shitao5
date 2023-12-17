@@ -1,0 +1,70 @@
+---
+title: "学习 Web 开发"
+date: "2023-12-17"
+# date-modified: "2023-12-7"
+image: "cover.png"
+categories: 
+  - HTML
+  - CSS
+  - JavaScript
+---
+
+```{r}
+#| include: false
+1 + 1
+```
+
+::: {.callout-note title='Progress'}
+`r stfun::progress(1.2, 11)`
+:::
+
+::: {.callout-tip title="Learning Source"}
+- <https://developer.mozilla.org/zh-CN/docs/Learn>
+:::
+
+# 新手请从这里开始！
+
+## JavaScript 基础
+
+- <p>我们将 `<script>` 放在 HTML 文件的底部附近的原因是浏览器会按照代码在文件中的顺序加载 HTML。如果先加载的 JavaScript 期望修改其下方的 HTML，那么它可能由于 HTML 尚未被加载而失效。因此，将 JavaScript 代码放在 HTML 页面的底部附近通常是最好的策略。</p>
+
+# HTML——构建 Web
+
+## HTML 介绍
+
+- 无论你在 HTML 元素的内容中使用多少空格（包括一个或多个空白字符或换行），当渲染这些代码的时候，HTML 解释器会将连续出现的空白字符减少为一个单独的空格符。
+
+- 实体引用：在 HTML 中包含特殊字符：
+
+    <table class="table">
+        <thead>
+            <tr>
+            <th>原义字符</th>
+            <th>等价字符引用</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+            <td>&lt;</td>
+            <td><code>&amp;lt;</code></td>
+            </tr>
+            <tr>
+            <td>&gt;</td>
+            <td><code>&amp;gt;</code></td>
+            </tr>
+            <tr>
+            <td>"</td>
+            <td><code>&amp;quot;</code></td>
+            </tr>
+            <tr>
+            <td>'</td>
+            <td><code>&amp;apos;</code></td>
+            </tr>
+            <tr>
+            <td>&amp;</td>
+            <td><code>&amp;amp;</code></td>
+            </tr>
+        </tbody>
+    </table>
+
+
