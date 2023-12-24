@@ -1,7 +1,7 @@
 ---
 title: "学习 Web 开发"
 date: "2023-12-17"
-# date-modified: "2023-12-7"
+date-modified: "2023-12-24"
 image: "cover.png"
 categories: 
   - HTML
@@ -15,7 +15,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(1.2, 11)`
+`r stfun::progress(2.2, 11)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -66,5 +66,16 @@ categories:
             </tr>
         </tbody>
     </table>
+  
+## 多媒体与嵌入
 
+- `<iframe>` 元素出现了（连同其他嵌入内容的方式，如 `<canvas>`、`<video>` 等），它提供了一种将整个 web 页嵌入到另一个网页的方法，看起来就像那个 web 页是另一个网页的一个 `<img>` 或其他元素一样。`<iframe>` 现在经常被使用。
+
+- 网络安全的一个很好的经验法则是“你怎么谨慎都不为过，如果你决定要做这件事，多检查一遍；如果是别人做的，在被证明是安全的之前，都假设这是危险的。”
+
+# CSS——设计 Web
+
+## CSS 第一步
+
+- CSS 是一门基于规则的语言——你能定义用于你的网页中特定元素样式的一组规则。比如“我希望页面中的主标题是红色的大字”。
 
