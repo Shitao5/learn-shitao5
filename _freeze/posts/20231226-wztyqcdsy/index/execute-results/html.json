@@ -1,0 +1,14 @@
+{
+  "hash": "e36d2163d371ddcc4f11a9a7ee92e58c",
+  "result": {
+    "markdown": "---\ntitle: \"我在通用汽车的岁月\"\ndate: \"2023-12-26\"\n# date-modified: \"2023-12-26\"\nimage: \"cover.jpg\"\ncategories: \n  - Management\n---\n\n\n\n\n::: {.callout-note title='Progress'}\nLearning Progress: 1%.\n\n<!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->\n:::\n\n::: {.callout-tip title=\"Learning Source\"}\n- <https://book.douban.com/subject/1435907/>\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
