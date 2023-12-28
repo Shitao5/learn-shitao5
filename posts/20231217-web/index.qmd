@@ -1,7 +1,7 @@
 ---
 title: "学习 Web 开发"
 date: "2023-12-17"
-date-modified: "2023-12-24"
+date-modified: "2023-12-27"
 image: "cover.png"
 categories: 
   - HTML
@@ -15,7 +15,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(2.2, 11)`
+`r stfun::progress(2.3, 11)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
@@ -78,4 +78,35 @@ categories:
 ## CSS 第一步
 
 - CSS 是一门基于规则的语言——你能定义用于你的网页中特定元素样式的一组规则。比如“我希望页面中的主标题是红色的大字”。
+
+- CSS 语言有一些规则来控制在发生冲突的情况下哪个选择器更强大。这些规则被称为**层叠**（cascade）和**优先级**（specificity）。后面的样式会替换样式表中较早出现的冲突样式，这就是**层叠**规则。一个类被认为是更具体的，因此它比元素选择器优先级更高，所以它取消了其他冲突的样式声明。
+
+![CSS 是怎么工作的？](images/rendering.svg){#fig-css-work width=85%}
+
+- 如果一个浏览器在解析 CSS 规则的过程中遇到了无法理解的属性或者值，它会忽略这些并继续解析下面的 CSS 声明。相似的，当浏览器遇到无法解析的选择器的时候，他会直接忽略整个选择器规则，然后解析下一个 CSS 选择器。
+
+## CSS 基础
+
+- <p>当使用选择器列表时，如果任何一个选择器无效 (存在语法错误)，那么整条规则都会被忽略。</p>
+
+<https://developer.mozilla.org/zh-CN/docs/Learn/CSS/Building_blocks/Selectors/Combinators>
+
+
+# JavaScript——用户端动态脚本
+
+## JavaScript 第一步
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

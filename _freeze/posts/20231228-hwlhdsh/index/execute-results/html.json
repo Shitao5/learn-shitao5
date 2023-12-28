@@ -1,0 +1,16 @@
+{
+  "hash": "b2e5abb1885b9d4671ec0469c44d5846",
+  "result": {
+    "markdown": "---\ntitle: \"何为良好生活\"\nsubtitle: \"行之于途而应于心\"\ndate: \"2023-12-28\"\n# date-modified: \"2023-12-28\"\nimage: \"cover.jpg\"\ncategories: \n  - Philosophy\n---\n\n\n\n\n::: {.callout-note title='Progress'}\nLearning Progress: 6%.\n\n<!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->\n:::\n\n::: {.callout-tip title=\"Learning Source\"}\n- <https://book.douban.com/subject/26363926/>\n:::\n\n# 序言 {-}\n\n- <p>我一直对自己期望不高，更希望的倒是有几个读者能与作者一样感到诚实的思考实是人生一大乐事。“生今之世，承诸圣之表章，经群英之辩难，我得以坐集千古之智，折中其间，岂不幸乎？”</p>\n\n# 伦理与伦理学\n\n- 伦理和道德有一层细微而重要的区别：在说到伦理的时候，我们更多联系于特定的社会形态，而不同社会有个殊的伦理关系和伦理规范，而说到道德，我们倾向于把某些伦理规范从个殊的伦理关系中抽离出来，把道德视作某种独立的、普遍的东西。\n\n- 在我看来，道德植根于伦理并与伦理生活交织在一起，伦理则植根于一般社会生活并与一般社会生活交织在一起。\n\n- 哲学追索根本道理，而很多根本道理凝结在我们的语言之中。因此，哲学家在阐论其学说时，几乎都会用语言中的实例作证。\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+    "supporting": [
+      "index_files"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

@@ -1,0 +1,43 @@
+---
+title: "荣格自传"
+subtitle: "回忆·梦·思考"
+date: "2023-12-29"
+# date-modified: "2023-12-28"
+image: "cover.jpg"
+categories: 
+  - Psychology
+---
+
+```{r}
+#| include: false
+1 + 1
+```
+
+::: {.callout-note title='Progress'}
+`r stfun::progress(1, 100)`
+
+<!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->
+:::
+
+::: {.callout-tip title="Learning Source"}
+- <https://book.douban.com/subject/25793666/>
+:::
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
