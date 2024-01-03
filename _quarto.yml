@@ -20,8 +20,8 @@ website:
     right:
       - text: About
         href: about.qmd
-      - text: To Read
-        href: toread.qmd
+      # - text: To Read
+      #   href: toread.qmd
       - text: Shitao's Blog
         href: https://shitao5.org/
       - icon: github
@@ -31,7 +31,7 @@ website:
         aria-label: RSS
 
   page-footer:
-    left: "Copyright 2023, [Shitao5](https://shitao5.org/)"
+    left: "Copyright 2024, [Shitao5](https://shitao5.org/)"
     right: "This blog is built with [Quarto](https://quarto.org/)❤️."
 
 format:
