@@ -1,14 +1,14 @@
 ---
 title: "To Read"
 date: "2023-09-20"
+date-modified: "2024-01-06"
 include-in-header:
   - _includes/giscus.html
 include-after-body:
   - _includes/div-giscus.html
 ---
 
-以下是待阅读的内容：
-
-- book1
-
-- book2
+- 《公司法学》
+- 《行为设计学》
+- 《宗教的本质》
+- 《详谈：赵鹏》

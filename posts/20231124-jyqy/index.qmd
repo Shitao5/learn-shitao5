@@ -14,7 +14,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(15, 100)`
+`r stfun::progress(15, 100, stop = TRUE)`
 
 <!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->
 :::
