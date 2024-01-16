@@ -5,6 +5,7 @@ date-modified: "2023-12-28"
 image: "cover.jpg"
 categories: 
   - Management
+  - Autobiography
 ---
 
 ```{r}
