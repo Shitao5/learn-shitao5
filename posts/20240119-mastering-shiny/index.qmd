@@ -1,0 +1,61 @@
+---
+title: "Mastering Shiny"
+date: "2024-01-19"
+# date-modified: "2024-01-18"
+image: "cover.png"
+categories: 
+  - R
+---
+
+```{r}
+#| include: false
+1 + 1
+```
+
+::: {.callout-note title='Progress'}
+`r stfun::progress(1, 23)`
+
+<!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->
+:::
+
+::: {.callout-tip title="Learning Source"}
+- <https://mastering-shiny.org/>
+:::
+
+# Getting started {-}
+
+# Your first Shiny app
+
+- You can enter that URL into any compatible web browser to open another copy of your app.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
