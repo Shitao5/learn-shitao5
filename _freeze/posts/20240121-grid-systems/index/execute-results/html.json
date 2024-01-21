@@ -1,0 +1,16 @@
+{
+  "hash": "8b9056c7270510c641c81d8454422800",
+  "result": {
+    "markdown": "---\ntitle: \"平面设计中的网格系统\"\nsubtitle: \"平面设计、字体编排和空间设计的视觉传达设计手册\"\ndate: \"2024-01-21\"\n# date-modified: \"2024-01-20\"\nimage: \"cover.png\"\ncategories: \n  - Design\n---\n\n\n\n\n::: {.callout-note title='Progress'}\nLearning Progress: 6.08%.\n\n<!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->\n:::\n\n::: {.callout-tip title=\"Learning Source\"}\n- <https://book.douban.com/subject/26806997/>\n:::\n\n",
+    "supporting": [
+      "index_files"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

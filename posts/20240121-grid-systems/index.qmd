@@ -1,0 +1,25 @@
+---
+title: "平面设计中的网格系统"
+subtitle: "平面设计、字体编排和空间设计的视觉传达设计手册"
+date: "2024-01-21"
+# date-modified: "2024-01-20"
+image: "cover.png"
+categories: 
+  - Design
+---
+
+```{r}
+#| include: false
+1 + 1
+```
+
+::: {.callout-note title='Progress'}
+`r stfun::progress(11, 181)`
+
+<!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->
+:::
+
+::: {.callout-tip title="Learning Source"}
+- <https://book.douban.com/subject/26806997/>
+:::
+
