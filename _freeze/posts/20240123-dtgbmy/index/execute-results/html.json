@@ -1,0 +1,14 @@
+{
+  "hash": "693c606772a296ad08e10eee4e12eb8b",
+  "result": {
+    "markdown": "---\ntitle: \"定投改变命运\"\ndate: \"2024-01-23\"\n# date-modified: \"2024-01-18\"\nimage: \"cover.jpg\"\ncategories: \n  - Finance\n---\n\n\n\n\n::: {.callout-note title='Progress'}\nLearning Progress: 10%.\n\n<!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->\n:::\n\n::: {.callout-tip title=\"Learning Source\"}\n- <https://ri.firesbox.com/#/cn/>\n:::\n\n# 警告 {-}\n\n- 金融领域是认知变现的最佳场所，可与此同时，也从来没有任何一个其他领域像金融领域那样，毫不留情地严厉惩罚缺乏正确独立思考能力的人。\n\n- 千万不要误以为自己刚刚学到了一些新知识就可以马上变身超人 —— 消化知识所需要的时间远远超出大多数人的想象 —— 请您务必悠着点，千万不要急；最好别太猛，因为若是用力过猛，动作肯定会变形。\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

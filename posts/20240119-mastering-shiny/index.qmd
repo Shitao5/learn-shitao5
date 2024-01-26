@@ -1,7 +1,7 @@
 ---
 title: "Mastering Shiny"
 date: "2024-01-19"
-date-modified: "2024-01-21"
+date-modified: "2024-01-22"
 image: "cover.png"
 categories: 
   - R
@@ -13,7 +13,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(9, 23)`
+`r stfun::progress(10, 23)`
 
 <!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->
 :::
@@ -87,20 +87,144 @@ categories:
   
   - How should you order the buttons? Do you put cancel first (like the Mac), or continue first (like Windows)? Your best option is to mirror the platform that you think most people will be using.
   
-  - Can you make the dangerous option more obvious? Here I’ve used class = `"btn btn-danger"` to style the button prominently.
+  - Can you make the dangerous option more obvious? Here I’ve used `class = "btn btn-danger"` to style the button prominently.
 
+# Uploads and downloads
 
+- By default, the user can only upload files up to 5 MB. You can increase this limit by setting the `shiny.maxRequestSize` option prior to starting Shiny. For example, to allow up to 10 MB run `options(shiny.maxRequestSize = 10 * 1024^2)`.
 
+- I recommend using `.tsv` (tab separated value) instead of `.csv` (comma separated values) because many European countries use commas to separate the whole and fractional parts of a number (e.g. `1,23` vs `1.23`). This means `they can’t use commas to separate fields and instead use semi-colons in so-called “c”sv files! You can avoid this complexity by using tab separated files, which work the same way everywhere.
 
+- By default, RMarkdown will render the report in the current process, which means that it will inherit many settings from the Shiny app (like loaded packages, options, etc). For greater robustness, I recommend running `render()` in a separate R session using the callr package:
 
+  ```{r}
+  #| eval: false
+  
+  render_report <- function(input, output, params) {
+    rmarkdown::render(input,
+      output_file = output,
+      params = params,
+      envir = new.env(parent = globalenv())
+    )
+  }
+  
+  server <- function(input, output) {
+    output$report <- downloadHandler(
+      filename = "report.html",
+      content = function(file) {
+        params <- list(n = input$slider)
+        callr::r(
+          render_report,
+          list(input = report_path, output = file, params = params)
+        )
+      }
+    )
+  }
+  ```
 
+# Dynamic UI
 
+- There are three key techniques for creating dynamic user interfaces:
+  
+  - Using the `update` family of functions to modify parameters of input controls.
+  
+  - Using `tabsetPanel()` to conditionally show and hide parts of the user interface.
+  
+  - Using `uiOutput()` and `renderUI()` to generate selected parts of the user interface with code.
 
+- You might wonder when you should use `freezeReactiveValue()`: it’s actually good practice to **always** use it when you dynamically change an input `value`. The actual modification takes some time to flow to the browser then back to Shiny, and in the interim any reads of the value are at best wasted, and at worst lead to errors. Use `freezeReactiveValue()` to tell all downstream calculations that an input value is stale and they should save their effort until it’s useful.
 
+- If you run this code yourself, you’ll notice that it takes a fraction of a second to appear after the app loads. That’s because it’s reactive: the app must load, trigger a reactive event, which calls the server function, yielding HTML to insert into the page. This is one of the downsides of `renderUI()`; relying on it too much can create a laggy UI. For good performance, strive to keep fixed as much of the user interface as possible, using the techniques described earlier in the chapter.
+  
+  There’s one other problem with this approach: when you change controls, you lose the currently selected value. Maintaining existing state is one of the big challenges of creating UI with code. This is one reason that selectively showing and hiding UI is a better approach if it works for you — because you’re not destroying and recreating the controls, you don’t need to do anything to preserve the values. However, in many cases, we can fix the problem by setting the value of the new input to the current `value` of the existing control:
 
+  ```{r}
+  #| eval: false
+  server <- function(input, output, session) {
+    output$numeric <- renderUI({
+      value <- isolate(input$dynamic)
+      if (input$type == "slider") {
+        sliderInput("dynamic", input$label, value = value, min = 0, max = 10)
+      } else {
+        numericInput("dynamic", input$label, value = value, min = 0, max = 10)
+      }
+    })
+  }
+  ```
 
+# Bookmarking
 
+- By default, Shiny apps have one major drawback compared to most web sites: you can’t bookmark the app to return to the same place in the future or share your work with someone else with a link in an email. That’s because, by default, Shiny does not expose the current state of the app in its URL.
 
+- There are three things we need to do to make this app bookmarkable:
+  
+  1. Add a `bookmarkButton()` to the UI. This generates a button that the user clicks to generate the bookmarkable URL.
+  
+  1. Turn `ui` into a function. You need to do this because bookmarked apps have to replay the bookmarked values: effectively, Shiny modifies the default `value` for each input control. This means there’s no longer a single static UI but multiple possible UIs that depend on parameters in the URL; i.e. it has to be a function.
+  1. Add `enableBookmarking = "url"` to the `shinyApp()` call.
+
+- Instead of providing an explicit button, another option is to automatically update the URL in the browser. This allows your users to use the user bookmark command in their browser, or copy and paste the URL from the location bar.
+  
+  Automatically updating the URL requires a little boilerplate in the server function:
+  
+  ```{r}
+  #| eval: false
+  # Automatically bookmark every time an input changes
+  observe({
+    reactiveValuesToList(input)
+    session$doBookmark()
+  })
+  # Update the query string
+  onBookmarked(updateQueryString)
+  ```
+
+# Tidy evaluation
+
+- It’s going to be easier to understand what’s happening if we can disambiguate the two uses by introducing two new terms:
+  
+  - An **env-variable** (environment variable) is a “programming” variables that you create with `<-`. `input$var` is a env-variable.
+  
+  - A **data-variable** (data frame variables) is “statistical” variable that lives inside a data frame. `carat` is a data-variable.
+  
+  With these new terms we can make the problem of indirection more clear: we have a data-variable (`carat`) stored inside an env-variable (`input$var`), and we need some way to tell dplyr this. There are two slightly different ways to do this depending on whether the function you’re working with is a “data-masking” function or a “tidy-selection” function.
+
+- Data-masking functions allow you to use variables in the “current” data frame without any extra syntax. It’s used in many dplyr functions like `arrange()`, `filter()`, `group_by()`, `mutate()`, and `summarise()`, and in ggplot2’s `aes()`. Data-masking is useful because it lets you use data-variables without any additional syntax.
+
+- Fortunately, inside data-masking functions you can use `.data` or `.env` if you want to be explicit about whether you’re talking about a data-variable or an env-variable:
+  
+  ```{r}
+  #| eval: false
+  diamonds %>% filter(.data[[var]] > .env$min)
+  ```
+- However, in my opinion, one of the advantages of the tidyverse is the careful thought that has been applied to edge cases so that functions work more consistently.
+
+- As well as data-masking, there’s one other important part of tidy evaluation: tidy-selection. Tidy-selection provides a concise way of selecting columns by position, name, or type. It’s used in `dplyr::select()` and `dplyr::across()`, and in many functions from tidyr, like `pivot_longer()`, `pivot_wider()`, `separate()`, `extract()`, and `unite()`.
+
+- To refer to variables indirectly use `any_of()` or `all_of()`: both expect a character vector env-variable containing the names of data-variables. The only difference is what happens if you supply a variable name that doesn’t exist in the input: `all_of()` will throw an error, while `any_of()` will silently ignore it.
+
+# Mastering reactivity {-}
+
+# Why reactivity?
+
+- But magic in software usually leads to disillusionment: without a solid mental model, it’s extremely difficult to predict how the software will act when you venture beyond the borders of its demos and examples. And when things don’t go the way you expect, debugging is almost impossible.
+
+- Once you’ve formed an accurate mental model of reactivity, you’ll see that there’s nothing up Shiny’s sleeves: the magic comes from simple concepts combined in consistent ways.
+
+- Reactive programming is a style of programming that focuses on values that change over time, and calculations and actions that depend on those values.
+
+- For Shiny apps to be maximally useful, we need reactive expressions and outputs to update if and only if their inputs change. We want outputs to stay in sync with inputs, while ensuring that we never do more work than necessary.
+
+- A reactive expression has two important properties:
+  
+  - It’s **lazy**: it doesn’t do any work until it’s called.
+  
+  - It’s **cached**: it doesn’t do any work the second and subsequent times it’s called because it caches the previous result.
+
+- Spreadsheets are closely related to reactive programming: you declare the relationship between cells using formulas, and when one cell changes, all of its dependencies automatically update. So you’ve probably already done a bunch of reactive programming without knowing it!
+
+# The reactive graph
+
+- Recall that reactive inputs and expressions are collectively called reactive producers; reactive expressions and outputs are reactive consumers.
 
 
 
