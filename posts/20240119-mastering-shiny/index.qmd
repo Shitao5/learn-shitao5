@@ -1,7 +1,7 @@
 ---
 title: "Mastering Shiny"
 date: "2024-01-19"
-date-modified: "2024-01-22"
+date-modified: "2024-01-28"
 image: "cover.png"
 categories: 
   - R
@@ -13,7 +13,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(10, 23)`
+`r stfun::progress(19.4, 23)`
 
 <!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->
 :::
@@ -226,21 +226,148 @@ categories:
 
 - Recall that reactive inputs and expressions are collectively called reactive producers; reactive expressions and outputs are reactive consumers.
 
+- You might wonder how Shiny decides which of the invalidated outputs to execute. In short, you should act as if it’s random: your observers and outputs shouldn’t care what order they execute in, because they’ve been designed to function independently.
+
+- Shiny records a relationship between the output and reactive expression (i.e. we draw an arrow). The direction of the arrow is important: the expression records that it is used by the output; the output doesn’t record that it uses the expression. This is a subtle distinction, but its importance will become more clear when you learn about invalidation.
+
+- Each invalidated reactive expression and output “erases” all of the arrows coming in to and out of it and completing the invalidation phase.
+
+- It may seem perverse that we put so much value on those relationships, and now we’ve thrown them away! But this is a key part of Shiny’s reactive programming model: though these particular arrows were important, they are now out of date. The only way to ensure that our graph stays accurate is to erase arrows when they become stale, and let Shiny rediscover the relationships around these nodes as they re-execute.
+
+- The reactive dependency is established when you read a value from input, not when you use that value.
+
+# Reactive building blocks
+
+- It’s important to note that both types of reactive values have so called reference semantics. Most R objects have copy-on-modify48 semantics which means that if you assign the same value to two names, the connection is broken as soon as you modify one. This is not the case with reactive values — they always keep a reference back to the same value so that modifying any copy modifies all values.
+
+- Reactive expressions cache errors in exactly the same way that they cache values.
+
+- Errors are also treated the same way as values when it comes to the reactive graph: errors propagate through the reactive graph exactly the same way as regular values. The only difference is what happens when an error hits an output or observer:
+  
+  - An error in an output will be displayed in the app.
+  
+  - An error in an observer will cause the current session to terminate. If you don’t want this to happen, you’ll need to wrap the code in `try()` or `tryCatch()`.
+
+- Observers and outputs are powered by the same underlying tool: `observe()`. This sets up a block of code that is run every time one of the reactive values or expressions it uses is updated. Note that the observer runs immediately when you create it — it must do this in order to determine its reactive dependencies.
+
+- `observe()` also powers reactive outputs. Reactive outputs are a special type of observers that have two important properties:
+  
+  - They are defined when you assign them into `output`, i.e. `output$text <- ...` creates the observer.
+  
+  - They have some limited ability to detect when they’re not visible (i.e. they’re in non-active tab) so they don’t have to recompute51.
+  
+  It’s important to note that `observe()` and the reactive outputs don’t “do” something, but “create” something (which then takes action as needed).
+
+- Shiny provides `isolate()` to resolve this problem. This function allows you to access the current value of a reactive value or expression **without** taking a dependency on it
+
+- `invalidateLater(ms)` causes any reactive consumer to be invalidated in the future, after `ms` milliseconds. It is useful for creating animations and connecting to data sources outside of Shiny’s reactive framework that may be changing over time.
+
+# Escaping the graph
+
+- <p>Having a reactive graph that is as simple as possible is important for both humans and for Shiny. A simple graph is easier for humans to understand, and a simple graph is easier for Shiny to optimise.</p>
+
+# Best practices {-}
+
+# General guidelines
+
+- Improving your software engineering skills is a lifelong journey. Expect to have frustrations as you start learning them, but understand that everyone experiences the same issues, and if you persevere you’ll get past them. Most people go through the same evolution when learning a new technique: “I don’t understand it and have to look it up every time I use it” to “I vaguely understand it but still read the documentation a lot” to eventually “I understand it and can use it fluidly”. It takes time and practice to get to the final stage.
+
+- Being a good programmer means developing empathy for others who will need to interact with this code-base in the future (even if it’s just future-you!). Like all forms of empathy, this takes practice and becomes easier only after you’ve done it many times. Over time, you’ll start to notice that certain practices improve the readability of your code. There are no universal rules, but some general guidelines include:
+  
+  - Are the variable and function names clear and concise? If not, what names would better communicate the intent of the code?
+  - Do I have comments where needed to explain complex bits of code?
+  
+  - Does this whole function fit on my screen or could it be printed on a single piece of paper? If not, is there a way to break it up into smaller pieces?
+  
+  - Am I copying-and-pasting the same block of code many times throughout my app? If so, is there a way to use a function or a variable to avoid the repetition?
+  
+  - Are all the parts of my application tangled together, or can I manage the different components of my application in isolation?
+
+- Automation takes time to set up, but it pays off over time because you can run the tests more frequently. For that reason, various forms of automated testing have been developed for Shiny, as outlined in Chapter 21. As that chapter will explain, you can develop:
+  
+  - Unit tests that confirm the correct behaviour of an individual function.
+  
+  - Integration tests to confirm the interactions between reactives.
+  
+  - Functional tests to validate the end-to-end experience from a browser
+  
+  - Load tests to ensure that the application can withstand the amount of traffic you anticipate for it.
+  
+  The beauty of writing an automated test is that once you’ve taken the time to write it, you’ll never need to manually test that portion of the application again. You can even leverage continuous integration to run these tests every time you make a change to your code before publishing the application.
+
+# Functions
+
+- In this chapter, you’ll learn how writing functions can help. This tends to have slightly different flavours for UI and server components:
+  
+  - In the UI, you have components that are repeated in multiple places with minor variations. Pulling out repeated code into a function reduces duplication (making it easier to update many controls from one place), and can be combined with functional programming techniques to generate many controls at once.
+  
+  - In the server, complex reactives are hard to debug because you need to be in the midst of the app. Pulling out a reactive into a separate function, even if that function is only called in one place, makes it substantially easier to debug, because you can experiment with computation independent of reactivity.
+  
+  Functions have another important role in Shiny apps: they allow you to spread out your app code across multiple files. While you certainly can have one giant `app.R` file, it’s much easier to manage when spread across multiple files.
+
+- There are two places you might put them depending on how big they are:
+  
+  - I recommend putting large functions (and any smaller helper functions that they need) into their own `R/{function-name}.R` file.
+  
+  - You might want to collect smaller, simpler, functions into one place. I often use `R/utils.R` for this, but if they’re primarily used in your ui you might use `R/ui.R`.
+
+- If you’re developing a lot of Shiny apps within your organisation, you can help improve cross-app consistency by putting functions like this in a shared package.
+
+- Whenever you have a long reactive (say >10 lines) you should consider pulling it out into a separate function that does not use any reactivity. This has two advantages:
+  
+  - It is much easier to debug and test your code if you can partition it so that reactivity lives inside of `server()`, and complex computation lives in your functions.
+  
+  - When looking at a reactive expression or output, there’s no way to easily tell exactly what values it depends on, except by carefully reading the code block. A function definition, however, tells you exactly what the inputs are.
+  
+  The key benefits of a function in the UI tend to be around reducing duplication. The key benefits of functions in a server tend to be around isolation and testing.
+
+# Shiny modules
+
+- Shiny modules have two big advantages. Firstly, namespacing makes it easier to understand how your app works because you can write, analyse, and test individual components in isolation. Secondly, because modules are functions they help you reuse code; anything you can do with a function, you can do with a module.
+
+```{r}
+#| eval: false
+
+library(shiny)
+
+histogramUI <- function(id) {
+  tagList(
+    selectInput(NS(id, "var"), "Variable", choices = names(mtcars)),
+    numericInput(NS(id, "bins"), "bins", value = 10, min = 1),
+    plotOutput(NS(id, "hist"))
+  )
+}
+
+histogramServer <- function(id) {
+  moduleServer(id, function(input, output, session) {
+    data <- reactive(mtcars[[input$var]])
+    output$hist <- renderPlot({
+      hist(data(), breaks = input$bins, main = input$var)
+    }, res = 96)
+  })
+}
+
+histogramApp <- function() {
+  ui <- fluidPage(
+    histogramUI("hist1")
+  )
+  server <- function(input, output, session) {
+    histogramServer("hist1")
+  }
+  shinyApp(ui, server)
+}
+
+histogramApp()
+```
+
+- Namespacing turns modules into black boxes. From outside of the module, you can’t see any of the inputs, outputs, or reactives inside of it.
+
+- Note that the module UI and server differ in how the namespacing is expressed:
+  
+  - In the module UI, the namespacing is *explicit*: you have to call `NS(id, "name")` every time you create an input or output.
+  
+  - In the module server, the namespacing is *implicit*. You only need to use `id` in the call to `moduleServer()` and then Shiny automatically namespaces `input` and `output` so that in your module code `input$name` means the input with name `NS(id, "name")`.
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+<https://mastering-shiny.org/scaling-modules.html#inputs-and-outputs>

@@ -2,7 +2,7 @@
 title: "荣格自传"
 subtitle: "回忆·梦·思考"
 date: "2023-12-29"
-date-modified: "2024-01-03"
+date-modified: "2024-01-27"
 image: "cover.jpg"
 categories: 
   - Psychology
@@ -14,7 +14,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(4, 100)`
+`r stfun::progress(9, 100)`
 
 <!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->
 :::
@@ -51,7 +51,7 @@ categories:
 
 - 这一类姑娘后来成了我潜意识中异性人格化的一个组成部分。她所传达的那种既生疏又始终为人所认识的感觉，是后来在我心中象征女性本质的那个形象的一种特征。
 
-
+- 对于这些行为的意义，或者究竟该怎样解释它们，我毫不在意。我满足于有一种安全感，满足于占有某种别人不知道而又无法获得的东西。这是一种永远不能背叛的秘密，因为我生命的安全由它掌握。为什么如此，我没有问过自己。事情就是这样。
 
 
 

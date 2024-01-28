@@ -13,7 +13,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(2.3, 17)`
+`r stfun::progress(2.3, 17, stop = TRUE)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
