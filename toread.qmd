@@ -1,7 +1,7 @@
 ---
 title: "To Read"
 date: "2023-09-20"
-date-modified: "2024-01-28"
+date-modified: "2024-01-31"
 include-in-header:
   - _includes/giscus.html
 include-after-body:
@@ -18,6 +18,7 @@ include-after-body:
 - [JavaScript for R](https://book.javascript-for-r.com/)
 - [Supervised Machine Learning for Text Analysis in R](https://smltar.com/)
 - [Hands-On Machine Learning with R](https://bradleyboehmke.github.io/HOML/)
+- [Advanced R](https://adv-r.hadley.nz/)
 
 
 # [Rust](../#category=Rust)

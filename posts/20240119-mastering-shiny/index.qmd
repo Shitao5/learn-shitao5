@@ -13,7 +13,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(21, 23)`
+`r stfun::progress(23, 23)`
 
 <!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->
 :::
@@ -460,24 +460,54 @@ datasetApp()
 
 # Testing
 
+- As your app gets more complicated it becomes impossible to hold it all in your head simultaneously. Testing is a way to capture desired behaviour of your code, in such a way that you can automatically verify that it keeps working the way you expect. Turning your existing informal tests into code is painful when you first do it, because you need to carefully turn every key press and mouse click into a line of code, but once done, it’s tremendously faster to re-run your tests.
 
+- These levels of testing form a natural hierarchy because each technique provides a fuller simulation of the user experience of an app. The downside of the better simulations is that each level is slower because it has to do more, and more fragile because more external forces come into play. You should always strive to work at the lowest possible level so your tests are as fast and robust as possible. Over time this will also influence the way you write code: knowing what sort of code is easier to test will naturally push you towards simpler designs.
 
+- The art of testing is figuring out how to write tests that clearly define the expected behaviour of your function, without depending on incidental details that might change in the future.
 
+- Note that the second argument to `expect_error()` is a regular expression — the goal is to find a short fragment of text that matches the error you expect and is unlikely to match errors that you don’t expect.
+
+- A snapshot expectation differs from other expectations primarily in that the expected result is stored in a separate snapshot file, rather than in the code itself. Snapshot tests are most useful when you are designing complex user interface design systems, which is outside of the scope of most apps.
+
+- It’s very useful to verify that your tests test what you think they’re testing. A great way to do this is with “code coverage” which runs your tests and tracks every line of code that is run. You can then look at the results to see which lines of your code are never touched by a test, and gives you the opportunity to reflect on if you’ve tested the most important, highest risk, or hardest to program parts of your code. It’s not a substitute for thinking about your code — you can have 100% test coverage and still have bugs. But it’s a fun and a useful tool to help you think about what’s important, particularly when you have complex nested code.
+
+- When should you write tests? There are three basic options: 
   
+  - **Before you write the code**. This is a style of code called test driven development, and if you know exactly how a function should behave, it makes sense to capture that knowledge as code before you start writing the implementation.
   
+  - **After you write the code.** While writing code you’ll often build up a mental to-do list of worries about your code. After you’ve written the function, turn these into tests so that you can be confident that the function works the way that you expect.
   
+  When you start writing tests, beware writing them too soon. If your function is still actively evolving, keeping your tests up to date with all the changes is going to feel frustrating. That may indicate you need to wait a little longer.
   
+  - **When you find a bug**. Whenever you find a bug, it’s good practice to turn it into an automated test case. This has two advantages. Firstly, to make a good test case, you’ll need to relentlessly simplify the problem until you have a very minimal reprex that you can include in a test. Secondly, you’ll make sure that the bug never comes back again!
+
+# Security
+
+- When securing your app, there are two main things to protect:
   
+  - Your data: you want to make sure an attacker can’t access any sensitive data.
   
+  - Your compute resources: you want to make sure an attacker can’t mine bitcoin or use your server as part of a spam farm.
+
+- Note that code within `server()` is isolated so there’s no way for one user session to see data from another. The only exception is if you use caching
+
+- Finally, note that Shiny inputs use client-side validation, i.e. the checks for valid input are performed by JavaScript in the browser, not by R. This means it’s possible for a knowledgeable attacker to send values that you don’t expect.
+
+- In general, the combination of `parse()` and `eval()` is a big warning sign for any Shiny app: they instantly make your app vulnerable. Similarly, you should never `source()` an uploaded `.R` file, or `rmarkdown::render()` an uploaded `.Rmd`. But these cases are pretty obvious, and are unlikely to be source of real problems.
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  The bigger challenge arises because are a number of functions that `parse()`, `eval()`, or both, in a way that you’re not aware of.
+
+# Performance
+
+- This is a feature of Shiny: it allows you to quickly prototype a proof of concept that works for you, before figuring out how to make it fast so many people can use it simultaneously. Fortunately, it’s generally straightforward to get 10-100x performance with a few simple tweaks.
+
+- Benchmarking lets you check the performance of your app with multiple users, without actually exposing real people to a potentially slow app. Or if you want to serve 100s or 1000s of users, benchmarking will help you figure out just how many users each process can handle, and hence how many servers you’ll need to use.
+
+- As well as a flame graph, profvis also does its best to find and display the underlying source code so that you can click on a function in the flame graph to see exactly what’s run.
+
+- The most important limitation of profiling is due to the way it works: R has to stop the process and inspect what R functions are currently run. That means that R has to be in control.
+
+- Begin by resolving any issues where existing code is run more often than you expect — make sure you’re not repeating the same work in multiple reactives and that the reactive graph isn’t updating more often than you expect
+
+- Caching is a very powerful technique for improving code performance. The basic idea is to record the inputs to and outputs from every call to a function. When the cache function is called with a set of inputs that it’s already seen, it can replay the recorded output without recomputing.

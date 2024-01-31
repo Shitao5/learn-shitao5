@@ -2,7 +2,7 @@
 title: "平面设计中的网格系统"
 subtitle: "平面设计、字体编排和空间设计的视觉传达设计手册"
 date: "2024-01-21"
-date-modified: "2024-01-27"
+date-modified: "2024-01-28"
 image: "cover.png"
 categories: 
   - Design
@@ -14,7 +14,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(19, 181)`
+`r stfun::progress(33, 181)`
 
 <!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->
 :::
@@ -67,9 +67,13 @@ categories:
 
 # 排版中的度量系统
 
-- 在一个字体家族中通常会有窄体（condensed）、中等体（medium）、宽体（expanded）、特窄体（extra-condensed）、特宽体（extra-expanded）。但一般来说，中等体都是最易阅读的字体。
+- <p>在一个字体家族中通常会有窄体（condensed）、中等体（medium）、宽体（expanded）、特窄体（extra-condensed）、特宽体（extra-expanded）。但一般来说，中等体都是最易阅读的字体。</p>
 
+# 字体样式
 
+- “无衬线”这一名称是因为这类字体除去了字母起步和收笔处的装饰“衬线”。
+
+- Times New Roman 是在 1923 年专为《泰晤士报》（The Times）的印刷而设计的。这款字体即使被印刷在粗糙的纸张上，也能保持高度的易认性，因为其字母具有短小、有力而尖锐的衬线。无论大小写字母都显得非常清晰。
 
 
 
