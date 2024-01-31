@@ -1,7 +1,7 @@
 ---
 title: "Mastering Shiny"
 date: "2024-01-19"
-date-modified: "2024-01-28"
+date-modified: "2024-01-31"
 image: "cover.png"
 categories: 
   - R
@@ -13,7 +13,7 @@ categories:
 ```
 
 ::: {.callout-note title='Progress'}
-`r stfun::progress(19.4, 23)`
+`r stfun::progress(21, 23)`
 
 <!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->
 :::
@@ -368,6 +368,116 @@ histogramApp()
   
   - In the module server, the namespacing is *implicit*. You only need to use `id` in the call to `moduleServer()` and then Shiny automatically namespaces `input` and `output` so that in your module code `input$name` means the input with name `NS(id, "name")`.
 
+- Unlike regular Shiny code, connecting modules together requires you to be explicit about inputs and outputs. Initially, this is going to feel tiresome. And it’s certainly more work than Shiny’s usual free-form association. But modules enforce specific lines of communication for a reason: they’re a little more work to create, but much easier to understand, and allow you to build substantially more complex apps.
+
+- You might see advice to use session$userData or other techniques to break out of the module straitjacket. Be wary of such advice: it’s showing you how to work around the rules imposed by namespacing, making it easy to re-introduce much complexity to your app and significantly reducing the benefits of using a module in the first place.
+
+```{r}
+#| eval: false
+#| code-fold: true
+library(shiny)
+
+datasetInput <- function(id, filter = NULL) {
+  names <- ls("package:datasets")
+  if (!is.null(filter)) {
+    data <- lapply(names, get, "package:datasets")
+    names <- names[vapply(data, filter, logical(1))]
+  }
+
+  selectInput(NS(id, "dataset"), "Pick a dataset", choices = names)
+}
+
+datasetServer <- function(id) {
+  moduleServer(id, function(input, output, session) {
+    reactive(get(input$dataset, "package:datasets"))
+  })
+}
+
+datasetApp <- function(filter = NULL) {
+  ui <- fluidPage(
+    datasetInput("dataset", filter = filter),
+    tableOutput("data")
+  )
+  server <- function(input, output, session) {
+    data <- datasetServer("dataset")
+    output$data <- renderTable(head(data()))
+  }
+  shinyApp(ui, server)
+}
+
+datasetApp()
+```
+
+- You can make the life of module user much easier with a quick and dirty call to `stopifnot()`. For example, `selectVarServer()` could check that data is reactive and filter is not with the following code:
+
+  ```{r}
+  #| eval: false
+  selectVarServer <- function(id, data, filter = is.numeric) {
+    stopifnot(is.reactive(data))
+    stopifnot(!is.reactive(filter))
+    
+    moduleServer(id, function(input, output, session) {
+      observeEvent(data(), {
+        updateSelectInput(session, "var", choices = find_vars(data(), filter))
+      })
+      
+      reactive(data()[[input$var]])
+    })
+  }
+  ```
+
+- The key challenge of creating modules is creating functions that are flexible enough to be used in multiple places, but simple enough that they can easily be understood. Figuring out how to write functions that are good building blocks is the journey of a lifetime; expect that you’ll have to do it wrong quite a few times before you get it right. (I wish I could offer more concrete advice here, but currently this is a skill that you’ll have to refine through practice and conscious reflection.)
+
+- The main challenge with this sort of code is remembering when you use the reactive (e.g. `x$value`) vs. when you use its value (e.g. `x$value()`). Just remember that when passing an argument to a module, you want the module to react to the value changing which means that you have to pass the reactive, not it’s current value.
+
+- If you find yourself frequently returning multiple values from a reactive, you might also consider using the [zeallot](https://github.com/r-lib/zeallot) package. zeallot provides the `%<-%` operator which allows you to assign into multiple variables (sometimes called multiple, unpacking, or destructuring assignment). This can be useful when returning multiple values because you avoid a layer of indirection.
+  
+  ```{r}
+  #| eval: false
+  library(zeallot)
+  
+  histogramApp <- function() {
+    ui <- fluidPage(...)
+  
+    server <- function(input, output, session) {
+      data <- datasetServer("data")
+      c(value, name) %<-% selectVarServer("var", data)
+      histogramServer("hist", value, name)
+    }
+    shinyApp(ui, server)
+  }
+  ```
+
+- The return value of a module should always be a reactive or, if you want to return multiple values, a list of reactives.
+
+- Another important use of modules is to give complex UI elements a simpler user interface.
+
+# Packages
+
+- The core idea of a package is that it’s a set of conventions for organising your code and related artefacts: if you follow those conventions, you get a bunch of tools for free.
+
+- In fact, all a project needs to be a package is a directory of R files and a `DESCRIPTION` file. A package is just a lightweight set of conventions that unlock useful tools and workflows.
+
+# Testing
 
 
-<https://mastering-shiny.org/scaling-modules.html#inputs-and-outputs>
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
