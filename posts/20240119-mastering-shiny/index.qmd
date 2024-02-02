@@ -478,7 +478,7 @@ datasetApp()
   
   - **After you write the code.** While writing code you’ll often build up a mental to-do list of worries about your code. After you’ve written the function, turn these into tests so that you can be confident that the function works the way that you expect.
   
-  When you start writing tests, beware writing them too soon. If your function is still actively evolving, keeping your tests up to date with all the changes is going to feel frustrating. That may indicate you need to wait a little longer.
+    When you start writing tests, beware writing them too soon. If your function is still actively evolving, keeping your tests up to date with all the changes is going to feel frustrating. That may indicate you need to wait a little longer.
   
   - **When you find a bug**. Whenever you find a bug, it’s good practice to turn it into an automated test case. This has two advantages. Firstly, to make a good test case, you’ll need to relentlessly simplify the problem until you have a very minimal reprex that you can include in a test. Secondly, you’ll make sure that the bug never comes back again!
 
