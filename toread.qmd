@@ -1,7 +1,7 @@
 ---
 title: "To Read"
 date: "2023-09-20"
-date-modified: "2024-01-31"
+date-modified: "2024-02-03"
 include-in-header:
   - _includes/giscus.html
 include-after-body:
@@ -10,31 +10,31 @@ include-after-body:
 
 # [R](../#category=R)
 
-- [Engineering Production-Grade Shiny Apps](https://engineering-shiny.org/)
-- [Statistical Inference via Data Science](https://moderndive.com/)
-- [Introduction to Modern Statistics (2nd Ed)](https://openintro-ims2.netlify.app/)
-- [Building reproducible analytical pipelines with R](https://raps-with-r.dev/)
-- [Tidy design principles](https://design.tidyverse.org/)
-- [JavaScript for R](https://book.javascript-for-r.com/)
-- [Supervised Machine Learning for Text Analysis in R](https://smltar.com/)
-- [Hands-On Machine Learning with R](https://bradleyboehmke.github.io/HOML/)
-- [Advanced R](https://adv-r.hadley.nz/)
-
+-   [Engineering Production-Grade Shiny Apps](https://engineering-shiny.org/)
+-   [Statistical Inference via Data Science](https://moderndive.com/)
+-   [Introduction to Modern Statistics (2nd Ed)](https://openintro-ims2.netlify.app/)
+-   [Building reproducible analytical pipelines with R](https://raps-with-r.dev/)
+-   [Tidy design principles](posts/20240203-tidy-design-principles/) (Paused)
+-   [JavaScript for R](https://book.javascript-for-r.com/)
+-   [Supervised Machine Learning for Text Analysis in R](https://smltar.com/)
+-   [Hands-On Machine Learning with R](https://bradleyboehmke.github.io/HOML/)
+-   [Advanced R](https://adv-r.hadley.nz/)
 
 # [Rust](../#category=Rust)
 
-- [Welcome to Comprehensive Rust](https://google.github.io/comprehensive-rust/)
-- [Rusty Book](https://rusty.course.rs/)
+-   [Welcome to Comprehensive Rust](https://google.github.io/comprehensive-rust/)
+-   [Rusty Book](https://rusty.course.rs/)
 
 # 访谈录
 
-- 详谈：左晖
-- 详谈：张勇
-- 详谈：饶晓志
-- 详谈：杜国楹
-- 详谈：杨浩涌
-- 详谈：沈鹏
+-   详谈：左晖
+-   详谈：张勇
+-   详谈：饶晓志
+-   详谈：杜国楹
+-   详谈：杨浩涌
+-   详谈：沈鹏
 
 # Others
 
-- 《宗教的本质》
+-   《宗教的本质》
+-   [《全球科学与玩中学的结合：对家庭、学校和城市规划的影响（中国特别篇）》](https://learningthroughplay.com/explore-the-research/where-global-science-meets-playful-learning-implications-for-home-school-cities-and-digital-spaces)

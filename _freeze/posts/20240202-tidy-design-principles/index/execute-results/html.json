@@ -1,0 +1,14 @@
+{
+  "hash": "bf6647ab52cfe9799cfa6935da61d5bd",
+  "result": {
+    "markdown": "---\ntitle: \"Tidy design principles\"\ndate: \"2024-02-02\"\n# date-modified: \"2024-02-02\"\nimage: \"logo.png\"\ncategories: \n  - R\n---\n\n\n\n\n::: {.callout-note title=\"Progress\"}\nLearning Progress: 1%.\n\n<!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->\n:::\n\n::: {.callout-tip title=\"Learning Source\"}\n-   <https://design.tidyverse.org/>\n:::\n\n#  {.unnumbered}\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
