@@ -58,7 +58,7 @@ categories:
 
 # Before we start
 
--   you need to know what an actual text file is. A document written in Word (with the `.docx` extension) is not a text file. It looks like text, but is not. The `.docx` format is a much more complex format with many layers of abstraction. “True” plain text files can be opened with the simplest text editor included in your operating system.
+-   You need to know what an actual text file is. A document written in Word (with the `.docx` extension) is not a text file. It looks like text, but is not. The `.docx` format is a much more complex format with many layers of abstraction. “True” plain text files can be opened with the simplest text editor included in your operating system.
 
 -   The tools are always right. If you’re using a tool and it’s not behaving as expected, it is much more likely that your expectations are wrong. Take this opportunity to review your knowledge of the tool.
 
