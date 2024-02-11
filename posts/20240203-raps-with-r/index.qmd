@@ -1,7 +1,7 @@
 ---
 title: "Building reproducible analytical pipelines with R"
 date: "2024-02-03"
-# date-modified: "2024-02-02"
+date-modified: "2024-02-11"
 image: "cover.png"
 categories: 
   - R
@@ -13,7 +13,7 @@ categories:
 ```
 
 ::: {.callout-note title="Progress"}
-`r stfun::progress(3, 17)`
+`r stfun::progress(8, 17)`
 
 <!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->
 :::
@@ -54,7 +54,7 @@ categories:
 
 -   The take-away message is that counting on the language itself being stable through time as a sufficient condition for reproducibility is not enough. We have to set up the code in a way that it actually is reproducible.
 
-# Don't Repeat Yourself {.unnumbered}
+# Part 1: Don't Repeat Yourself {.unnumbered}
 
 # Before we start
 
@@ -62,4 +62,98 @@ categories:
 
 -   The tools are always right. If you’re using a tool and it’s not behaving as expected, it is much more likely that your expectations are wrong. Take this opportunity to review your knowledge of the tool.
 
-# **Project start**
+# Project start
+
+-   Getting data from Excel into a tidy data frame can be very tricky. This is because very often, Excel is used as some kind of dashboard or presentation tool. So data is made human-readable, in contrast to machine-readable.
+
+-   An issue with scraping tables off the web is that they might change in the future. It is therefore a good idea to save the page by right clicking on it and then selecting save as, and then re-hosting it.
+
+-   Let’s ask ourselves the following important questions:
+
+    -   How easy would it be for someone else to rerun the analysis?
+
+    -   How easy would it be to update the analysis once new data gets published?
+
+    -   How easy would it be to reuse this code for other projects?
+
+    -   What guarantee do we have that if the scripts get run in 5 years, with the same input data, we get the same output?
+
+-   Sometimes you might not be interested in reusing code for another project: however, even if that’s the case, structuring your code into functions and packaging them makes it easy to reuse code even inside the same project.
+
+# Version control with Git
+
+-   Modern software development would be impossible without version control systems, and the same goes for building analytical pipelines that are reproducible and robust.
+
+-   What really sets up Github.com apart is Github Actions, Github’s continuous integration service. Github Actions is literally a computer in the cloud that you can use to run a set of actions each time you interact with the repository (or at defined moments as well).
+
+-   By the way, if you’re using a cloud service like Dropbox, Onedrive, and the like, DO NOT put projects tracked by Git in them! I really need to stress this: do not track projects with both something like Dropbox and Git.
+
+-   Unlike Dropbox (or similar services), Git deals with conflicts not on a per-file basis, but on a per-line basis. So if two collaborators change the same file, but different lines of this same file, there will be no conflict: Git will handle the merge on its own.
+
+-   *Committing* means that we are happy with our work, and we can snapshot it. These snapshots then get uploaded to Github by pushing them. This way, the changes will be available for our coworkers for them to pull.
+
+-   Try to keep commit messages as short and as explicit as possible. This is not always easy, but it really pays off to strive for short, clear messages. Also, ideally, you would want to keep commits as small as possible, ideally one commit per change. For example, if you’re adding and amending comments in scripts, once you’re done with that make this a commit. Then, maybe clean up some code. That’s another, separate commit. This makes rolling back changes or reviewing them much easier. This will be crucial later on when we will use trunk-based development to collaborate with our teammates on a project. It is generally not a good idea to code all day and then only push one single big fat commit at the end of the day, but that is what happens very often…
+
+-   If you encountered a bug and want to open an issue, it is very important that you provide a minimal, reproducible example (MRE). MREs are snippets of code that can be run very easily by someone other than yourself and which produce the bug reliably. Interestingly, if you understand what makes an MRE minimal and reproducible, you understand what will make our pipelines reproducible as well.
+
+-   The bar you need to set for an MRE is as follows: bar needed package dependencies that may need to be installed beforehand, people that try to help you should be able to run your script by simply copy-and-pasting it into an R console. Any other manipulation that you require from them is unacceptable: remember that in open source development, developers very often work during their free time, and don’t owe you tech support! And even if they did, it is always a good idea to make it as easy as possible for them to help you, because it simply increases the likelihood that they will actually help.
+
+# Collaborating using Trunk-based development
+
+-   The idea of trunk-based development is simple; team members should work on separate branches to add features or fix bugs, and then merge their branch to the “trunk” (in our case the *master* branch) to add their changes back to the main codebase. And this process should happen quickly, ideally every day, or as soon as some code is ready. When a lot of work accumulates in a branch for several days or weeks, merging it back to the master branch can be very painful. So by working in short-lived branches, if conflicts arise, they can be dealt with quickly. This also makes code review much easier, because the reviewer only needs to review little bits of code at a time. If instead long-lived branches with a lot of code changes get merged, reviewing all the changes and solving the conflicts that could arise would be a lot of work. To avoid this, it is best to merge every day or each time a piece of code is added, and, **very importantly**, this code does not break the whole project (we will be using unit tests for this later).
+
+    So in summary: to avoid a lot of pain by merging branches that moved away too much from the trunk, we will create branches, add our code, and merge them to the trunk as soon as possible. *As soon as possible* can mean several things, but usually this means *as soon as a feature was added*, *a bug was fixed*, or *as soon as we added some code that does not break the whole project, even if the feature we wanted to add is not done yet*. The philosophy is that if merging fails, it should fail as early as possible. Early failures are easy to deal with.
+
+-   Well, let’s be clear; even with Git, it can sometimes be very tricky to resolve conflicts. But you should know that when solving a conflict with Git is difficult, this usually means that it would be impossible to do any other way, and would inevitably result in someone having to reconcile the files by hand. What makes handling conflicts easier with Git though, is that Git is able to tell you where you can find clashes on a per-line basis. So for instance, if you change the first ten lines of a script, and I change the next ten lines, there would be no conflict, and Git will automatically merge both our contributions into a single file.
+
+-   If adding a feature would take more time than just one day, then the task needs to be split in a manner that small contributions can be merged daily. In the beginning, these contributions can be simple placeholders that will be gradually enriched with functioning code until the feature is successfully implemented. This strategy is called branching by abstraction.
+
+# Functional programming
+
+-   Functional programming is a paradigm that relies exclusively on the evaluation of functions to achieve the desired result.
+
+-   A referentially transparent function is a function that does not use any variable that is not also one of its inputs.
+
+-   A pure function is a function that does not interact in any way with the global environment. It does not write anything to the global environment, nor requires anything from the global environment.
+
+-   Turns out that pure functions are thus necessarily referentially transparent.
+
+-   In a functional programming language, functions are first-class objects. Contrary to what the name implies, this means that functions, especially the ones you define yourself, are nothing special. A function is an object like any other, and can thus be manipulated as such. Think of anything that you can do with any object in R, and you can do the same thing with a function.
+
+-   Functions that return functions are called *function factories* and they’re incredibly useful.
+
+-   There is an issue with recursive functions (in the R programming language, other programming languages may not have the same problem, like Haskell): while it is sometimes easier to write a function using a recursive algorithm than an iterative algorithm, like for the factorial function, recursive functions in R are quite slow.
+
+-   We can take inspiration from the Unix philosophy and rewrite it for our purposes: *Write functions that do one thing and do it well. Write functions that work together. Write functions that handle lists, because that is a universal interface.*
+
+-   This idea of splitting the problem into smaller chunks, each chunk in turn split into even smaller units that can be handled by functions and then the results of these function combined into a final output is called composition.
+
+-   Loops are incredibly useful, and you are likely familiar with them. The problem with loops is that they are a concept from iterative programming, not functional programming, and this is a problem because loops rely on changing the state of your program to run.
+
+-   All of this to say that if you want to extend R by writing packages, learning some OOP essentials is also important. But for data analysis, functional programming does the job perfectly well.
+
+-   While this chapter stresses the advantages of functional programming, you should not forget that R is not a pure, and solely, functional programming language and that other paradigms, like object-oriented programming, are also available to you. So if your goal is to master the language (instead of “just” using it to solve data analysis problems), then you also need to know about R’s OOP capabilities.
+
+# Literate programming
+
+-   In literate programming, authors mix code and prose, which makes the output of their programs not just a series of tables, or graphs or predictions, but a complete report that contains the results of the analysis directly embedded into it. Scripts written using literate programming are also very easy to compile, or render, into a variety of document formats like `html`, `docx`, `pdf` or even `pptx`.
+
+-   Quarto is not tied to R. Quarto is actually a standalone tool that needs to be installed alongside your R installation, and works completely independently. In fact, you can use Quarto without having R installed at all, as Quarto, just like `{knitr}` supports many engines. This means that if you’re primarily using Python, you can use Quarto to author documents that mix Python chunks and prose.
+
+-   Copy and pasting is forbidden. Striving for 0 copy and pasting will make our code much more robust and likely to be correct.
+
+-   Child documents are exactly what you think they are: they’re smaller documents that get knitted and then embedded into the parent document. You can define anything within these child documents, and as such you can even use them to print more complex objects, like a ggplot object.
+
+-   It is important not to succumb to the temptation of copy and pasting sections of your report, or parts of your script, instead of using these more advanced features provided by the language. It is tempting, especially under time pressure, to just copy and paste bits of code and get things done instead of writing what seems to be unnecessary code to finally achieve the same thing. The problem, however, is that in practice copy and pasting code to simply get things done will come bite you sooner rather than later. Especially when you’re still in the exploration/drafting phase of the project. It may take more time to set up, but once you’re done, it is much easier to experiment with different parameters, test the code or even re-use the code for other projects. Not only that but forcing you to actually think about how to set up your code in a way that avoids repeating yourself also helps with truly understanding the problem at hand. What part of the problem is constant and does not change? What does change? How often, and why? Can you also fix these parts or not? What if instead of five sections that I need to copy and paste, I had 50 sections? How would I handle this?
+
+    Asking yourself these questions, and solving them, will ultimately make you a better programmer.
+
+    <div>
+
+    > 重要的是，不要屈服于复制和粘贴报告部分或脚本部分的诱惑，而是使用语言提供的这些更高级的功能。尤其是在时间紧迫的情况下，很容易只是复制和粘贴代码的片段，完成任务，而不是编写最终实现相同效果的看似不必要的代码。然而，实际上，复制和粘贴代码只是解决问题的权宜之计，迟早会给你带来麻烦，尤其是在项目的勘探/起草阶段。设置可能需要更多的时间，但一旦完成，就可以更轻松地尝试不同的参数，测试代码，甚至将代码用于其他项目。不仅如此，迫使你真正思考如何以避免重复的方式设置代码，还有助于更好地理解手头的问题。问题的哪一部分是恒定的且不变的？什么会改变？多久改变一次，为什么？你能否修复这些部分？如果我需要复制和粘贴的不是五个部分，而是五十个部分呢？我该如何处理？
+    >
+    > 问自己这些问题，并解决它们，最终将使你成为更好的程序员。
+
+    </div>
+
+# Part 2: Write IT down {.unnumbered}

@@ -5,6 +5,7 @@ date-modified: "2024-02-02"
 image: "cover.jpg"
 categories: 
   - Finance
+  - Investment
 ---
 
 ```{r}
