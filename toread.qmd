@@ -1,7 +1,7 @@
 ---
 title: "To Read"
 date: "2023-09-20"
-date-modified: "2024-02-03"
+date-modified: "2024-02-11"
 include-in-header:
   - _includes/giscus.html
 include-after-body:
@@ -13,12 +13,13 @@ include-after-body:
 -   [Engineering Production-Grade Shiny Apps](https://engineering-shiny.org/)
 -   [Statistical Inference via Data Science](https://moderndive.com/)
 -   [Introduction to Modern Statistics (2nd Ed)](https://openintro-ims2.netlify.app/)
--   [Building reproducible analytical pipelines with R](https://raps-with-r.dev/)
--   [Tidy design principles](posts/20240203-tidy-design-principles/) (Paused)
+-   [Building reproducible analytical pipelines with R](https://raps-with-r.dev/) ([Reading](posts/20240203-raps-with-r/))
+-   [Tidy design principles](https://design.tidyverse.org/) ([Paused](posts/20240203-tidy-design-principles/))
 -   [JavaScript for R](https://book.javascript-for-r.com/)
 -   [Supervised Machine Learning for Text Analysis in R](https://smltar.com/)
 -   [Hands-On Machine Learning with R](https://bradleyboehmke.github.io/HOML/)
 -   [Advanced R](https://adv-r.hadley.nz/)
+-   [Modern R with the tidyverse](http://modern-rstats.eu/)
 
 # [Rust](../#category=Rust)
 

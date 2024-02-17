@@ -12,16 +12,16 @@ categories:
 1 + 1
 ```
 
-::: {.callout-note title='Progress'}
+::: {.callout-note title="Progress"}
 `r stfun::progress(10.2, 25)`
 :::
 
 ::: {.callout-tip title="Learning Source"}
-- <https://adv-r.hadley.nz/index.html>
-- 中文翻译由 ChatGPT 3.5 提供
+-   <https://adv-r.hadley.nz/index.html>
+-   中文翻译由 ChatGPT 3.5 提供
 :::
 
-# Foundations {-}
+# Foundations {.unnumbered}
 
 # Functions
 
@@ -29,22 +29,22 @@ R uses **lexical scoping**: it looks up the values of names based on how a funct
 
 R’s lexical scoping follows four primary rules:
 
-- Name masking
-- Functions versus variables
-- A fresh start
-- Dynamic lookup
+-   Name masking
+-   Functions versus variables
+-   A fresh start
+-   Dynamic lookup
 
 > R使用词法作用域（lexical scoping）：它根据函数的定义方式查找名称的值，而不是根据它的调用方式。“词法”在这里不是指与单词或词汇相关的英语形容词。它是一个技术性的计算机科学术语，告诉我们作用域规则使用的是解析时的结构，而不是运行时的结构。
 >
 > R的词法作用域遵循四条主要规则：
 >
-> - 名称屏蔽（Name masking） 
+> -   名称屏蔽（Name masking）
 >
-> - 函数与变量  
+> -   函数与变量
 >
-> - 全新的起点  
+> -   全新的起点
 >
-> - 动态查找
+> -   动态查找
 
 Lexical scoping determines where, but not when to look for values. R looks for values when the function is run, not when the function is created. Together, these two properties tell us that the output of a function can differ depending on the objects outside the function’s environment.
 
@@ -144,12 +144,11 @@ The handlers set up by `tryCatch()` are called **exiting** handlers because afte
 
 > 由 `tryCatch()` 设置的处理程序被称为**退出处理程序**，因为在条件被发出后，控制权传递给处理程序，不再返回到原始代码，实际上意味着代码退出执行。
 
-
-::: {.callout-warning}
+::: callout-warning
 这章有点看不懂，暂缓。
 :::
 
-# Functional Progarmming {-}
+# Functional Progarmming {.unnumbered}
 
 ```{r}
 #| message: false
@@ -158,7 +157,7 @@ library(purrr)
 
 # Functionals
 
-A **functional** is a function that takes a function as an input and returns a vector as output. Here's a simple functional: it calls the function provided as input with 1000 random uniform numbers. 
+A **functional** is a function that takes a function as an input and returns a vector as output. Here's a simple functional: it calls the function provided as input with 1000 random uniform numbers.
 
 > 一个**函数式**是一个接受函数作为输入并返回向量作为输出的函数。这是一个简单的函数式示例：它使用 1000 个随机均匀数调用提供的输入函数。
 
@@ -169,7 +168,7 @@ randomise(mean)
 randomise(sum)
 ```
 
-The map functions also have shortcuts for extracting elements from a vector, powered by  `purrr::pluck()`. You can use a character vector to select elements by name, an integer vector to select by position, or a list to select by both name and position. These are very useful for working with deeply nested lists, which often arise when working with JSON. 
+The map functions also have shortcuts for extracting elements from a vector, powered by `purrr::pluck()`. You can use a character vector to select elements by name, an integer vector to select by position, or a list to select by both name and position. These are very useful for working with deeply nested lists, which often arise when working with JSON.
 
 > map 函数还具有从向量中提取元素的快捷方式，由 `purrr::pluck()` 提供支持。你可以使用字符向量按名称选择元素，使用整数向量按位置选择元素，或者使用列表同时按名称和位置选择元素。这在处理深层嵌套的列表时非常有用，这种情况在处理 JSON 数据时经常出现。
 
@@ -221,11 +220,11 @@ by_cyl %>%
 
 There are three basic ways to loop over a vector with a for loop:
 
-- Loop over the elements: `for (x in xs)`
+-   Loop over the elements: `for (x in xs)`
 
-- Loop over the numeric indices: `for (i in seq_along(xs))`
+-   Loop over the numeric indices: `for (i in seq_along(xs))`
 
-- Loop over the names: `for (nm in names(xs))`
+-   Loop over the names: `for (nm in names(xs))`
 
 The first form is analogous to the `map()` family. The second and third forms are equivalent to the `imap()` family which allows you to iterate over the values and the indices of a vector in parallel.
 
@@ -243,7 +242,7 @@ The first form is analogous to the `map()` family. The second and third forms ar
 >
 > `imap()` 类似于 `map2()`，因为你的 `.f` 会被调用两次，但这里的两个参数都来自向量。如果 `x` 有名称，`imap(x, f)` 等同于 `map2(x, names(x), f)`，如果没有名称，就等同于 `map2(x, seq_along(x), f)`。
 
-`reduce()` is a useful way to generalise a function that works with two inputs (a binary function) to work with any number of inputs. 
+`reduce()` is a useful way to generalise a function that works with two inputs (a binary function) to work with any number of inputs.
 
 `reduce()` 是一种有用的方式，可以将一个适用于两个输入（二进制函数）的函数泛化为适用于任意数量的输入。
 
@@ -270,31 +269,31 @@ If you’re using `reduce()` in a function, you should always supply `.init`. Th
 
 A **predicate functional** applies a predicate to each element of a vector. purrr provides seven useful functions which come in three groups:
 
-- `some(.x, .p)` returns `TRUE` if *any* element matches;
+-   `some(.x, .p)` returns `TRUE` if *any* element matches;
 
-- `every(.x, .p)` returns `TRUE` if *all* elements match;
+-   `every(.x, .p)` returns `TRUE` if *all* elements match;
 
-- `none(.x, .p)` returns `TRUE` if *no* element matches.
+-   `none(.x, .p)` returns `TRUE` if *no* element matches.
 
 These are similar to `any(map_lgl(.x, .p))`, `all(map_lgl(.x, .p))` and `all(map_lgl(.x, negate(.p)))` but they terminate early: `some()` returns `TRUE` when it sees the first `TRUE`, and `every()` and `none()` return `FALSE` when they see the first `FALSE` or `TRUE` respectively.
 
-- `detect(.x, .p)` returns the value of the first match; `detect_index(.x, .p)` returns the location of the first match.
+-   `detect(.x, .p)` returns the value of the first match; `detect_index(.x, .p)` returns the location of the first match.
 
-- `keep(.x, .p)` keeps all matching elements; `discard(.x, .p)` drops all matching elements.
+-   `keep(.x, .p)` keeps all matching elements; `discard(.x, .p)` drops all matching elements.
 
 > **谓词函数**将谓词应用于向量的每个元素。purrr 提供了七个有用的函数，分为三组：
 >
-> - `some(.x, .p)`：如果任何元素匹配，则返回 `TRUE`；
+> -   `some(.x, .p)`：如果任何元素匹配，则返回 `TRUE`；
 >
-> - `every(.x, .p)`：如果所有元素都匹配，则返回 `TRUE`；
+> -   `every(.x, .p)`：如果所有元素都匹配，则返回 `TRUE`；
 >
-> - `none(.x, .p)`：如果没有元素匹配，则返回 `TRUE`。
+> -   `none(.x, .p)`：如果没有元素匹配，则返回 `TRUE`。
 >
-> 这些函数类似于 `any(map_lgl(.x, .p))`、`all(map_lgl(.x, .p))` 和 `all(map_lgl(.x, negate(.p)))`，但它们会提前终止：`some()` 在看到第一个 `TRUE` 时返回 `TRUE`，`every()`  和 `none()` 在看到第一个 `FALSE` 或 `TRUE` 时分别返回 `FALSE`。
+> 这些函数类似于 `any(map_lgl(.x, .p))`、`all(map_lgl(.x, .p))` 和 `all(map_lgl(.x, negate(.p)))`，但它们会提前终止：`some()` 在看到第一个 `TRUE` 时返回 `TRUE`，`every()` 和 `none()` 在看到第一个 `FALSE` 或 `TRUE` 时分别返回 `FALSE`。
 >
-> - `detect(.x, .p)`：返回第一个匹配的值；`detect_index(.x, .p)`：返回第一个匹配的位置。
+> -   `detect(.x, .p)`：返回第一个匹配的值；`detect_index(.x, .p)`：返回第一个匹配的位置。
 >
-> - `keep(.x, .p)`：保留所有匹配的元素；`discard(.x, .p)`：删除所有匹配的元素。
+> -   `keep(.x, .p)`：保留所有匹配的元素；`discard(.x, .p)`：删除所有匹配的元素。
 
 ```{r}
 df = data.frame(x = 1:3, y = letters[1:3])
@@ -366,29 +365,6 @@ fn_env(square)$exp
 fn_env(cube)$exp
 ```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ::: {.callout-tip title="To be continued"}
-- <https://adv-r.hadley.nz/function-factories.html#forcing-evaluation>
+-   <https://adv-r.hadley.nz/function-factories.html#forcing-evaluation>
 :::
