@@ -1,0 +1,41 @@
+---
+title: "The {targets} R package user manual"
+date: "2024-02-21"
+# date-modified: "2024-02-11"
+image: "logo.svg"
+categories: 
+  - R
+---
+
+```{r}
+#| include: false
+1 + 1
+```
+
+::: {.callout-note title="Progress"}
+`r stfun::progress(1, 19)`
+
+<!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->
+:::
+
+::: {.callout-tip title="Learning Source"}
+-   <https://docs.ropensci.org/targets/index.html>
+
+-   <https://docs.ropensci.org/targets/articles/overview.html>
+
+-   <https://books.ropensci.org/targets/>
+
+-   翻译来自 ChatGPT 3.5
+:::
+
+# **Introduction**
+
+-   Pipeline tools coordinate the pieces of computationally demanding analysis projects. The [`targets`](https://docs.ropensci.org/targets/) package is a [Make](https://www.gnu.org/software/make/)-like pipeline tool for statistics and data science in R. The package skips costly runtime for tasks that are already up to date, orchestrates the necessary computation with implicit parallel computing, and abstracts files as R objects. If all the current output matches the current upstream code and data, then the whole pipeline is up to date, and the results are more trustworthy than otherwise.\
+    流水线工具协调计算密集型分析项目的各个部分。"targets"包是一个类似于 Make 的用于 R 中统计和数据科学的流水线工具。该包跳过那些已经是最新的任务的昂贵运行时，通过隐式并行计算协调必要的计算，并将文件抽象为 R 对象。如果所有当前输出与当前上游代码和数据匹配，那么整个流水线是最新的，结果比其他情况更可信。
+
+-    [`targets`](https://docs.ropensci.org/targets/) implicitly nudges users toward a clean, function-oriented programming style that fits the intent of the R language and helps practitioners maintain their data analysis projects.\
+    "targets"隐式地引导用户朝着一种清晰的、面向函数的编程风格前进，符合 R 语言的意图，有助于从业者维护其数据分析项目。
+
+# How to use {target} {.unnumbered}
+
+# A walkthrough to get started

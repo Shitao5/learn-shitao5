@@ -1,0 +1,14 @@
+{
+  "hash": "a045593ee999e95c75632cf055720194",
+  "result": {
+    "markdown": "---\ntitle: \"The {targets} R package user manual\"\ndate: \"2024-02-21\"\n# date-modified: \"2024-02-11\"\nimage: \"logo.svg\"\ncategories: \n  - R\n---\n\n\n\n\n::: {.callout-note title=\"Progress\"}\nLearning Progress: 5.26%.\n\n<!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->\n:::\n\n::: {.callout-tip title=\"Learning Source\"}\n-   <https://docs.ropensci.org/targets/articles/overview.html>\n\n-   <https://books.ropensci.org/targets/>\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
