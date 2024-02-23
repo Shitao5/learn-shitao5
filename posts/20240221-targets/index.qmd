@@ -1,7 +1,7 @@
 ---
 title: "The {targets} R package user manual"
 date: "2024-02-21"
-# date-modified: "2024-02-11"
+date-modified: "2024-02-23"
 image: "logo.svg"
 categories: 
   - R
@@ -13,7 +13,7 @@ categories:
 ```
 
 ::: {.callout-note title="Progress"}
-`r stfun::progress(1, 19)`
+`r stfun::progress(5, 19)`
 
 <!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->
 :::
@@ -38,6 +38,40 @@ categories:
 
     > "targets"隐式地引导用户朝着一种清晰的、面向函数的编程风格前进，符合 R 语言的意图，有助于从业者维护其数据分析项目。
 
-# How to use {target} {.unnumbered}
+# Debugging pipelines
 
-# A walkthrough to get started
+-   In `targets`, several layers of encapsulation and automation separate you from the code you want to debug:
+
+    -   The pipeline runs in an external non-interactive [`callr::r()`](https://github.com/r-lib/callr) process where you cannot use the R console.
+
+    -   Data management
+
+    -   Environment management
+
+    -   [High-performance computing](https://books.ropensci.org/targets/hpc.html)
+
+    -   Built-in error handling
+
+    Although these layers are essential for reproducibility and scale, you will need to cut through them in order to diagnose and solve issues in pipelines.
+
+    <div>
+
+    > 在 targets 中，几个封装和自动化的层将您与要调试的代码分开：
+    >
+    > -   管道在外部非交互式 `callr::r()` 进程中运行，您无法使用 R 控制台。
+    >
+    > -   数据管理
+    >
+    > -   环境管理
+    >
+    > -   高性能计算
+    >
+    > -   内置错误处理
+    >
+    > 虽然这些层对于可重现性和扩展性至关重要，但您需要穿过它们才能诊断和解决管道中的问题。本章将解释如何做到这一点。
+
+    </div>
+
+-   Even if you hit an error, you can still finish the successful parts of the pipeline. The `error` argument of `tar_option_set()` and `tar_target()` tells each target what to do if it hits an error. For example, `tar_option_set(error = "null")` tells errored targets to return `NULL`. The output as a whole will not be correct or up to date, but the pipeline will finish so you can look at preliminary results. This is especially helpful with [dynamic branching](https://books.ropensci.org/targets/dynamic.html).
+
+# Functions
