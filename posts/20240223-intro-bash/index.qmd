@@ -1,0 +1,201 @@
+---
+title: "Introduction to Bash Scripting"
+date: "2024-02-23"
+date-modified: "2024-02-28"
+image: "cover.png"
+execute: 
+  eval: false
+categories: 
+  - Bash
+---
+
+```{r}
+#| include: false
+1 + 1
+```
+
+::: {.callout-note title="Progress"}
+`r stfun::progress(169, 169)`
+
+<!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->
+:::
+
+::: {.callout-tip title="Learning Source"}
+-   <https://ebook.bobby.sh/>
+:::
+
+# About the book
+
+-   I am always doing that which I cannot do in order that I may learn how to do it, and I believe in sharing knowledge.
+
+    <div>
+
+    > 我总是在做那些我不能做的事情，以便学会如何做，而且我坚信分享知识的重要性。
+
+    </div>
+
+-   I think it's essential always to keep professional and surround yourself with good people, work hard, and be nice to everyone. You have to perform at a consistently higher level than others. That's the mark of a true professional.
+
+    <div>
+
+    > 我认为始终保持专业，与优秀的人为伍，努力工作并对每个人都友善是至关重要的。你必须在一个始终比其他人更高水平表现的位置。这是真正专业人士的标志。
+
+    </div>
+
+# Bash Variables
+
+-   As in any other programming language, you can use variables in Bash Scripting as well. However, there are no data types, and a variable in Bash can contain numbers as well as characters.
+
+-   You can not have spaces before and after the `=` sign.
+
+-   Wrapping the variable name between curly brackets is not required, but is considered a good practice, and I would advise you to use them whenever you can:
+
+    ```{bash}
+    echo ${name}
+    ```
+
+-   You can also add variables in the Command Line outside the Bash script and they can be read as parameters.
+
+-   `$0` is used to reference the script itself.
+
+# Bash Arrays
+
+-   You can initialize an array by assigning values devided by space and enclosed in `()`. Example:
+
+    ```{bash}
+    my_array=("value 1" "value 2" "value 3" "value 4")
+    ```
+
+-   Prepending the array with a hash sign (`#`) would output the total number of elements in the array, in our case it is `4`:
+
+    ```{bash}
+    echo ${#my_array[@]}
+    ```
+
+-   Bash 数组索引从 0 开始，左闭右开，和 Python 类似。
+
+# Bash Conditional Expressions
+
+-   <p>In Bash, conditional expressions are used by the `[[` compound command and the `[` built-in commands to test file attributes and perform string and arithmetic comparisons.</p>
+
+# Bash Conditionals
+
+-   The format of an `if-else` statement in Bash is as follows:
+
+    ```{bash}
+    if [[ some_test ]]
+    then
+      <commands>
+    else
+      <another commands>
+    fi
+    ```
+
+-   The Bash `case` statement syntax looks like this:
+
+    ```{bash}
+    case $some_variable in
+      
+      pattern_1)
+        <commands>
+        ;;
+      
+      pattern_2 | pattern_3)
+        <commands>
+        ;;
+        
+      *)
+        <default commands>
+        ;;
+    esac
+    ```
+
+# Bash Loops
+
+-   The structure of a for loop:
+
+    ```{bash}
+    for var in ${list}
+    do
+      your_commands
+    done
+    ```
+
+-   The structure of a while loop:
+
+    ```{bash}
+    while [ your_condition ]
+    do
+      your_commands
+    done
+    ```
+
+-   The structure of a until loop:
+
+    ```{bash}
+    until [[ your_condition ]]
+    do
+      your_commands
+    done
+    ```
+
+-   `continue` tells your bash script to stop the current iteration of the loop and start the next iteration. The syntax of the continue statement:
+
+    ```{bash}
+    continue [n]
+    ```
+
+-   `break` tells your bash script to end the loop straight away. The syntax of the break statement:
+
+    ```{bash}
+    break [n]
+    ```
+
+-   We can also use break command with multiple loops. If we want to exit out of current working loop whether inner outer loop, we simply use `break` but if we are in inner loop and want to exit out of outer loop, we use `break 2`.
+
+# Bash Functions
+
+-   The structure of a function in bash is quite similar to most languages:
+
+    ```{bash}
+    function function_name() {
+      your_commands
+    }
+    ```
+
+    You can also omit the `function` keyword at the beginning, which would also work:
+
+    ```{bash}
+    function_name() {
+      your_commands
+    }
+    ```
+
+-   One thing to keep in mind is that you should not add the parenthesis when you call the function.
+
+# Debugging, testing and shortcuts
+
+-   <p>In order to debug your bash scripts, you can use `-x` when executing your scripts:</p>
+
+    ```{bash}
+    bash -x ./your_script.sh
+    ```
+
+# Creating custom bash commands
+
+-   In order to make the change persistent, we need to add the `alias` command in our shell profile file. `nano ~./bashrc` open the file and add the `alias` command, save and then exit.
+
+-   Use `alias` to list all of the available aliases for your current shell.
+
+-   Of course, you could actually write a bash script and add the script inside your `usr/bin` folder, but this would not work if you don't have root or sudo access, whereas with aliases you can do it without the need of root access.
+
+# Write your first Bash script
+
+-   <p>By using `$()` we tell bash to actually interpret the command and then assign the value to our variable.</p>
+
+# Pipes and Redirections
+
+-   Both *pipes* and *redirections* redirect streams (file descriptor) of process being executed. The main difference is that *redirections* deal with files stream, sending the output stream to a file or sending the content of a given file to the input stream of the process.\
+    On the otherhand a pipe connects two commands by sending the output stream of the first one to the input stream of the second one, without any redirections specified.
+
+-   Everytime you redirect the STDOUT of any command multiple times to the same file, it will remove the existing contents of the file to write the new ones. This behaviour can be avoided using the `>>` operator.
