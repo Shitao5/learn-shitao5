@@ -1,0 +1,14 @@
+{
+  "hash": "e3257d5ce26640928884939b1a2c3d22",
+  "result": {
+    "markdown": "---\ntitle: \"权力的 48 条法则\"\ndate: \"2024-02-28\"\n# date-modified: \"2024-02-21\"\nimage: \"cover.png\"\ncategories: \n  - Self Development\n---\n\n\n\n\n::: {.callout-note title=\"Progress\"}\nLearning Progress: 0.7%.\n\n<!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->\n:::\n\n::: {.callout-tip title=\"Learning Source\"}\n-   <https://book.douban.com/subject/2158889/>\n:::\n\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

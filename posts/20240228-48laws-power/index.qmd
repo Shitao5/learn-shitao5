@@ -1,0 +1,29 @@
+---
+title: "权力的 48 条法则"
+date: "2024-02-28"
+# date-modified: "2024-02-21"
+image: "cover.png"
+categories: 
+  - Self Development
+---
+
+```{r}
+#| include: false
+1 + 1
+```
+
+::: {.callout-note title="Progress"}
+`r stfun::progress(8, 427)`
+
+<!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->
+:::
+
+::: {.callout-tip title="Learning Source"}
+-   <https://book.douban.com/subject/2158889/>
+:::
+
+# 前言 {.unnumbered}
+
+-   与其抗拒必然的规律去争论、怨恨或充满罪恶感，还不如努力精于权力之道为好。实际上，你越善于操控权力，你就越能成为一个好朋友、好情人、好丈夫或好妻子。遵循成功朝臣的权力之道，你将会使别人感觉更好，成为他们快乐的源泉。他们将仰仗你的才能，渴望聚集在你的周围。
+
+-   
