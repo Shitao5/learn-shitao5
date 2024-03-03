@@ -1,8 +1,10 @@
 {
-  "hash": "e3257d5ce26640928884939b1a2c3d22",
+  "hash": "aa618bda0a27d64060d55f2977832ddf",
   "result": {
-    "markdown": "---\ntitle: \"权力的 48 条法则\"\ndate: \"2024-02-28\"\n# date-modified: \"2024-02-21\"\nimage: \"cover.png\"\ncategories: \n  - Self Development\n---\n\n\n\n\n::: {.callout-note title=\"Progress\"}\nLearning Progress: 0.7%.\n\n<!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->\n:::\n\n::: {.callout-tip title=\"Learning Source\"}\n-   <https://book.douban.com/subject/2158889/>\n:::\n\n",
-    "supporting": [],
+    "markdown": "---\ntitle: \"权力的 48 条法则\"\ndate: \"2024-02-28\"\ndate-modified: \"2024-03-02\"\nimage: \"cover.png\"\ncategories: \n  - Self Development\n---\n\n\n\n\n::: {.callout-note title=\"Progress\"}\nLearning Progress: 7.03%.\n\n<!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->\n:::\n\n::: {.callout-tip title=\"Learning Source\"}\n-   <https://book.douban.com/subject/2158889/>\n:::\n\n# 前言 {.unnumbered}\n\n-   与其抗拒必然的规律去争论、怨恨或充满罪恶感，还不如努力精于权力之道为好。实际上，你越善于操控权力，你就越能成为一个好朋友、好情人、好丈夫或好妻子。遵循成功朝臣的权力之道，你将会使别人感觉更好，成为他们快乐的源泉。他们将仰仗你的才能，渴望聚集在你的周围。\n\n-   对任何情况或局面都产生情绪上的反应是通向权力道路最大的障碍，这样的错误会让你付出巨大的代价。\n\n-   欺骗和伪装不应该简单地看成是丑恶的和不道德的，人与人之间的交集互动在很多方面都需要欺骗。\n\n-   在本质上，权力是与道德无关的，是超越道德范畴的。要想获取权力，最重要的技能之一，就是能够根据形势变化而不是根据善恶来洞察情势，做出判断和应对。权力就是一场竞赛，这句话必须多次重复。在这场竞赛中，一切都以行动的结果而不是对手的道德意图来决定输赢。\n\n-   永远不要去区分谁是你应该研究的，谁是你可以信赖的。永远不要完全信任任何人，而应该研究每一个人，包括朋友和你所爱的人。\n\n# 永远不要盖过上司的光芒\n\n-   所有的上司都希望自己看起来比别人更杰出。\n\n-   你不可能一辈子都在意别人琐碎的感受而忧心忡忡，但是对于权位比你高的人，你必须采取不同的策略和方式。如果你想要获得权力，而你却盖过上司的光芒，这恐怕是最严重的错误。\n\n-   \n",
+    "supporting": [
+      "index_files"
+    ],
     "filters": [
       "rmarkdown/pagebreak.lua"
     ],
