@@ -1,7 +1,7 @@
 ---
 title: "Statistical Thinking for the 21st Century"
 date: "2024-03-02"
-# date-modified: "2024-03-02"
+date-modified: "2024-03-06"
 image: "cover.png"
 categories: 
   - Data Science
@@ -13,7 +13,7 @@ categories:
 ```
 
 ::: {.callout-note title="Progress"}
-`r stfun::progress(14, 319)`
+`r stfun::progress(23, 319)`
 
 <!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->
 :::
@@ -41,5 +41,59 @@ categories:
 -   Statistical thinking will one day be as necessary for efficient citizenship as the ability to read and write. – H.G. Wells
 
 -   Statistical thinking provides us with the tools to more accurately understand the world and overcome the biases of human judgment.
+
+-   One way to think of statistics is as a set of tools that enable us to learn from data. In any situation, we start with a set of ideas or *hypotheses* about what might be the case. Another way to think of statistic is as "the science of throwing away data".
+
+-   Statistics provides us with a way to describe how new data can be best used to update our beliefs, and in this way there are deep links between statistic and psychology. In fact, many theories of human and animal learning from psychology are closely aligned with ideas from the new field of *machine learning*. Machine learning is a field at the interface of statistics and computer science that focuses on how to build computer algorithms that can learn from experience. While statistics and machine learning often try to solve the same problems, researchers from these fields often take very different approaches; the famous statistician Leo Breiman once referred to them as "The Two Cultures" to reflect how different their approaches can be. In this book I will try to blend the two cultures together because both approaches provide useful tools for thinking about data.
+
+    <div>
+
+    > 统计学为我们提供了一种描述新数据如何最好地用于更新我们信仰的方法，这样统计学与心理学之间存在深刻的联系。事实上，许多心理学中关于人类和动物学习的理论与新兴的机器学习领域的思想密切相关。机器学习是统计学和计算机科学交界处的一个领域，重点研究如何构建能够从经验中学习的计算机算法。虽然统计学和机器学习通常试图解决相同的问题，但来自这些领域的研究人员通常采取非常不同的方法；著名的统计学家 Leo Breiman 曾将它们称为“两种文化”，以反映它们的方法之间有多么不同。在本书中，我将尝试将这两种文化融合在一起，因为两种方法都为思考数据提供了有用的工具。
+
+    </div>
+
+-   Statistics provides us with the tools to characterize uncertainty, to make decisions under uncertainty, and to make predictions whose uncertainty we can quantify.
+
+    <div>
+
+    > 统计学为我们提供了表征不确定性、在不确定性下做出决策以及对我们可以量化不确定性的预测的工具。
+
+    </div>
+
+-   Statistics can provide us with evidence, but it's always tentative and subject to the uncertainty that is always present in the real world.
+
+    <div>
+
+    > 统计学可以为我们提供证据，但它始终是暂时的，并受到现实世界中始终存在的不确定性的影响。
+
+    </div>
+
+-   In fact, the rate at which the benefit of larger samples decreases follows a simple mathematical rule, growing as the square root of the sample size, such that in order to double the precision of our estimate we need to quadruple the size of our sample.
+
+    <div>
+
+    > 事实上，随着样本规模的增大，较大样本的益处减小的速率遵循一个简单的数学规律，按照样本大小的平方根增长，这意味着为了提高我们的估计精度，我们需要将样本的大小增加四倍。
+
+    </div>
+
+-   Although observational research cannot conclusively demonstrate causal relations, we generally think that causation can be demonstrated using studies that experimentally control and manipulate a specific factor. In medicine, such a study is referred to as a *randomized controlled trial* (RCT).
+
+    <div>
+
+    > 尽管观察性研究不能最终证明因果关系，但我们通常认为，可以使用实验性地控制和操作特定因素的研究来证明因果关系。在医学中，这样的研究被称为随机对照试验（RCT）。
+
+    </div>
+
+-   Researchers often try to address these confounds using statistical analyses, but removing the influence of a confound from the data can be very difficult.
+
+    <div>
+
+    > 研究人员通常尝试使用统计分析来解决这些混淆问题，但从数据中消除混淆的影响可能非常困难。
+
+    </div>
+
+# Working with data
+
+-   The first important point about data is that data *are* – meaning that word "data" is plural (though some people disagree with me on this).
 
 -   
