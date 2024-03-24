@@ -1,8 +1,11 @@
 {
-  "hash": "7fe9021528d855911331b1a5b8ef8c90",
+  "hash": "c4ea10b2baf213d417bac13fc53925ef",
   "result": {
+    "engine": "knitr",
     "markdown": "---\ntitle: \"财务自由之路2\"\nsubtitle: \"3年内让你的个人资产翻一番\"\ndate: \"2024-02-11\"\n# date-modified: \"2024-02-11\"\nimage: \"cover.png\"\ncategories: \n  - Investment\ndraft: true\n---\n\n\n\n\n::: {.callout-note title=\"Progress\"}\nLearning Progress: 0.39%.\n\n<!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->\n:::\n\n::: {.callout-tip title=\"Learning Source\"}\n-   <https://book.douban.com/subject/30328453/>\n:::\n",
-    "supporting": [],
+    "supporting": [
+      "index_files"
+    ],
     "filters": [
       "rmarkdown/pagebreak.lua"
     ],

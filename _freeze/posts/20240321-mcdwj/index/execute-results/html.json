@@ -1,0 +1,15 @@
+{
+  "hash": "739922faaddc57e21e527008ba6812ec",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"漫长的危机\"\nsubtitle: \"欧洲的衰退与复兴\"\ndate: \"2024-03-21\"\n# date-modified: \"2024-03-06\"\nimage: \"cover.png\"\ncategories: \n  - Economics\n---\n\n\n\n\n::: {.callout-note title=\"Progress\"}\nLearning Progress: 2%.\n\n<!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->\n:::\n\n::: {.callout-tip title=\"Learning Source\"}\n-   <https://book.douban.com/subject/30157597/>\n:::\n\n# 前言 {.unnumbered}\n\n-   总体来看，从20世纪80年代初开始，在市场自律环境中的新一轮放松财政管控和不加节制的信用消费浪潮就已经席卷全球。\n\n-   苏联的解体使资本主义制度没有了敌人，也开启了一个新的阶段：人们开始相信“历史的终结”和以持续股市行情看涨为基础的“新增长”。\n\n-   \n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

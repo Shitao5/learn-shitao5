@@ -1,0 +1,15 @@
+{
+  "hash": "7ee645035e35133af3337ed0b6f1d429",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Efficient Linux at the Command Line\"\nsubtitle: \"Boost Your Command-Line Skills\"\ndate: \"2024-03-24\"\n# date-modified: \"2024-03-06\"\nimage: \"cover.png\"\ncategories: \n  - Linux\n---\n\n\n\n\n::: {.callout-note title=\"Progress\"}\nLearning Progress: 4.44%.\n\n<!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->\n:::\n\n::: {.callout-tip title=\"Learning Source\"}\n-   <https://book.douban.com/subject/35776782/>\n:::\n\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
