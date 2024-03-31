@@ -1,9 +1,11 @@
 {
-  "hash": "739922faaddc57e21e527008ba6812ec",
+  "hash": "741802d695ba99f13c1d51b83a59290f",
   "result": {
     "engine": "knitr",
-    "markdown": "---\ntitle: \"漫长的危机\"\nsubtitle: \"欧洲的衰退与复兴\"\ndate: \"2024-03-21\"\n# date-modified: \"2024-03-06\"\nimage: \"cover.png\"\ncategories: \n  - Economics\n---\n\n\n\n\n::: {.callout-note title=\"Progress\"}\nLearning Progress: 2%.\n\n<!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->\n:::\n\n::: {.callout-tip title=\"Learning Source\"}\n-   <https://book.douban.com/subject/30157597/>\n:::\n\n# 前言 {.unnumbered}\n\n-   总体来看，从20世纪80年代初开始，在市场自律环境中的新一轮放松财政管控和不加节制的信用消费浪潮就已经席卷全球。\n\n-   苏联的解体使资本主义制度没有了敌人，也开启了一个新的阶段：人们开始相信“历史的终结”和以持续股市行情看涨为基础的“新增长”。\n\n-   \n",
-    "supporting": [],
+    "markdown": "---\ntitle: \"漫长的危机\"\nsubtitle: \"欧洲的衰退与复兴\"\ndate: \"2024-03-21\"\ndate-modified: \"2024-03-26\"\nimage: \"cover.png\"\ncategories: \n  - Economics\n---\n\n\n\n\n::: {.callout-note title=\"Progress\"}\nLearning Progress: 9%.\n\n<!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->\n:::\n\n::: {.callout-tip title=\"Learning Source\"}\n-   <https://book.douban.com/subject/30157597/>\n:::\n\n# 前言 {.unnumbered}\n\n-   总体来看，从20世纪80年代初开始，在市场自律环境中的新一轮放松财政管控和不加节制的信用消费浪潮就已经席卷全球。\n\n-   苏联的解体使资本主义制度没有了敌人，也开启了一个新的阶段：人们开始相信“历史的终结”和以持续股市行情看涨为基础的“新增长”。\n\n-   我们正处于并将长期处于一个历史时期：经济发达国家的财富积累量稳步提升，而生产率和收入增长则十分缓慢。\n\n# 漫长的危机\n",
+    "supporting": [
+      "index_files"
+    ],
     "filters": [
       "rmarkdown/pagebreak.lua"
     ],

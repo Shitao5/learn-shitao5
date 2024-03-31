@@ -2,7 +2,7 @@
 title: "漫长的危机"
 subtitle: "欧洲的衰退与复兴"
 date: "2024-03-21"
-# date-modified: "2024-03-06"
+date-modified: "2024-03-26"
 image: "cover.png"
 categories: 
   - Economics
@@ -14,7 +14,7 @@ categories:
 ```
 
 ::: {.callout-note title="Progress"}
-`r stfun::progress(2, 100)`
+`r stfun::progress(9, 100)`
 
 <!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->
 :::
@@ -29,4 +29,6 @@ categories:
 
 -   苏联的解体使资本主义制度没有了敌人，也开启了一个新的阶段：人们开始相信“历史的终结”和以持续股市行情看涨为基础的“新增长”。
 
--   
+-   我们正处于并将长期处于一个历史时期：经济发达国家的财富积累量稳步提升，而生产率和收入增长则十分缓慢。
+
+# 漫长的危机
