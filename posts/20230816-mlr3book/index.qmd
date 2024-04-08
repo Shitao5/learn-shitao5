@@ -3,6 +3,8 @@ title: "Applied Machine Learning Using mlr3 in R"
 date: "2023-08-16"
 date-modified: "2023-10-23"
 image: "logo.png"
+execute: 
+  freeze: true
 categories: 
   - Machine Learning
   - R
