@@ -2,7 +2,7 @@
 title: "Efficient Linux at the Command Line"
 subtitle: "Boost Your Command-Line Skills"
 date: "2024-03-24"
-# date-modified: "2024-03-06"
+date-modified: "2024-04-05"
 image: "cover.png"
 categories: 
   - Linux
@@ -14,14 +14,14 @@ categories:
 ```
 
 ::: {.callout-note title="Progress"}
-`r stfun::progress(11, 248)`
+`r stfun::progress(23, 100)`
 
 <!-- 读后感：[读《管理行为》](https://shitao5.org/posts/glxw/)。 -->
 :::
 
 ::: {.callout-tip title="Learning Source"}
 -   <https://book.douban.com/subject/35776782/>
--   翻译来自 ChatGPT 3.5
+-   翻译来自 ChatGPT 3.5 和 ChatGPT 4
 :::
 
 # **Core Concepts**
@@ -70,3 +70,25 @@ categories:
 -   Output redirection has a partner, *input redirection*, that redirects stdin to come from a file instead of the keyboard. Use the symbol `<` followed by a filename to redirect stdin.
 
     > 输出重定向有一个伴侣，即输入重定向，它将 stdin 重定向到来自文件而不是键盘。使用符号 \< 后跟文件名来重定向 stdin。
+
+-   A leading backslash before an alias escapes the alias, causing the shell to look for a command of the same name, ignoring any shadowing.
+
+    > 在别名前加上反斜杠可以转义该别名，这会导致 shell 寻找同名的命令，忽略任何可能的覆盖。
+
+    ``` bash
+    $ alias less="less -c"        Define an alias
+    $ less myfile                 Run the alias, which invokes less -c
+    $ \less myfile                Run the standard less command, not the alias
+    ```
+
+-   When the shell searches for a command by name, it checks if that name is an alias before checking the search path. That’s why an alias can shadow (take precedence over) a command of the same name.
+
+    > 当 Shell 按名称搜索一个命令时，它会在检查搜索路径之前检查该名称是否为一个别名。这就是为什么一个别名可以遮蔽（优先于）一个同名的命令。
+
+## Rerunning Commands
+
+-   The shell appends commands to the history, verbatim, unevaluated. The one exception to this rule is history expansion. Its expressions are always evaluated before they’re added to the command history.
+
+    > Shell 将命令原样、未经评估地添加到历史中。这条规则的唯一例外是历史扩展。它的表达式在添加到命令历史之前总是先被评估。
+
+## Cruising the Filesystems
